@@ -17,7 +17,7 @@
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "build"],
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
       "outputs": ["coverage/**"]
     },

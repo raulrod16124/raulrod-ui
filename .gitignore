@@ -151,3 +151,6 @@ vite.config.ts.timestamp-*
 
 # Docs
 /docs
+
+# Local-only check scripts (not committed; policy like /docs)
+**/scripts/*.mjs

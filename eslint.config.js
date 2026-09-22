@@ -53,6 +53,9 @@ module.exports = [
       "import-x/resolver-next": [
         createNodeResolver({
           extensions: [".mjs", ".cjs", ".js", ".json", ".node", ".ts", ".mts", ".cts", ".tsx"],
+          extensionAlias: {
+            ".js": [".ts", ".js"],
+          },
         }),
       ],
     },

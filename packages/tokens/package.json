@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node scripts/check-contrast.mjs"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
