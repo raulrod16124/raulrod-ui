@@ -3,6 +3,7 @@ const tseslint = require("typescript-eslint");
 const reactHooks = require("eslint-plugin-react-hooks");
 const jsxA11y = require("eslint-plugin-jsx-a11y");
 const importX = require("eslint-plugin-import-x");
+const { createNodeResolver } = importX;
 const eslintConfigPrettier = require("eslint-config-prettier");
 const globals = require("globals");
 
@@ -49,6 +50,11 @@ module.exports = [
     },
     settings: {
       "import-x/internal-regex": "^@raulrod/",
+      "import-x/resolver-next": [
+        createNodeResolver({
+          extensions: [".mjs", ".cjs", ".js", ".json", ".node", ".ts", ".mts", ".cts", ".tsx"],
+        }),
+      ],
     },
     rules: {
       ...tseslint.configs.recommended.rules,
