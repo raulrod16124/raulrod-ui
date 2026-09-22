@@ -1,0 +1,6 @@
+{
+  "name": "@raulrod/playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Consumer app that validates the public API of RaulRod UI (RRU-110)."
+}
