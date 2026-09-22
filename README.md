@@ -30,8 +30,8 @@ pnpm add @raulrod/ui @raulrod/tokens @raulrod/icons
 Import the system stylesheet once, then use the public API:
 
 ```tsx
-import {Button, Dialog, ChevronDown} from '@raulrod/ui';
-import '@raulrod/ui/styles.css';
+import { Button, Dialog, ChevronDown } from "@raulrod/ui";
+import "@raulrod/ui/styles.css";
 ```
 
 ## Usage

@@ -2,5 +2,8 @@
   "name": "@raulrod/storybook",
   "version": "0.0.0",
   "private": true,
-  "description": "Storybook app for RaulRod UI: catalog, docs and props playground (RRU-080)."
+  "description": "Storybook app for RaulRod UI: catalog, docs and props playground (RRU-080).",
+  "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern"
+  }
 }
