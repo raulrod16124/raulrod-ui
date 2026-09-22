@@ -17,7 +17,7 @@ RaulRod UI is the shared UI infrastructure for Raúl's personal projects. It pro
 ## Requirements
 
 - React `>= 18.2.0` as a peer dependency (compatible with React 19).
-- Node.js LTS + pnpm.
+- Node.js 24 LTS (Active LTS, "Krypton", supported until Apr 2028) + pnpm. Use `nvm install 24 && nvm use` (see [`.nvmrc`](./.nvmrc)).
 
 ## Installation
 
