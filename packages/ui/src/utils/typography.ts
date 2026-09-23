@@ -4,10 +4,12 @@
 // exhaustive Records, so adding a font.*/color.text.* token to
 // `@raulrod/tokens` breaks compilation here until the matching `rr-*--*`
 // modifier exists in the CSS files — fail loud instead of silently falling
-// back to a default style.
+// back to a default style. The axis maps and the derived props type follow the
+// base component pattern (RRU-040): variants are built through
+// `createVariants` and `VariantProps` from `utils/variants`.
 import type { ColorText, FontWeight, TypeScale } from "@raulrod/tokens";
 
-import { cx } from "./cx.js";
+import { createVariants, type VariantProps } from "./variants.js";
 
 /** Root class names the helper can decorate (one per typography component). */
 export type TypographyRoot = "rr-text" | "rr-heading";
@@ -38,22 +40,23 @@ const colorModifiers: Record<ColorText, string> = {
   "color.text.inverse": "color-inverse",
 };
 
-/** Typography modifier props shared by Text and Heading (RRU-032 API surface). */
-export interface TypographyModifiers {
-  /** Font size, typed against the `TypeScale` token union. */
-  size?: TypeScale;
-  /** Font weight, typed against the `FontWeight` token union. */
-  weight?: FontWeight;
-  /** Text color, typed against the `ColorText` token union. */
-  color?: ColorText;
-}
+const typoModifiers: Readonly<{
+  size: Record<TypeScale, string>;
+  weight: Record<FontWeight, string>;
+  color: Record<ColorText, string>;
+}> = {
+  size: sizeModifiers,
+  weight: weightModifiers,
+  color: colorModifiers,
+};
+
+/** Typography modifier props shared by Text and Heading (RRU-032 API surface),
+ *  derived from the maps (`VariantProps<typeof typoModifiers>`). */
+export type TypographyModifiers = VariantProps<typeof typoModifiers>;
+
+const typographyVariantClasses = createVariants(typoModifiers);
 
 /** Joins the `rr-*` modifier classes for a typography component. */
 export function typographyClasses(root: TypographyRoot, modifiers: TypographyModifiers): string {
-  const { size, weight, color } = modifiers;
-  return cx(
-    size !== undefined && `${root}--${sizeModifiers[size]}`,
-    weight !== undefined && `${root}--${weightModifiers[weight]}`,
-    color !== undefined && `${root}--${colorModifiers[color]}`,
-  );
+  return typographyVariantClasses(root, modifiers);
 }

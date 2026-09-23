@@ -5,10 +5,13 @@
 // here until the matching `rr-*-gap-*` modifier exists in the CSS files —
 // fail loud instead of silently falling back to the default gap. `align`/
 // `justify` values are CSS layout keywords, not design values: they have no
-// token counterpart by design (ADR-003 / RRU-031 notes).
+// token counterpart by design (ADR-003 / RRU-031 notes). The axis maps and the
+// derived props type follow the base component pattern (RRU-040): variants are
+// built through `createVariants` and `VariantProps` from `utils/variants`.
 import type { Spacing } from "@raulrod/tokens";
 
 import { cx } from "./cx.js";
+import { createVariants, type VariantProps } from "./variants.js";
 
 /** Cross-axis alignment (`align-items`) shared by both layout primitives. */
 export type FlexAlign = "start" | "center" | "end" | "stretch" | "baseline";
@@ -50,21 +53,26 @@ const justifyModifiers: Record<FlexJustify, string> = {
   evenly: "justify-evenly",
 };
 
-/** Layout modifier props shared by Stack and Inline (RRU-031 API surface). */
-export interface FlexModifiers {
-  gap?: Spacing;
-  align?: FlexAlign;
-  justify?: FlexJustify;
-  wrap?: boolean;
-}
+const flexModifiers: Readonly<{
+  gap: Record<Spacing, string>;
+  align: Record<FlexAlign, string>;
+  justify: Record<FlexJustify, string>;
+}> = {
+  gap: gapModifiers,
+  align: alignModifiers,
+  justify: justifyModifiers,
+};
+
+/** Layout modifier props shared by Stack and Inline (RRU-031 API surface).
+ *  The three token-typed axes are derived from the maps (`VariantProps<typeof
+ *  flexModifiers>`); `wrap` is a boolean flag handled as an explicit `cx`
+ *  condition, outside the variant helper (RRU-040 convention). */
+export type FlexModifiers = VariantProps<typeof flexModifiers> & { wrap?: boolean };
+
+const flexVariantClasses = createVariants(flexModifiers);
 
 /** Joins the `rr-*` modifier classes for a flex layout primitive. */
 export function flexClasses(root: FlexRoot, modifiers: FlexModifiers): string {
-  const { gap, align, justify, wrap } = modifiers;
-  return cx(
-    gap !== undefined && `${root}--${gapModifiers[gap]}`,
-    align !== undefined && `${root}--${alignModifiers[align]}`,
-    justify !== undefined && `${root}--${justifyModifiers[justify]}`,
-    wrap === true && `${root}--wrap`,
-  );
+  const { wrap, ...variantProps } = modifiers;
+  return cx(flexVariantClasses(root, variantProps), wrap === true && `${root}--wrap`);
 }

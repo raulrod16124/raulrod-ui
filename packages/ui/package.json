@@ -13,7 +13,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs"
+    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs && node scripts/check-pattern.mjs"
   },
   "devDependencies": {
     "@raulrod/tokens": "workspace:*",
