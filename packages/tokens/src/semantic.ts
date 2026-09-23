@@ -1,12 +1,17 @@
-// Semantic tokens: intent per theme, light + dark values (RRU-020/021).
+// Semantic tokens: intent per theme (RRU-020/021).
+// Naming: dot-separated `category.descriptor.specific` (color.md §4/§5,
+// token-taxonomy.md §3.2). Color intents declare light and dark — the theme
+// changes the value, never the intent — and MUST resolve to a primitive (or the
+// fixed inverse `#ffffff`), enforced at compile time via PrimitiveHex and at
+// runtime by scripts/check-contrast.mjs. Non-color domains (font.*, RRU-022) are
+// theme-agnostic scalars (string | number) validated by the same runtime gate.
 import type { SemanticKey } from "./taxonomy.js";
 
 import { primitives, type PrimitiveHex } from "./primitives.js";
 
-// Naming: dot-separated `category.descriptor.specific` (color.md §4/§5). Each
-// intent declares light and dark: the theme changes the value, never the intent.
-// Values MUST resolve to a primitive (or the fixed inverse `#ffffff`) — enforced
-// at compile time via PrimitiveHex and at runtime by scripts/check-contrast.mjs.
+/** Value shapes accepted by semantic tokens: color pairs or theme-agnostic scalars. */
+export type SemanticValue = { light: PrimitiveHex; dark: PrimitiveHex } | string | number;
+
 export const semantic = {
   "color.background.default": { light: primitives["gray-0"], dark: primitives["gray-950"] },
   "color.background.surface": { light: primitives["gray-50"], dark: primitives["gray-925"] },
@@ -63,4 +68,33 @@ export const semantic = {
   },
   "color.action.info.text": { light: "#ffffff", dark: "#ffffff" },
   "color.focus.ring": { light: primitives["blue-550"], dark: primitives["blue-500"] },
-} as const satisfies Record<SemanticKey, { light: PrimitiveHex; dark: PrimitiveHex }>;
+
+  // Typography (RRU-022): theme-agnostic scalars from docs/typography.md §2–§5.
+  // font.size.* in px; font.weight.* unitless; font.leading.* unitless;
+  // font.tracking.* as em-suffixed letter-spacing strings; font.numeric.* a CSS
+  // `font-variant-numeric` value. Static scale (fluid type excluded from MVP).
+  "font.family.sans": "'Inter', 'Helvetica Neue', Arial, sans-serif",
+  "font.family.mono": "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+  "font.size.2xs": 12,
+  "font.size.xs": 13,
+  "font.size.sm": 14,
+  "font.size.base": 16,
+  "font.size.lg": 20,
+  "font.size.xl": 25,
+  "font.size.2xl": 31,
+  "font.size.3xl": 39,
+  "font.size.4xl": 49,
+  "font.size.5xl": 61,
+  "font.weight.regular": 400,
+  "font.weight.medium": 500,
+  "font.weight.semibold": 600,
+  "font.weight.bold": 700,
+  "font.leading.none": 1,
+  "font.leading.tight": 1.25,
+  "font.leading.normal": 1.5,
+  "font.leading.relaxed": 1.75,
+  "font.tracking.tight": "-0.01em",
+  "font.tracking.normal": "0",
+  "font.tracking.wide": "0.05em",
+  "font.numeric.tabular-nums": "tabular-nums",
+} as const satisfies Record<SemanticKey, SemanticValue>;
