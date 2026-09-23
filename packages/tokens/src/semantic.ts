@@ -20,6 +20,11 @@ export const semantic = {
   "color.text.primary": { light: primitives["gray-950"], dark: primitives["gray-100"] },
   "color.text.muted": { light: primitives["gray-650"], dark: primitives["gray-450"] },
   "color.text.inverse": { light: "#ffffff", dark: "#ffffff" },
+  // Error/danger text (RRU-044): light uses red-600 (AA 4.83:1 over default,
+  // 4.54:1 over surface); dark needs a LIGHTER step — red-600 is 3.55:1 on the
+  // dark bg (fails AA) — so it flips to red-400 (6.19:1 / 5.64:1). Same
+  // "theme changes the value, not the intent" model as muted (gray-650/450).
+  "color.text.danger": { light: primitives["red-600"], dark: primitives["red-400"] },
   "color.border.default": { light: primitives["gray-300"], dark: primitives["gray-800"] },
   "color.border.strong": { light: primitives["gray-600"], dark: primitives["gray-550"] },
   // Invalid/danger border (RRU-043): red-600 clears AA ≥3:1 against surface in

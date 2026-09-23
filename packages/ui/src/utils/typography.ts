@@ -38,6 +38,7 @@ const colorModifiers: Record<ColorText, string> = {
   "color.text.primary": "color-primary",
   "color.text.muted": "color-muted",
   "color.text.inverse": "color-inverse",
+  "color.text.danger": "color-danger",
 };
 
 const typoModifiers: Readonly<{

@@ -78,3 +78,7 @@
 .rr-text--color-inverse {
   color: var(--rr-color-text-inverse);
 }
+
+.rr-text--color-danger {
+  color: var(--rr-color-text-danger);
+}

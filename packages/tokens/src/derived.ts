@@ -58,11 +58,11 @@ export type MotionBehavior = Extract<SemanticToken, `motion.behavior.${string}`>
 /** Z-index roles (`z.*`): base | overlay | modal | toast. */
 export type ZIndex = Extract<SemanticToken, `z.${string}`>;
 
-/** Semantic text colors (`color.text.*`): primary | muted | inverse. */
+/** Semantic text colors (`color.text.*`): primary | muted | inverse | danger. */
 export type ColorText = Extract<SemanticToken, `color.text.${string}`>;
 
 /** Semantic background colors (`color.background.*`): default | surface | sunken. */
 export type ColorBackground = Extract<SemanticToken, `color.background.${string}`>;
 
-/** Semantic border colors (`color.border.*`): default | strong. */
+/** Semantic border colors (`color.border.*`): default | strong | danger. */
 export type ColorBorder = Extract<SemanticToken, `color.border.${string}`>;

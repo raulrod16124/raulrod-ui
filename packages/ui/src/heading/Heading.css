@@ -62,3 +62,7 @@
 .rr-heading--color-inverse {
   color: var(--rr-color-text-inverse);
 }
+
+.rr-heading--color-danger {
+  color: var(--rr-color-text-danger);
+}

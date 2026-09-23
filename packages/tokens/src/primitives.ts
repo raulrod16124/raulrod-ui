@@ -27,6 +27,7 @@ export const primitives = {
   "blue-600": "#2563eb",
   "blue-700": "#1d4ed8",
   "blue-800": "#1e40af",
+  "red-400": "#f87171",
   "red-600": "#dc2626",
   "red-700": "#b91c1c",
   "red-800": "#991b1b",
