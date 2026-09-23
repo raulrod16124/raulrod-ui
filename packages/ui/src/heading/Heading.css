@@ -66,3 +66,19 @@
 .rr-heading--color-danger {
   color: var(--rr-color-text-danger);
 }
+
+.rr-heading--color-success {
+  color: var(--rr-color-text-success);
+}
+
+.rr-heading--color-warning {
+  color: var(--rr-color-text-warning);
+}
+
+.rr-heading--color-info {
+  color: var(--rr-color-text-info);
+}
+
+.rr-heading--color-destructive {
+  color: var(--rr-color-text-destructive);
+}

@@ -1,0 +1,49 @@
+/* Badge — status indicator (RRU-049, ADR-003).
+   Only tokens for design values (var(--rr-*)). No mechanics exceptions: the
+   pill is pure token geometry (radius-full, space-1 paddings, font.size.2xs /
+   semibold / leading-none). The neutral variant reuses the existing
+   `color.background.sunken` + `color.text.muted` pair (AA 4.81:1 light /
+   5.11:1 dark, color.md §6.1) instead of dedicated tokens (token-taxonomy §1,
+   RRU-026: no speculative layer); the four status variants consume the alert
+   tint tokens deferred from RRU-021 (`color.background.*` + `color.text.*`,
+   color.md §5.3) — dark flips the tint value, never the intent (§9). Non-
+   interactive by design: no :hover/:focus/:disabled, no border, no transition
+   — a badge is static text, nothing to afford. */
+
+.rr-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--rr-space-1) var(--rr-space-2);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-2xs);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  border-radius: var(--rr-radius-full);
+}
+
+.rr-badge--neutral {
+  background: var(--rr-color-background-sunken);
+  color: var(--rr-color-text-muted);
+}
+
+.rr-badge--success {
+  background: var(--rr-color-background-success);
+  color: var(--rr-color-text-success);
+}
+
+.rr-badge--warning {
+  background: var(--rr-color-background-warning);
+  color: var(--rr-color-text-warning);
+}
+
+.rr-badge--info {
+  background: var(--rr-color-background-info);
+  color: var(--rr-color-text-info);
+}
+
+.rr-badge--destructive {
+  background: var(--rr-color-background-destructive);
+  color: var(--rr-color-text-destructive);
+}

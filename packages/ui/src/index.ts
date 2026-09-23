@@ -36,6 +36,8 @@ export type {
 } from "./radio/index.js";
 export { Switch } from "./switch/index.js";
 export type { SwitchProps, SwitchSize } from "./switch/index.js";
+export { Badge } from "./badge/index.js";
+export type { BadgeProps, BadgeVariant } from "./badge/index.js";
 export {
   FormField,
   FormFieldControl,

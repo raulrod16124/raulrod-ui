@@ -89,6 +89,21 @@ export const semantic = {
     dark: primitives["sky-900"],
   },
   "color.action.info.text": { light: "#ffffff", dark: "#ffffff" },
+  // Status tints for Badge/Toast (RRU-049, deferred from RRU-021 — color.md
+  // §5.3/§6.1). Soft background + darker text per intent: the theme flips the
+  // VALUE (light bg/tint → dark bg/tint), never the intent. Each pair clears AA
+  // ≥4.5 in both themes (verified by the PAIRS table of check-contrast.mjs).
+  // `color.text.destructive` coexists with `color.text.danger` (RRU-044): the
+  // former is the dark tint text (red-900/red-300), the latter the bright error
+  // text (red-600/red-400) over default/surface.
+  "color.text.success": { light: primitives["green-900"], dark: primitives["green-300"] },
+  "color.background.success": { light: primitives["green-100"], dark: primitives["green-950"] },
+  "color.text.warning": { light: primitives["amber-900"], dark: primitives["amber-400"] },
+  "color.background.warning": { light: primitives["amber-100"], dark: primitives["amber-950"] },
+  "color.text.info": { light: primitives["sky-900"], dark: primitives["sky-300"] },
+  "color.background.info": { light: primitives["sky-100"], dark: primitives["sky-950"] },
+  "color.text.destructive": { light: primitives["red-900"], dark: primitives["red-300"] },
+  "color.background.destructive": { light: primitives["red-100"], dark: primitives["red-950"] },
   "color.focus.ring": { light: primitives["blue-550"], dark: primitives["blue-500"] },
 
   // Typography (RRU-022): theme-agnostic scalars from docs/typography.md §2–§5.

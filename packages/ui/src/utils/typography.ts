@@ -39,6 +39,11 @@ const colorModifiers: Record<ColorText, string> = {
   "color.text.muted": "color-muted",
   "color.text.inverse": "color-inverse",
   "color.text.danger": "color-danger",
+  // Status tints (RRU-049): the fail-loud cascade of adding `color.text.*`.
+  "color.text.success": "color-success",
+  "color.text.warning": "color-warning",
+  "color.text.info": "color-info",
+  "color.text.destructive": "color-destructive",
 };
 
 const typoModifiers: Readonly<{
