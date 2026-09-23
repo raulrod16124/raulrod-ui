@@ -53,6 +53,19 @@ export const semantic = {
     dark: primitives["red-800"],
   },
   "color.action.destructive.text": { light: "#ffffff", dark: "#ffffff" },
+  // Disabled control state (RRU-041): one generic intent shared by every
+  // disabled control. WCAG 1.4.3 exempts disabled controls from contrast, so
+  // these pairs are deliberately NOT in the check-contrast PAIRS allowlist
+  // (color.md §6 note); values reuse existing gray steps so no primitive is
+  // added speculatively (token-taxonomy §1, RRU-026/041).
+  "color.action.disabled.background": {
+    light: primitives["gray-100"],
+    dark: primitives["gray-800"],
+  },
+  "color.action.disabled.text": {
+    light: primitives["gray-650"],
+    dark: primitives["gray-450"],
+  },
   "color.action.success.background": {
     light: primitives["green-700"],
     dark: primitives["green-800"],

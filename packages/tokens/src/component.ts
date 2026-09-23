@@ -5,14 +5,19 @@
 // rule: components consume semantics, token-taxonomy.md §1/§2). Emission turns
 // each ref into a `var(--rr-…)` alias (RRU-024/emit-css.mjs), so theming
 // (light/dark) stays in the semantic layer and per-component override works.
+// Two component tokens may NEVER share the same semantic target: an alias
+// always stays a real consumed state (check-contrast.mjs de-duplication rule).
 //
-// Scope today: `button.primary.{background,hover}` — exactly the states backed
-// by a real semantic (`color.action.primary.background(.hover)`, RRU-021). No
-// speculative tokens: `button.primary.background.disabled` is deferred to RRU-041
-// (no semantic disabled value yet, and creating one without a consuming component
-// would be the speculative layer §9 forbids; WCAG 1.4.3 exempts disabled controls
-// from contrast). `button.secondary.*`, `button.destructive.*`, `dropdown.*`, …
-// only when their component uses them.
+// Scope today: the Button states its consuming component actually paints
+// (RRU-041). `button.primary.background.disabled` keeps the RRU-026 promise —
+// its semantic (`color.action.disabled.background`) was created in this card
+// together with the real palette; only primary gets a disabled alias (other
+// variants read the semantic directly in Button.css — a shared target would
+// break the de-duplication rule). outline/ghost/link variants likewise read
+// semantics directly (`color.border.*`, `color.text.*`, `color.action.*`) and
+// own no aliases: no distinct semantics exist for them yet, and inventing
+// per-variant semantics nobody else consumes would be the speculative layer
+// §9 forbids. Add keys here when a variant gains a state worth overriding.
 import type { semantic } from "./semantic.js";
 import type { ComponentKey } from "./taxonomy.js";
 
@@ -23,4 +28,13 @@ type SemanticColorKey = Extract<keyof typeof semantic, `color.${string}`>;
 export const component = {
   "button.primary.background": "color.action.primary.background",
   "button.primary.background.hover": "color.action.primary.background.hover",
+  "button.primary.background.active": "color.action.primary.background.active",
+  "button.primary.background.disabled": "color.action.disabled.background",
+  "button.primary.text": "color.action.primary.text",
+  "button.secondary.background": "color.action.secondary.background",
+  "button.secondary.background.hover": "color.action.secondary.background.hover",
+  "button.secondary.text": "color.action.secondary.text",
+  "button.destructive.background": "color.action.destructive.background",
+  "button.destructive.background.hover": "color.action.destructive.background.hover",
+  "button.destructive.text": "color.action.destructive.text",
 } as const satisfies Record<ComponentKey, SemanticColorKey>;
