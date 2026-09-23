@@ -1,0 +1,179 @@
+/* IconButton — compact icon-only action control (RRU-042, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041):
+   - border/outline widths (1px/2px) and outline-offset: no width token
+     exists; 2px focus ring is the color.md §6.3 contract.
+   - `transparent` keyword (no color token for it) and @keyframes geometry.
+   Defaults: variant=primary comes from JS (Heading `as` precedent); size=md
+   lives in this base class (Stack.gap precedent). Source order matters: the
+   disabled block is last so it beats every variant `:hover` at equal
+   specificity.
+
+   Square sizing (matching Button's heights so a mixed toolbar stays aligned):
+   each size sets width/height to `font-size + 2×padding + 2×1px border`
+   (content-box), built entirely from tokens plus the documented 1px border
+   mechanics exception — sm = 14 + 2·4 + 2 = 24, md = 16 + 2·8 + 2 = 34,
+   lg = 20 + 2·12 + 2 = 46 (same as Button sm/md/lg heights).
+
+   Variants read the semantic layer directly (`color.action.*`,
+   `color.border.*`, `color.text.*`), the outline/ghost/link precedent of
+   Button.css — no new `icon-button.*` component tokens added (RRU-026 adds
+   them only when a component genuinely needs an alias worth overriding). */
+
+.rr-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-medium);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  border: 1px solid transparent;
+  border-radius: var(--rr-radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-icon-button:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-icon-button__icon,
+.rr-icon-button__spinner {
+  display: inline-flex;
+}
+
+.rr-icon-button__icon svg,
+.rr-icon-button__spinner svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* --- Size axis (base = md; explicit modifier for the passed case) --- */
+
+.rr-icon-button--size-sm {
+  padding: var(--rr-space-1);
+  font-size: var(--rr-font-size-sm);
+  width: calc(var(--rr-font-size-sm) + var(--rr-space-2) + 2px);
+  height: calc(var(--rr-font-size-sm) + var(--rr-space-2) + 2px);
+}
+
+.rr-icon-button--size-md {
+  padding: var(--rr-space-2);
+  font-size: var(--rr-font-size-base);
+  width: calc(var(--rr-font-size-base) + var(--rr-space-4) + 2px);
+  height: calc(var(--rr-font-size-base) + var(--rr-space-4) + 2px);
+}
+
+.rr-icon-button--size-lg {
+  padding: var(--rr-space-3);
+  font-size: var(--rr-font-size-lg);
+  width: calc(var(--rr-font-size-lg) + var(--rr-space-6) + 2px);
+  height: calc(var(--rr-font-size-lg) + var(--rr-space-6) + 2px);
+}
+
+/* --- Variants (semantics directly — Button.css outline/ghost/link precedent) --- */
+
+.rr-icon-button--primary {
+  background: var(--rr-color-action-primary-background);
+  color: var(--rr-color-action-primary-text);
+}
+
+.rr-icon-button--primary:hover {
+  background: var(--rr-color-action-primary-background-hover);
+}
+
+.rr-icon-button--primary:active {
+  background: var(--rr-color-action-primary-background-active);
+}
+
+.rr-icon-button--secondary {
+  background: var(--rr-color-action-secondary-background);
+  color: var(--rr-color-action-secondary-text);
+  border-color: var(--rr-color-border-default);
+}
+
+.rr-icon-button--secondary:hover {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-icon-button--destructive {
+  background: var(--rr-color-action-destructive-background);
+  color: var(--rr-color-action-destructive-text);
+}
+
+.rr-icon-button--destructive:hover {
+  background: var(--rr-color-action-destructive-background-hover);
+}
+
+.rr-icon-button--outline {
+  background: transparent;
+  color: var(--rr-color-text-primary);
+  border-color: var(--rr-color-border-strong);
+}
+
+.rr-icon-button--outline:hover {
+  background: var(--rr-color-action-secondary-background);
+}
+
+.rr-icon-button--outline:active {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-icon-button--ghost {
+  background: transparent;
+  color: var(--rr-color-text-primary);
+  border-color: transparent;
+}
+
+.rr-icon-button--ghost:hover {
+  background: var(--rr-color-action-secondary-background);
+}
+
+.rr-icon-button--ghost:active {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-icon-button--link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--rr-color-action-primary-background);
+}
+
+.rr-icon-button--link:hover {
+  color: var(--rr-color-action-primary-background-hover);
+}
+
+/* --- Disabled: LAST so it wins over every `:hover` above (same specificity,
+       later source order). One shared disabled look across variants (WCAG
+       1.4.3 exempts these from contrast — color.md §6 note, RRU-041). --- */
+
+.rr-icon-button:disabled {
+  background: var(--rr-color-action-disabled-background);
+  color: var(--rr-color-action-disabled-text);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* --- Loading spinner (decorative; the aria-label stays for the accessible name) --- */
+
+.rr-icon-button__spinner {
+  animation: rr-icon-button-spin var(--rr-motion-duration-base) linear infinite;
+}
+
+@keyframes rr-icon-button-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-icon-button__spinner {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}
