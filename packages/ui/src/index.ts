@@ -23,6 +23,8 @@ export { IconButton } from "./icon-button/index.js";
 export type { IconButtonProps, IconButtonSize, IconButtonVariant } from "./icon-button/index.js";
 export { Input } from "./input/index.js";
 export type { InputProps, InputSize } from "./input/index.js";
+export { Textarea } from "./textarea/index.js";
+export type { TextareaProps, TextareaSize } from "./textarea/index.js";
 export {
   FormField,
   FormFieldControl,
