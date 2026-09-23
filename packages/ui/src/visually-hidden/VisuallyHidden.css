@@ -1,0 +1,33 @@
+/* VisuallyHidden — sr-only primitive (RRU-033, ADR-003).
+   Keeps content in the accessibility tree (screen readers) while removing it
+   visually: no layout impact, no focus/pointer interception. The values below
+   are a11y mechanics (geometry/clipping), NOT design tokens — same documented
+   exception as the layout keywords for Stack/Inline (RRU-031): they have no
+   token counterpart. Never `display: none` / `visibility: hidden` here: that
+   would drop the content from the a11y tree and block focus (card DoD #1). */
+
+.rr-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.rr-visually-hidden--focusable:focus,
+.rr-visually-hidden--focusable:active,
+.rr-visually-hidden--focusable:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+}

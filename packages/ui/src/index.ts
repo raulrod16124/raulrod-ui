@@ -9,3 +9,5 @@ export { Heading } from "./heading/index.js";
 export type { HeadingLevel, HeadingProps } from "./heading/index.js";
 export { Text } from "./text/index.js";
 export type { TextProps } from "./text/index.js";
+export { VisuallyHidden } from "./visually-hidden/index.js";
+export type { VisuallyHiddenProps } from "./visually-hidden/index.js";
