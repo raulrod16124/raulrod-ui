@@ -1,0 +1,53 @@
+/* Avatar — square user image / initials fallback (RRU-050, ADR-003).
+   Only tokens for design values (var(--rr-*)); no mechanics exceptions: the
+   disc is pure token geometry (`radius-full` + `space-8/10/12` squares) and the
+   initials read the `background.sunken` + `text.muted` pair already AA-verified
+   for Badge neutral (color.md §6.1, 4.81:1 light / 5.11:1 dark). No tokens new
+   (RRU-026): the fallback reuses the existing pair instead of speculativating a
+   dedicated `color.background.avatar`. Non-interactive by design (Badge
+   precedent): no `:hover`/`:focus`/`:disabled` — a static avatar must not
+   afford interaction; if it is clickable the consumer wraps it.
+   Default: size=md lives in this base class (Stack.gap / Button.size
+   precedent); the size modifiers override the square and the initials font. */
+
+.rr-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--rr-space-10);
+  height: var(--rr-space-10);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-none);
+  color: var(--rr-color-text-muted);
+  background: var(--rr-color-background-sunken);
+  border-radius: var(--rr-radius-full);
+  overflow: hidden;
+}
+
+.rr-avatar--size-sm {
+  width: var(--rr-space-8);
+  height: var(--rr-space-8);
+  font-size: var(--rr-font-size-xs);
+}
+
+.rr-avatar--size-md {
+  width: var(--rr-space-10);
+  height: var(--rr-space-10);
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-avatar--size-lg {
+  width: var(--rr-space-12);
+  height: var(--rr-space-12);
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
