@@ -1,0 +1,83 @@
+/* Input — base single-line text field (RRU-043, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041):
+   - border/outline widths (1px/2px) and outline-offset: no width token
+     exists; 2px focus ring is the color.md §6.3 contract.
+   Defaults: size=md lives in this base class (Stack.gap precedent). Source
+   order matters: the disabled block is last so it beats the invalid border
+   at equal specificity.
+   Colors: the resting boundary uses `color.border.strong`, NOT
+   `border.default` — color.md §6.2 forbids the latter on interactive control
+   boundaries; `border.danger` marks the invalid state (AA on
+   background.default, pair in color.md §6.2). There is no border-hover token:
+   interaction feedback comes from the :focus-visible ring (color.md §6.3). */
+
+.rr-input {
+  display: block;
+  width: 100%;
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-regular);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-primary);
+  background: var(--rr-color-background-default);
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-input::placeholder {
+  color: var(--rr-color-text-muted);
+}
+
+.rr-input:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Size axis (base = md; explicit modifier for the passed case) ---
+   Heights match Button per size (24/34/46px) so fields and buttons align in
+   the same toolbar (leading-none + same padding, RRU-042 precedent). */
+
+.rr-input--size-sm {
+  padding: var(--rr-space-1) var(--rr-space-3);
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-input--size-md {
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-input--size-lg {
+  padding: var(--rr-space-3) var(--rr-space-5);
+  font-size: var(--rr-font-size-lg);
+}
+
+/* --- Invalid state: styled purely on the native `aria-invalid` attribute
+   (RRU-043 decision) — the danger border stays on hover and while focused;
+   the focus-visible ring is still the §6.3 contract. --- */
+
+.rr-input[aria-invalid="true"] {
+  border-color: var(--rr-color-border-danger);
+}
+
+/* --- Disabled: LAST so it wins over the invalid border above (same
+   specificity, later source order). Shared disabled look (WCAG 1.4.3
+   exempts disabled controls from contrast — color.md §6 note, RRU-041). --- */
+
+.rr-input:disabled,
+.rr-input[aria-disabled="true"] {
+  background: var(--rr-color-action-disabled-background);
+  color: var(--rr-color-action-disabled-text);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.rr-input:disabled::placeholder {
+  color: var(--rr-color-action-disabled-text);
+}

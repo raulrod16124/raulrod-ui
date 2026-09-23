@@ -21,6 +21,8 @@ export { Button } from "./button/index.js";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./button/index.js";
 export { IconButton } from "./icon-button/index.js";
 export type { IconButtonProps, IconButtonSize, IconButtonVariant } from "./icon-button/index.js";
+export { Input } from "./input/index.js";
+export type { InputProps, InputSize } from "./input/index.js";
 // ADR-007 / decisión de producto #2: el entry point público re-exporta todo el
 // set de iconos para que los consumidores no dependan de lucide-react
 // directamente (RRU-041, sesión 2026-09-23).

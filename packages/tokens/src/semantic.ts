@@ -22,6 +22,9 @@ export const semantic = {
   "color.text.inverse": { light: "#ffffff", dark: "#ffffff" },
   "color.border.default": { light: primitives["gray-300"], dark: primitives["gray-800"] },
   "color.border.strong": { light: primitives["gray-600"], dark: primitives["gray-550"] },
+  // Invalid/danger border (RRU-043): red-600 clears AA ≥3:1 against surface in
+  // both themes (4.54 light / 3.23 dark — verified by check-contrast.mjs).
+  "color.border.danger": { light: primitives["red-600"], dark: primitives["red-600"] },
   "color.action.primary.background": {
     light: primitives["blue-600"],
     dark: primitives["blue-600"],
