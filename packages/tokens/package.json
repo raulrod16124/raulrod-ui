@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/emit-css.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "node scripts/check-contrast.mjs"
