@@ -9,6 +9,25 @@ export { component } from "./component.js";
 export { primitives } from "./primitives.js";
 export { semantic } from "./semantic.js";
 export type { ComponentKey, PrimitiveKey, SemanticKey, TokenLayer } from "./taxonomy.js";
+export type {
+  Breakpoint,
+  ColorBackground,
+  ColorBorder,
+  ColorText,
+  FontFamily,
+  FontLeading,
+  FontNumeric,
+  FontTracking,
+  FontWeight,
+  MotionBehavior,
+  MotionDuration,
+  MotionEasing,
+  Radius,
+  Shadow,
+  Spacing,
+  TypeScale,
+  ZIndex,
+} from "./derived.js";
 
 export type PrimitiveToken = keyof typeof primitives;
 export type SemanticToken = keyof typeof semantic;
