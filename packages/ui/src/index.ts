@@ -25,6 +25,8 @@ export { Input } from "./input/index.js";
 export type { InputProps, InputSize } from "./input/index.js";
 export { Textarea } from "./textarea/index.js";
 export type { TextareaProps, TextareaSize } from "./textarea/index.js";
+export { Checkbox } from "./checkbox/index.js";
+export type { CheckboxProps, CheckboxSize } from "./checkbox/index.js";
 export {
   FormField,
   FormFieldControl,

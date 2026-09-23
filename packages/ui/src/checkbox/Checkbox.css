@@ -1,0 +1,117 @@
+/* Checkbox — native tri-state toggle (RRU-046, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041):
+   - border/outline widths (1px/2px) and outline-offset: no width token
+     exists; 2px focus ring is the color.md §6.3 contract.
+   - `appearance: none` and `cursor` keywords: platform styling mechanics
+     without a token counterpart (precedent `align`/`justify`, RRU-031).
+   - the check/dash glyphs as inline data-URI SVGs with a #ffffff stroke:
+     the white-on-primary contract is FIXED by product decision #3
+     (`color.action.primary.text` = #ffffff in both themes), so the stroke is
+     governed (not arbitrary); SVGs cannot reach `currentColor`/var() from a
+     background-image. Documented, single-instance exception.
+   The checked and indeterminate visuals ride the NATIVE pseudo-classes
+   (`:checked`, `:indeterminate`) — no state classes in the markup. Defaults:
+   size=md in this base class (Stack.gap precedent); indeterminate/checked
+   filled squares use `color.action.primary.background(.hover)`. Source order
+   matters: the disabled block is last so it beats every state rule at equal
+   specificity. The resting boundary uses `color.border.strong`, NOT
+   `border.default` (color.md §6.2). */
+
+.rr-checkbox {
+  appearance: none;
+  width: var(--rr-space-4);
+  height: var(--rr-space-4);
+  margin: 0;
+  padding: 0;
+  background: var(--rr-color-background-default);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 62.5%;
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-checkbox:hover {
+  background-color: var(--rr-color-background-surface);
+}
+
+.rr-checkbox:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Size axis (base = md; explicit modifier for the passed case) --- */
+
+.rr-checkbox--size-sm {
+  width: var(--rr-space-3);
+  height: var(--rr-space-3);
+}
+
+.rr-checkbox--size-md {
+  width: var(--rr-space-4);
+  height: var(--rr-space-4);
+}
+
+.rr-checkbox--size-lg {
+  width: var(--rr-space-5);
+  height: var(--rr-space-5);
+}
+
+/* --- Checked / indeterminate fills (native pseudo-classes) ---
+   `:checked:not(:indeterminate)` keeps the check off a partially-selected box
+   when both flags are set (the indeterminate property wins visually). The
+   hover-state squares resolve the primary `.background-hover` semantic so the
+   fill darkens with the theme like Button's primary. */
+
+.rr-checkbox:checked:not(:indeterminate) {
+  background-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-action-primary-background);
+}
+
+.rr-checkbox:checked:not(:indeterminate):hover {
+  background-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-action-primary-background-hover);
+}
+
+.rr-checkbox:indeterminate {
+  background-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-action-primary-background);
+}
+
+.rr-checkbox:indeterminate:hover {
+  background-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-action-primary-background-hover);
+}
+
+.rr-checkbox:checked:not(:indeterminate) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'><path d='M4 8.4l2.6 2.6L12 5.6' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+
+.rr-checkbox:indeterminate {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'><path d='M4.5 8h7' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/></svg>");
+}
+
+/* --- Invalid wiring: styled purely on `aria-invalid` (Input precedent,
+   RRU-043 decision) so FormField (RRU-044) drives it by composition. --- */
+
+.rr-checkbox[aria-invalid="true"] {
+  border-color: var(--rr-color-border-danger);
+}
+
+/* --- Disabled: LAST so it beats every state and hover rule above (same
+   specificity, later source order). Shared disabled look (WCAG 1.4.3 exempts
+   disabled controls from contrast — color.md §6). `background-image: none`
+   also clears the check/dash so a disabled checked box is a plain square. --- */
+
+.rr-checkbox:disabled,
+.rr-checkbox[aria-disabled="true"] {
+  background-color: var(--rr-color-action-disabled-background);
+  background-image: none;
+  border-color: transparent;
+  cursor: not-allowed;
+}
