@@ -54,7 +54,7 @@ module.exports = [
         createNodeResolver({
           extensions: [".mjs", ".cjs", ".js", ".json", ".node", ".ts", ".mts", ".cts", ".tsx"],
           extensionAlias: {
-            ".js": [".ts", ".js"],
+            ".js": [".ts", ".tsx", ".js"],
           },
         }),
       ],

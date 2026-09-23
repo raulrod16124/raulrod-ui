@@ -1,0 +1,101 @@
+/* Stack — vertical flex layout primitive (RRU-031, ADR-003).
+   Only tokens for design values (`var(--rr-space-*)`); `align`/`justify`
+   values are CSS layout keywords and have no token counterpart. */
+
+.rr-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-4);
+}
+
+.rr-stack--gap-0 {
+  gap: var(--rr-space-0);
+}
+
+.rr-stack--gap-1 {
+  gap: var(--rr-space-1);
+}
+
+.rr-stack--gap-2 {
+  gap: var(--rr-space-2);
+}
+
+.rr-stack--gap-3 {
+  gap: var(--rr-space-3);
+}
+
+.rr-stack--gap-4 {
+  gap: var(--rr-space-4);
+}
+
+.rr-stack--gap-5 {
+  gap: var(--rr-space-5);
+}
+
+.rr-stack--gap-6 {
+  gap: var(--rr-space-6);
+}
+
+.rr-stack--gap-8 {
+  gap: var(--rr-space-8);
+}
+
+.rr-stack--gap-10 {
+  gap: var(--rr-space-10);
+}
+
+.rr-stack--gap-12 {
+  gap: var(--rr-space-12);
+}
+
+.rr-stack--gap-16 {
+  gap: var(--rr-space-16);
+}
+
+.rr-stack--align-start {
+  align-items: flex-start;
+}
+
+.rr-stack--align-center {
+  align-items: center;
+}
+
+.rr-stack--align-end {
+  align-items: flex-end;
+}
+
+.rr-stack--align-stretch {
+  align-items: stretch;
+}
+
+.rr-stack--align-baseline {
+  align-items: baseline;
+}
+
+.rr-stack--justify-start {
+  justify-content: flex-start;
+}
+
+.rr-stack--justify-center {
+  justify-content: center;
+}
+
+.rr-stack--justify-end {
+  justify-content: flex-end;
+}
+
+.rr-stack--justify-between {
+  justify-content: space-between;
+}
+
+.rr-stack--justify-around {
+  justify-content: space-around;
+}
+
+.rr-stack--justify-evenly {
+  justify-content: space-evenly;
+}
+
+.rr-stack--wrap {
+  flex-wrap: wrap;
+}
