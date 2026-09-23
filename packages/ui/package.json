@@ -13,7 +13,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs && node scripts/check-pattern.mjs && node scripts/check-button.mjs && node scripts/check-icon-button.mjs && node scripts/check-input.mjs && node scripts/check-form-field.mjs && node scripts/check-textarea.mjs && node scripts/check-checkbox.mjs && node scripts/check-radio.mjs"
+    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs && node scripts/check-pattern.mjs && node scripts/check-button.mjs && node scripts/check-icon-button.mjs && node scripts/check-input.mjs && node scripts/check-form-field.mjs && node scripts/check-textarea.mjs && node scripts/check-checkbox.mjs && node scripts/check-radio.mjs && node scripts/check-switch.mjs"
   },
   "dependencies": {
     "@raulrod/icons": "workspace:*"

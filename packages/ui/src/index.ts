@@ -34,6 +34,8 @@ export type {
   RadioProps,
   RadioSize,
 } from "./radio/index.js";
+export { Switch } from "./switch/index.js";
+export type { SwitchProps, SwitchSize } from "./switch/index.js";
 export {
   FormField,
   FormFieldControl,
