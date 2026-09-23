@@ -18,7 +18,7 @@
     },
     "test": {
       "dependsOn": ["^build", "build"],
-      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "**/scripts/*.mjs"],
       "outputs": ["coverage/**"]
     },
     "test:e2e": {
