@@ -1,0 +1,64 @@
+/* Heading — headline primitive (RRU-032, ADR-003).
+   Size modifiers are emitted per level by Heading.tsx via `TypeScale` tokens;
+   weight/leading/tracking reflect the `heading` role (docs/typography.md §4.4).
+   Only tokens for design values; no arbitrary values. */
+
+.rr-heading {
+  font-family: var(--rr-font-family-sans);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-tight);
+  letter-spacing: var(--rr-font-tracking-tight);
+  color: var(--rr-color-text-primary);
+}
+
+.rr-heading--size-2xs {
+  font-size: var(--rr-font-size-2xs);
+}
+
+.rr-heading--size-xs {
+  font-size: var(--rr-font-size-xs);
+}
+
+.rr-heading--size-sm {
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-heading--size-base {
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-heading--size-lg {
+  font-size: var(--rr-font-size-lg);
+}
+
+.rr-heading--size-xl {
+  font-size: var(--rr-font-size-xl);
+}
+
+.rr-heading--size-2xl {
+  font-size: var(--rr-font-size-2xl);
+}
+
+.rr-heading--size-3xl {
+  font-size: var(--rr-font-size-3xl);
+}
+
+.rr-heading--size-4xl {
+  font-size: var(--rr-font-size-4xl);
+}
+
+.rr-heading--size-5xl {
+  font-size: var(--rr-font-size-5xl);
+}
+
+.rr-heading--color-primary {
+  color: var(--rr-color-text-primary);
+}
+
+.rr-heading--color-muted {
+  color: var(--rr-color-text-muted);
+}
+
+.rr-heading--color-inverse {
+  color: var(--rr-color-text-inverse);
+}

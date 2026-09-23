@@ -5,3 +5,7 @@ export { Inline } from "./inline/index.js";
 export type { InlineProps } from "./inline/index.js";
 export { Stack } from "./stack/index.js";
 export type { StackProps } from "./stack/index.js";
+export { Heading } from "./heading/index.js";
+export type { HeadingLevel, HeadingProps } from "./heading/index.js";
+export { Text } from "./text/index.js";
+export type { TextProps } from "./text/index.js";

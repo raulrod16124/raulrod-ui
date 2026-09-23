@@ -1,0 +1,80 @@
+/* Text — typographic span primitive (RRU-032, ADR-003).
+   Only tokens for design values (var(--rr-font-*) / var(--rr-color-text-*));
+   no arbitrary values (docs/typography.md §1). */
+
+.rr-text {
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-regular);
+  line-height: var(--rr-font-leading-normal);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-primary);
+}
+
+.rr-text--size-2xs {
+  font-size: var(--rr-font-size-2xs);
+}
+
+.rr-text--size-xs {
+  font-size: var(--rr-font-size-xs);
+}
+
+.rr-text--size-sm {
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-text--size-base {
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-text--size-lg {
+  font-size: var(--rr-font-size-lg);
+}
+
+.rr-text--size-xl {
+  font-size: var(--rr-font-size-xl);
+}
+
+.rr-text--size-2xl {
+  font-size: var(--rr-font-size-2xl);
+}
+
+.rr-text--size-3xl {
+  font-size: var(--rr-font-size-3xl);
+}
+
+.rr-text--size-4xl {
+  font-size: var(--rr-font-size-4xl);
+}
+
+.rr-text--size-5xl {
+  font-size: var(--rr-font-size-5xl);
+}
+
+.rr-text--weight-regular {
+  font-weight: var(--rr-font-weight-regular);
+}
+
+.rr-text--weight-medium {
+  font-weight: var(--rr-font-weight-medium);
+}
+
+.rr-text--weight-semibold {
+  font-weight: var(--rr-font-weight-semibold);
+}
+
+.rr-text--weight-bold {
+  font-weight: var(--rr-font-weight-bold);
+}
+
+.rr-text--color-primary {
+  color: var(--rr-color-text-primary);
+}
+
+.rr-text--color-muted {
+  color: var(--rr-color-text-muted);
+}
+
+.rr-text--color-inverse {
+  color: var(--rr-color-text-inverse);
+}
