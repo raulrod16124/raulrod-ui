@@ -13,11 +13,12 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs"
+    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs"
   },
   "devDependencies": {
     "@raulrod/tokens": "workspace:*",
     "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2"

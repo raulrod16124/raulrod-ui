@@ -11,3 +11,5 @@ export { Text } from "./text/index.js";
 export type { TextProps } from "./text/index.js";
 export { VisuallyHidden } from "./visually-hidden/index.js";
 export type { VisuallyHiddenProps } from "./visually-hidden/index.js";
+export { Portal } from "./portal/index.js";
+export type { PortalProps } from "./portal/index.js";
