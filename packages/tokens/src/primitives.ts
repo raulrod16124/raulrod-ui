@@ -1,9 +1,13 @@
-// Primitive tokens: raw values, theme-agnostic (RRU-020/021).
+// Primitive tokens: raw values, theme-agnostic (RRU-020/021/023).
+// Naming: `namespace-step` kebab, no dots (color.md §3, token-taxonomy.md §3.1).
+// Color primitives: only the steps consumed by a semantic token are emitted
+// (color.md §1.5). Spacing (base 4px) and radius primitives are consumed
+// *directly* by components (token-taxonomy.md §4/§6, footnote ¹) and therefore
+// are not referenced by any semantic — the runtime gate skips color invariants
+// (duplicate value / orphan) for non-hex primitives. Value gate lives in
+// scripts/check-contrast.mjs.
 import type { PrimitiveKey } from "./taxonomy.js";
 
-// Naming: `namespace-step` kebab, no dots (color.md §3). Only the steps consumed
-// by a semantic token are emitted (color.md §1.5); the AA contrast gate lives in
-// scripts/check-contrast.mjs.
 export const primitives = {
   "gray-0": "#ffffff",
   "gray-50": "#f7f8fa",
@@ -32,7 +36,30 @@ export const primitives = {
   "sky-700": "#0369a1",
   "sky-800": "#075985",
   "sky-900": "#0c4a6e",
+
+  // Spacing scale, base 4px (guide §10, token-taxonomy.md §3.1). Consumed
+  // directly by components as gap/margin/padding; emitted as CSS `px` strings.
+  "space-0": "0",
+  "space-1": "4px",
+  "space-2": "8px",
+  "space-3": "12px",
+  "space-4": "16px",
+  "space-5": "20px",
+  "space-6": "24px",
+  "space-8": "32px",
+  "space-10": "40px",
+  "space-12": "48px",
+  "space-16": "64px",
+
+  // Radius scale {none, sm, md, lg, full} (guide §10).
+  "radius-none": "0",
+  "radius-sm": "4px",
+  "radius-md": "8px",
+  "radius-lg": "12px",
+  "radius-full": "9999px",
 } as const satisfies Record<PrimitiveKey, string>;
 
-/** Union of the emitted primitive hex values (single source of truth for semantic tokens). */
-export type PrimitiveHex = (typeof primitives)[keyof typeof primitives];
+/** Union of the emitted color hex values (single source of truth for semantic
+ *  color tokens). Non-hex primitives (`space-*`, `radius-*`) are excluded so a
+ *  semantic color can only resolve to a real hex (enforced at compile time). */
+export type PrimitiveHex = Extract<(typeof primitives)[keyof typeof primitives], `#${string}`>;

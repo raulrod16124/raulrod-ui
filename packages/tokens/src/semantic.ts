@@ -1,10 +1,11 @@
 // Semantic tokens: intent per theme (RRU-020/021).
-// Naming: dot-separated `category.descriptor.specific` (color.md §4/§5,
+// Naming: dot-separated `category.descriptor[.specific]` (color.md §4/§5,
 // token-taxonomy.md §3.2). Color intents declare light and dark — the theme
 // changes the value, never the intent — and MUST resolve to a primitive (or the
 // fixed inverse `#ffffff`), enforced at compile time via PrimitiveHex and at
-// runtime by scripts/check-contrast.mjs. Non-color domains (font.*, RRU-022) are
-// theme-agnostic scalars (string | number) validated by the same runtime gate.
+// runtime by scripts/check-contrast.mjs. Non-color domains (font.*, breakpoint.*,
+// shadow.*, motion.*, z.*) are theme-agnostic scalars (string | number) validated
+// by the same runtime gate.
 import type { SemanticKey } from "./taxonomy.js";
 
 import { primitives, type PrimitiveHex } from "./primitives.js";
@@ -97,4 +98,32 @@ export const semantic = {
   "font.tracking.normal": "0",
   "font.tracking.wide": "0.05em",
   "font.numeric.tabular-nums": "tabular-nums",
+
+  // Breakpoints (RRU-023): semantic role names, integer px (token-taxonomy.md §3.2).
+  "breakpoint.sm": 640,
+  "breakpoint.md": 768,
+  "breakpoint.lg": 1024,
+  "breakpoint.xl": 1280,
+
+  // Shadow (RRU-023): small elevation scale as CSS box-shadow strings.
+  "shadow.sm": "0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.10)",
+  "shadow.md": "0 4px 6px rgb(0 0 0 / 0.07), 0 10px 20px rgb(0 0 0 / 0.10)",
+
+  // Motion (RRU-023): duration (ms strings), easing (cubic-bezier) and
+  // reduced-motion behaviour. RRU-024 emits behavior.* under
+  // `@media (prefers-reduced-motion: reduce)`.
+  "motion.duration.fast": "100ms",
+  "motion.duration.base": "200ms",
+  "motion.duration.slow": "350ms",
+  "motion.easing.standard": "cubic-bezier(0.2, 0, 0, 1)",
+  "motion.easing.enter": "cubic-bezier(0, 0, 0.2, 1)",
+  "motion.easing.exit": "cubic-bezier(0.4, 0, 1, 1)",
+  "motion.behavior.default": "auto",
+  "motion.behavior.reduced": "none",
+
+  // Z-index (RRU-023): semantic roles, integer stacking order.
+  "z.base": 0,
+  "z.overlay": 100,
+  "z.modal": 200,
+  "z.toast": 300,
 } as const satisfies Record<SemanticKey, SemanticValue>;
