@@ -27,6 +27,13 @@ export { Textarea } from "./textarea/index.js";
 export type { TextareaProps, TextareaSize } from "./textarea/index.js";
 export { Checkbox } from "./checkbox/index.js";
 export type { CheckboxProps, CheckboxSize } from "./checkbox/index.js";
+export { Radio, RadioGroup } from "./radio/index.js";
+export type {
+  RadioGroupOrientation,
+  RadioGroupProps,
+  RadioProps,
+  RadioSize,
+} from "./radio/index.js";
 export {
   FormField,
   FormFieldControl,
