@@ -42,6 +42,8 @@ export { Avatar } from "./avatar/index.js";
 export type { AvatarProps, AvatarSize } from "./avatar/index.js";
 export { Skeleton } from "./skeleton/index.js";
 export type { SkeletonProps, SkeletonVariant } from "./skeleton/index.js";
+export { Pagination } from "./pagination/index.js";
+export type { PaginationProps } from "./pagination/index.js";
 export {
   FormField,
   FormFieldControl,
