@@ -17,8 +17,14 @@ const INTERNAL_EXPORTS = [
   "LAYER_ORDER",
   "getFocusableElements",
   "isFocusableElement",
+  "mergeRefs",
+  "computePopoverPosition",
+  "usePopoverPosition",
   // Dialog (RRU-053): single context per composite, never public (ADR-004).
   "DialogContext",
+  // Popover (RRU-054): same rule as Dialog.
+  "PopoverContext",
+  "usePopoverContext",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {

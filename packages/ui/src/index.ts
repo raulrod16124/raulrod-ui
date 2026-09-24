@@ -57,6 +57,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from "./dialog/index.js";
+export { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "./popover/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -66,6 +67,13 @@ export type {
   DialogTitleProps,
   DialogTriggerProps,
 } from "./dialog/index.js";
+export type {
+  PopoverContentProps,
+  PopoverPlacement,
+  PopoverProps,
+  PopoverTitleProps,
+  PopoverTriggerProps,
+} from "./popover/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,

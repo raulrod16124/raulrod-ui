@@ -8,7 +8,7 @@ import type {
   DialogTitleProps,
   DialogTriggerProps,
 } from "./Dialog.types.js";
-import type { ReactNode, Ref } from "react";
+import type { ReactNode } from "react";
 
 import {
   Children,
@@ -26,6 +26,7 @@ import { cx } from "../utils/cx.js";
 import { useDismissableLayer } from "../utils/dismissable-layer.js";
 import { useFocusReturn } from "../utils/focus-return.js";
 import { useFocusTrap } from "../utils/focus-trap.js";
+import { mergeRefs } from "../utils/merge-refs.js";
 import { useScrollLock } from "../utils/scroll-lock.js";
 import { useId } from "../utils/use-id.js";
 
@@ -251,20 +252,4 @@ function collectSlots(children: ReactNode): [boolean, boolean] {
 
   walk(children);
   return [title, description];
-}
-
-/** Merges the internal panel ref with the consumer's forwarded ref (callback or
- *  object). Local helper — extracted to a shared internal util only when a
- *  second consumer needs it (RRU-054+). */
-function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
-  return (node: T | null): void => {
-    for (const ref of refs) {
-      if (!ref) continue;
-      if (typeof ref === "function") {
-        ref(node);
-      } else {
-        ref.current = node;
-      }
-    }
-  };
 }

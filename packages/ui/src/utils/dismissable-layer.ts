@@ -13,6 +13,11 @@ import { useEffect, useRef } from "react";
 export interface DismissableLayerOptions {
   /** The overlay's own DOM node; interactions within it are NOT outside. */
   nodeRef: RefObject<HTMLElement | null>;
+  /** Additional nodes treated as INSIDE the layer for the outside-pointer
+   *  check (e.g. a Popover's trigger: pointer-down there must NOT dismiss the
+   *  layer — the trigger's own toggle owns the interaction). Only the pointer
+   *  check is affected; Escape/topmost logic is unchanged. */
+  extraInsideRefs?: Array<RefObject<HTMLElement | null>>;
   /** When true the layer is open/active and may dismiss. */
   active: boolean;
   /** Fired on Escape while this layer is the topmost active one. */
@@ -48,6 +53,7 @@ function isTopmostLayer(id: symbol): boolean {
  */
 export function useDismissableLayer({
   nodeRef,
+  extraInsideRefs,
   active,
   onEscape,
   onInteractOutside,
@@ -56,6 +62,7 @@ export function useDismissableLayer({
   const onEscapeRef = useRef(onEscape);
   const onInteractOutsideRef = useRef(onInteractOutside);
   const onPointerDownOutsideRef = useRef(onPointerDownOutside);
+  const extraInsideRefsRef = useRef(extraInsideRefs);
 
   // Latest-callback mirror: runs after every render, before any listener
   // effect of the same commit, so the refs always hold the current callbacks.
@@ -63,6 +70,7 @@ export function useDismissableLayer({
     onEscapeRef.current = onEscape;
     onInteractOutsideRef.current = onInteractOutside;
     onPointerDownOutsideRef.current = onPointerDownOutside;
+    extraInsideRefsRef.current = extraInsideRefs;
   });
 
   useEffect(() => {
@@ -72,8 +80,12 @@ export function useDismissableLayer({
 
     const isPointerOnOwnNode = (event: Event): boolean => {
       const target = event.target;
+      if (!(target instanceof Node)) return false;
       const node = nodeRef.current;
-      return target instanceof Node && node !== null && node.contains(target);
+      if (node !== null && node.contains(target)) return true;
+      return (extraInsideRefsRef.current ?? []).some(
+        (ref) => ref.current !== null && ref.current.contains(target),
+      );
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
