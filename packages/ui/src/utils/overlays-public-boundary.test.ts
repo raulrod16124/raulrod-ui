@@ -25,6 +25,19 @@ const INTERNAL_EXPORTS = [
   // Popover (RRU-054): same rule as Dialog.
   "PopoverContext",
   "usePopoverContext",
+  // DropdownMenu (RRU-055): two internal providers (root + sub) plus the
+  // keyboard internals — all private, same rule as the reset of the overlays.
+  "DropdownMenuContext",
+  "DropdownMenuSubContext",
+  "useDropdownMenuContext",
+  "useDropdownMenuSubContext",
+  "useMenuKeyboard",
+  "focusFirstMenuItem",
+  "firstEnabledIndex",
+  "lastEnabledIndex",
+  "nextItemIndex",
+  "prevItemIndex",
+  "typeaheadIndex",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {

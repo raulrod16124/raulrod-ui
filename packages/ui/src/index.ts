@@ -58,6 +58,16 @@ export {
   DialogTrigger,
 } from "./dialog/index.js";
 export { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "./popover/index.js";
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./dropdown-menu/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -74,6 +84,17 @@ export type {
   PopoverTitleProps,
   PopoverTriggerProps,
 } from "./popover/index.js";
+export type {
+  DropdownMenuContentProps,
+  DropdownMenuItemProps,
+  DropdownMenuPlacement,
+  DropdownMenuProps,
+  DropdownMenuSeparatorProps,
+  DropdownMenuSubContentProps,
+  DropdownMenuSubProps,
+  DropdownMenuSubTriggerProps,
+  DropdownMenuTriggerProps,
+} from "./dropdown-menu/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,

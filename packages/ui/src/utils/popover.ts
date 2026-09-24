@@ -18,10 +18,22 @@ export type PopoverSide = "top" | "right" | "bottom" | "left";
 export type PopoverAlign = "start" | "center" | "end";
 
 /** Public `placement` union (re-exported by `Popover.types` / the root
- *  `index.ts`): side + optional start/end alignment on the horizontal sides.
- *  Left/right keep center alignment in the MVP (no arrow support yet). */
+ *  `index.ts`): side + optional start/end alignment. The MVP dropped arrow
+ *  support, but start/end on the horizontal sides are needed anyway for
+ *  menus (RRU-055 submenus open `right-start` and flip to `left-start`). */
 export type PopoverPlacement =
-  "top" | "top-start" | "top-end" | "bottom" | "bottom-start" | "bottom-end" | "left" | "right";
+  | "top"
+  | "top-start"
+  | "top-end"
+  | "bottom"
+  | "bottom-start"
+  | "bottom-end"
+  | "left"
+  | "right"
+  | "left-start"
+  | "left-end"
+  | "right-start"
+  | "right-end";
 
 /** Axis-aligned rectangle (viewport-relative). */
 export interface Rect {
@@ -77,6 +89,14 @@ function parsePlacement(placement: PopoverPlacement): PlacementSpec {
       return { side: "bottom", align: "start" };
     case "bottom-end":
       return { side: "bottom", align: "end" };
+    case "left-start":
+      return { side: "left", align: "start" };
+    case "left-end":
+      return { side: "left", align: "end" };
+    case "right-start":
+      return { side: "right", align: "start" };
+    case "right-end":
+      return { side: "right", align: "end" };
     case "top":
       return { side: "top", align: "center" };
     case "bottom":

@@ -1,0 +1,122 @@
+/* DropdownMenu — menu button (RRU-055, ADR-003). Only tokens (var(--rr-*)).
+   Documented mechanics exceptions (component-pattern.mdx §5, precedent family
+   RRU-031/033/043/054):
+   - `left/top: -9999px`: offscreen-but-measurable starting point; the position
+     hook (`use-popover-position.ts`) writes the REAL coordinates as inline
+     `left`/`top` before paint — the same single ARBITRARY-value exception as
+     Popover (RRU-054): coordinates are frame data, not design tokens.
+   - `1px` separator thickness and `2px` focus ring: no width tokens exist
+     (2px focus ring is the color.md §6.3 contract).
+   Layering: `z-index: var(--rr-z-overlay)` — the menu floats at the overlay
+   level, BELOW modals (`z.modal`); stacked submenus keep working through the
+   dismissable-layer registry (RRU-052), one level per interaction. */
+
+.rr-dropdown-trigger {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--rr-radius-sm);
+}
+
+.rr-dropdown-trigger:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-dropdown-trigger:disabled {
+  cursor: not-allowed;
+}
+
+/* Shared panel for `.Content` and `.SubContent` (both render `role="menu"`):
+   same surface, elevation, padding and entrance — submenus simply float off
+   their own trigger, so no distinct `.rr-dropdown-submenu` class is authored
+   (one class = one source of truth, no speculative styles — SS §33). */
+.rr-dropdown-menu {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: var(--rr-z-overlay);
+  padding: var(--rr-space-1);
+  background: var(--rr-color-background-surface);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-md);
+  animation: rr-dropdown-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+/* Menu item base, shared by `.Item` and `.SubTrigger` (both are
+   `[role="menuitem"]` buttons); the label flexes to push the trailing
+   icon/chevron to the right edge. */
+
+.rr-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  width: 100%;
+  padding: var(--rr-space-2) var(--rr-space-3);
+  border: none;
+  border-radius: var(--rr-radius-sm);
+  background: none;
+  color: var(--rr-color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rr-dropdown-item:hover {
+  background: var(--rr-color-background-sunken);
+}
+
+.rr-dropdown-item:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Disabled: LAST so it beats `:hover` at equal specificity (Button precedent),
+   and the look is shared across all items (WCAG 1.4.3 exempts these from
+   contrast — color.md §6 note). */
+
+.rr-dropdown-item:disabled {
+  color: var(--rr-color-action-disabled-text);
+  background: none;
+  cursor: not-allowed;
+}
+
+.rr-dropdown-item__label {
+  flex: 1;
+}
+
+.rr-dropdown-item__icon {
+  display: inline-flex;
+}
+
+.rr-dropdown-separator {
+  height: 1px;
+  margin: var(--rr-space-2) var(--rr-space-1);
+  background: var(--rr-color-border-strong);
+}
+
+@keyframes rr-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-dropdown-menu {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

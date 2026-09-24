@@ -74,6 +74,33 @@ describe("computePopoverPosition — placement", () => {
       top: 90,
     });
   });
+
+  it("aligns start/end on the horizontal sides (menu submenus, RRU-055)", () => {
+    // right-start: the submenu column is flush with the trigger, top-aligned.
+    expect(
+      position(
+        { left: 10, top: 30, width: 120, height: 80 },
+        { width: 120, height: 60 },
+        "right-start",
+      ),
+    ).toEqual({ left: 138, top: 30 });
+    // right-end: the panel's bottom edge aligns with the trigger's.
+    expect(
+      position(
+        { left: 10, top: 30, width: 120, height: 80 },
+        { width: 120, height: 60 },
+        "right-end",
+      ),
+    ).toEqual({ left: 138, top: 50 });
+    // right-start on the right viewport edge flips side → left-start.
+    expect(
+      position(
+        { left: 200, top: 20, width: 80, height: 40 },
+        { width: 120, height: 60 },
+        "right-start",
+      ),
+    ).toEqual({ left: 72, top: 20 });
+  });
 });
 
 describe("computePopoverPosition — flip (DoD #1)", () => {
