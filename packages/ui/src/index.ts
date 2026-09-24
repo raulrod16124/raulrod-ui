@@ -68,6 +68,7 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./dropdown-menu/index.js";
+export { Tooltip } from "./tooltip/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -95,6 +96,7 @@ export type {
   DropdownMenuSubTriggerProps,
   DropdownMenuTriggerProps,
 } from "./dropdown-menu/index.js";
+export type { TooltipProps } from "./tooltip/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,
