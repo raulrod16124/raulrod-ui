@@ -1,0 +1,134 @@
+/* Table — native semantic data table (RRU-065, ADR-003).
+   Only tokens (var(--rr-*)). Documented mechanics exceptions
+   (component-pattern.mdx §5, precedent family RRU-031/043/054/055):
+   - `1px` hairline row borders (Select rail precedent — the divider is
+     hairline by design, no width token exists).
+   - `position: sticky` + `top: 0` + `z-index: 1` (sticky header): the header
+     must paint over scrolling body rows (the `1` is a bare stacking
+     mechanics value, Dialog precedent); lives ONLY under `rr-table--sticky`.
+   - `text-align: start/center/end` (RRU-065 alignment axis): LAYOUT keywords,
+     not design tokens (Stack/Inline alignment precedent, RRU-031).
+   Size axis: `.rr-table` IS the `md` density (CSS base default —
+   Stack.gap/Avatar precedent); `rr-table--size-sm` overrides DOWN to the
+   DataTable meter.
+   Row hover (BODY only, RRU-065): `.rr-table__body .rr-table__row:hover`
+   fills sunken — new authorized AA pair `text.primary` over
+   `background.sunken` (15.11:1 light / 11.42:1 dark, color.md §6.1), the
+   cells stay transparent so the row fill shows through; NOT interactive
+   (no cursor/focus — a table row preview is informational).
+   Empty state: `.rr-table__empty` is the single full-width row — text.muted
+   over `.rr-table__table` background (authorized muted pair). */
+
+.rr-table {
+  overflow-x: auto;
+  border: 1px solid var(--rr-color-border-default);
+  border-radius: var(--rr-radius-md);
+}
+
+.rr-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-sm);
+  background-color: var(--rr-color-background-default);
+}
+
+/* Cells: md density base (space-2/space-3 padding, font.size.sm rows) — the
+   `sm` modifier overrides these down. Line separators are hairline borders. */
+
+.rr-table__header,
+.rr-table__cell {
+  padding: var(--rr-space-2) var(--rr-space-3);
+  color: var(--rr-color-text-primary);
+  line-height: var(--rr-font-leading-normal);
+  letter-spacing: var(--rr-font-tracking-normal);
+  text-align: start;
+  border-bottom: 1px solid var(--rr-color-border-default);
+}
+
+/* Head labels firm up (weight + surface fill — not color alone, 1.4.1) and
+   the header divider firms to border.strong so the section reads as a bound. */
+
+.rr-table__header {
+  font-weight: var(--rr-font-weight-semibold);
+}
+
+.rr-table__head .rr-table__header {
+  background-color: var(--rr-color-background-surface);
+  border-bottom: 1px solid var(--rr-color-border-strong);
+}
+
+/* Sticky header: the surface fill on the head cells is what hides the rows
+   scrolling under them; the sticky/mechanics live only on the enabled state. */
+
+.rr-table--sticky .rr-table__head .rr-table__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Row hover (BODY only): sunken fill over the transparent cells — the AA
+   pair text.primary/sunken of the section 6.1 table. */
+
+.rr-table__body .rr-table__row:hover {
+  background-color: var(--rr-color-background-sunken);
+}
+
+/* Density: `sm` = the DataTable meter (font.size.xs rows, space-1/space-2
+   padding). `md` is the base above — no override class needed. */
+
+.rr-table--size-sm .rr-table__header,
+.rr-table--size-sm .rr-table__cell {
+  padding: var(--rr-space-1) var(--rr-space-2);
+  font-size: var(--rr-font-size-xs);
+}
+
+/* Alignment axis (layout keywords, no tokens). */
+
+.rr-table__header--align-center,
+.rr-table__cell--align-center {
+  text-align: center;
+}
+
+.rr-table__header--align-end,
+.rr-table__cell--align-end {
+  text-align: end;
+}
+
+/* Numeric axis: tabular-nums (typography.md §5) so figure columns align
+   digit-to-digit; inherited from the cell for its descendants. */
+
+.rr-table__header--numeric,
+.rr-table__cell--numeric {
+  font-variant-numeric: var(--rr-font-numeric-tabular-nums);
+}
+
+/* Empty state row (RRU-065): the message sits centered over the full width;
+   muted on the table's default background is an authorized §6.1 pair. */
+
+.rr-table__empty {
+  padding: var(--rr-space-8);
+  color: var(--rr-color-text-muted);
+  text-align: center;
+}
+
+/* Caption: the table's accessible name (WCAG 1.3.1) reads above the table
+   (native caption-side top); `text-align: start` overrides the browser's
+   centered caption default. */
+
+.rr-table__caption {
+  text-align: start;
+  padding: var(--rr-space-2) var(--rr-space-3);
+  color: var(--rr-color-text-primary);
+  font-size: var(--rr-font-size-base);
+}
+
+/* The wrapper owns the bottom border, so the last row of body/foot drops its
+   hairline (a double line under the table reads as a bug, not a feature). */
+
+.rr-table__body tr:last-child > .rr-table__header,
+.rr-table__body tr:last-child > .rr-table__cell,
+.rr-table__foot tr:last-child > .rr-table__header,
+.rr-table__foot tr:last-child > .rr-table__cell {
+  border-bottom: 0;
+}

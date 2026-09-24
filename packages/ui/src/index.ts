@@ -45,6 +45,33 @@ export type { SkeletonProps, SkeletonVariant } from "./skeleton/index.js";
 export { Pagination } from "./pagination/index.js";
 export type { PaginationProps } from "./pagination/index.js";
 export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableColGroup,
+  TableColumn,
+  TableFoot,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "./table/index.js";
+export type {
+  TableAlign,
+  TableBodyProps,
+  TableCaptionProps,
+  TableCellProps,
+  TableColGroupProps,
+  TableColumnProps,
+  TableFootProps,
+  TableHeadProps,
+  TableHeaderCellProps,
+  TableProps,
+  TableRowProps,
+  TableScope,
+  TableSize,
+} from "./table/index.js";
+export {
   FormField,
   FormFieldControl,
   FormFieldDescription,
