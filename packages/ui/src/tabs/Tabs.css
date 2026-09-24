@@ -1,0 +1,96 @@
+/* Tabs — WAI-ARIA Tabs, horizontal, automatic activation (RRU-058, ADR-003).
+   Only tokens (var(--rr-*)). Documented mechanics exceptions
+   (component-pattern.mdx §5, precedent family RRU-031/043/054/055):
+   - `1px` rail: no width token exists for hairline borders (Select rail
+     precedent — the border is hairline by design, not a design token).
+   - `2px` underline + focus ring: color.md §6.3 contract (≥3:1 perceptible
+     change); `outline-offset: -2px` keeps the ring inside the trigger so it
+     does not paint over the rail (Select option precedent).
+   - `-1px` overlap: the selected underline sits ON the rail (border-collapse
+     trick over `border-bottom`); mirror of the 1px exception.
+   - `transparent` underline in repose: keyword toggle, not a color token.
+   The RAIL is `color.border.default` (NOT `border.strong`): §6.2 forbids the
+   default only on INTERACTIVE control boundaries — the rail is a static
+   container line, not a control border (form-field family precedent).
+   Disabled block is LAST so it beats the `:hover` selectors at equal
+   specificity (shared disabled look, WCAG 1.4.3 exempt — color.md §6 note). */
+
+.rr-tabs-list {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  border-bottom: 1px solid var(--rr-color-border-default);
+}
+
+.rr-tabs-trigger {
+  appearance: none;
+  margin: 0;
+  padding: var(--rr-space-2) var(--rr-space-3);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-regular);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition:
+    color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-tabs-trigger:hover {
+  color: var(--rr-color-text-primary);
+}
+
+.rr-tabs-trigger:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Selected: the underline becomes the accent and the label firms up — the
+   static "current" cue (automatic activation keeps it in sync with focus). */
+
+.rr-tabs-trigger[aria-selected="true"] {
+  color: var(--rr-color-text-primary);
+  font-weight: var(--rr-font-weight-semibold);
+  border-bottom-color: var(--rr-color-action-primary-background);
+}
+
+/* Disabled: LAST so it beats `:hover` (Button precedent). Disabled tabs are
+   never focusable: the keyboard math skips them before roving writes (WCAG). */
+
+.rr-tabs-trigger:disabled {
+  color: var(--rr-color-action-disabled-text);
+  cursor: not-allowed;
+}
+
+/* Panel: kept MOUNTED, hidden only while inactive (the content keeps its Tab
+   order). The entrance animation is scoped to the VISIBLE state — `display:
+   none` redacts animations, so flipping `hidden` off restarts it on each
+   activation. */
+
+.rr-tabs-panel:not([hidden]) {
+  padding-top: var(--rr-space-4);
+  animation: rr-tabs-in var(--rr-motion-duration-base) var(--rr-motion-easing-standard);
+}
+
+@keyframes rr-tabs-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-tabs-panel:not([hidden]) {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

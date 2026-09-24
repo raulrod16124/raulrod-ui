@@ -44,6 +44,9 @@ const INTERNAL_EXPORTS = [
   "useSelectContext",
   "useListboxKeyboard",
   "focusSelectedOption",
+  // Tabs (RRU-058): its own context — same rule.
+  "TabsContext",
+  "useTabsContext",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {

@@ -79,6 +79,7 @@ export {
   SelectTrigger,
   SelectValue,
 } from "./select/index.js";
+export { Tabs, TabsList, TabsPanel, TabsTrigger } from "./tabs/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -119,6 +120,15 @@ export type {
   SelectTriggerProps,
   SelectValueProps,
 } from "./select/index.js";
+export type {
+  TabsContextValue,
+  TabsIdEntry,
+  TabsListProps,
+  TabsPanelProps,
+  TabsProps,
+  TabsRovingItem,
+  TabsTriggerProps,
+} from "./tabs/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,
