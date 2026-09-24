@@ -80,6 +80,14 @@ export {
   SelectValue,
 } from "./select/index.js";
 export { Tabs, TabsList, TabsPanel, TabsTrigger } from "./tabs/index.js";
+export { ToastProvider, useToast } from "./toast/index.js";
+export type {
+  ToastApi,
+  ToastInput,
+  ToastProviderProps,
+  ToastRole,
+  ToastTone,
+} from "./toast/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,

@@ -1,0 +1,133 @@
+/* Toast — notification system (RRU-059, ADR-003). Only tokens (var(--rr-*)).
+   Documented mechanics/geometry exceptions (component-pattern.mdx §5 family):
+   - viewport width `calc(var(--rr-space-16) * 6)`: a durable card width
+     derived from the space scale by arithmetic (token-derived, no magic
+     number); clamped to the viewport so a narrow window never breaks layout.
+   Layering: `z-index: var(--rr-z-toast)` (RRU-023) — the top of the semantic
+   scale (base 0 < overlay 100 < modal 200 < toast 300): notifications float
+   above dialogs/popovers by contract (a toast may explain an action taken
+   inside a dialog). The viewport is `pointer-events: none` so the fixed
+   region never blocks the page; each toast re-enables pointer events. */
+
+.rr-toast-viewport {
+  position: fixed;
+  top: var(--rr-space-4);
+  inset-inline-end: var(--rr-space-4);
+  z-index: var(--rr-z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--rr-space-2);
+  width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  pointer-events: none;
+}
+
+.rr-toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--rr-space-3);
+  padding: var(--rr-space-3);
+  background: var(--rr-color-background-surface);
+  color: var(--rr-color-text-primary);
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  box-shadow: var(--rr-shadow-md);
+  font-family: var(--rr-font-family-sans);
+  animation: rr-toast-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+/* Accent icon: tinted with the alert tokens (RRU-049) — the tone is carried by
+   the ICON + the derived live-role, never by background floods; surface stays
+   neutral so AA is the already-authorized text-on-surface pair. */
+.rr-toast__icon {
+  margin-top: var(--rr-space-1);
+}
+
+.rr-toast--info .rr-toast__icon {
+  color: var(--rr-color-text-info);
+}
+
+.rr-toast--success .rr-toast__icon {
+  color: var(--rr-color-text-success);
+}
+
+.rr-toast--warning .rr-toast__icon {
+  color: var(--rr-color-text-warning);
+}
+
+.rr-toast--destructive .rr-toast__icon {
+  color: var(--rr-color-text-destructive);
+}
+
+.rr-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-1);
+  min-width: 0;
+}
+
+.rr-toast__title {
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-normal);
+  letter-spacing: var(--rr-font-tracking-normal);
+}
+
+.rr-toast__description {
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-regular);
+  line-height: var(--rr-font-leading-normal);
+  color: var(--rr-color-text-muted);
+}
+
+.rr-toast__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rr-space-6);
+  height: var(--rr-space-6);
+  margin: calc(-1 * var(--rr-space-1)) calc(-1 * var(--rr-space-1)) 0 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--rr-radius-sm);
+  background: transparent;
+  color: var(--rr-color-text-muted);
+  cursor: pointer;
+}
+
+.rr-toast__close:hover {
+  color: var(--rr-color-text-primary);
+  background: var(--rr-color-background-sunken);
+}
+
+.rr-toast__close:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-toast__close-icon {
+  width: var(--rr-space-4);
+  height: var(--rr-space-4);
+}
+
+@keyframes rr-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-2));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* RRU-024 emits `--rr-motion-behavior-reduced: none` under the same media
+   query; `animation-name: none` kills the enter slide for reduced-motion users. */
+@media (prefers-reduced-motion: reduce) {
+  .rr-toast {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

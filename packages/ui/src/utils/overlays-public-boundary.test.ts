@@ -47,6 +47,10 @@ const INTERNAL_EXPORTS = [
   // Tabs (RRU-058): its own context — same rule.
   "TabsContext",
   "useTabsContext",
+  // Toast (RRU-059): the provider context is internal — consumers only see
+  // the public `useToast` hook (which reads it); the context object itself
+  // must never leak (frontera §24, same rule as the overlays).
+  "ToastContext",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {
