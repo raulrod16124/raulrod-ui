@@ -40,6 +40,8 @@ export { Badge } from "./badge/index.js";
 export type { BadgeProps, BadgeVariant } from "./badge/index.js";
 export { Avatar } from "./avatar/index.js";
 export type { AvatarProps, AvatarSize } from "./avatar/index.js";
+export { Skeleton } from "./skeleton/index.js";
+export type { SkeletonProps, SkeletonVariant } from "./skeleton/index.js";
 export {
   FormField,
   FormFieldControl,
