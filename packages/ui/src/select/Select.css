@@ -1,0 +1,204 @@
+/* Select — read-only combobox (RRU-057, ADR-003). Only tokens (var(--rr-*)).
+   Documented mechanics exceptions (component-pattern.mdx §5, precedent family
+   RRU-031/043/054/055):
+   - `left/top: -9999px`: offscreen-but-measurable starting point; the position
+     hook (`use-popover-position.ts`) writes the REAL coordinates as inline
+     `left`/`top` before paint — the same single ARBITRARY-value exception as
+     Popover/DropdownMenu: coordinates are frame data, not design tokens.
+   - border/outline widths (1px/2px) and outline-offset: no width token exists;
+     2px focus ring is the color.md §6.3 contract.
+   The TRIGGER is a FIELD by design (closed decision): it mirrors `Input`
+   (RRU-043) — same tokens, sizes and mechanics, so a select sits flush next to
+   an input in the same toolbar. Sizes sm/md/lg = 24/34/46px heights via the
+   same padding+font combos (leading-none, same as the field/button family).
+   Colors: boundary `color.border.strong` (NOT `border.default` — forbidden on
+   interactive control boundaries, color.md §6.2); `border.danger` marks the
+   invalid state (AA on background.default). No border-hover token: feedback
+   comes from the :focus-visible ring (§6.3). Disabled block is LAST so it beats
+   the invalid border and the hover selectors at equal specificity (Input
+   precedent). */
+
+.rr-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  width: 100%;
+  appearance: none;
+  margin: 0;
+  font-family: var(--rr-font-family-sans);
+  font-weight: var(--rr-font-weight-regular);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-primary);
+  text-align: left;
+  background: var(--rr-color-background-default);
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-select-trigger:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-select-trigger[aria-invalid="true"] {
+  border-color: var(--rr-color-border-danger);
+}
+
+/* --- Size axis (base = md; explicit modifier always emitted, field family
+   precedent RRU-043). Padding/font combos mirror Input exactly so the heights
+   land on 24/34/46px and toolbars stay aligned. --- */
+
+.rr-select-trigger--sm {
+  padding: var(--rr-space-1) var(--rr-space-3);
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-select-trigger--md {
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-select-trigger--lg {
+  padding: var(--rr-space-3) var(--rr-space-5);
+  font-size: var(--rr-font-size-lg);
+}
+
+/* --- Disabled: LAST so it wins over `aria-invalid="true"` (same specificity,
+   later source order). Shared disabled look (WCAG 1.4.3 exempts disabled
+   controls from contrast — color.md §6 note, RRU-041). --- */
+
+.rr-select-trigger:disabled,
+.rr-select-trigger[aria-disabled="true"] {
+  background: var(--rr-color-action-disabled-background);
+  color: var(--rr-color-action-disabled-text);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* Value cell: the selected label (or the muted placeholder). Flexes to fill the
+   field so the icon sits at the right edge; the combobox name = its text. */
+
+.rr-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rr-select-value--placeholder {
+  color: var(--rr-color-text-muted);
+}
+
+/* Icon cell: the chevron affordance rotates when expanded; the cue is the only
+   keyboard/screen-reader hint for the popup state. */
+
+.rr-select-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  transition: transform var(--rr-motion-duration-base) var(--rr-motion-easing-standard);
+}
+
+.rr-select-trigger[aria-expanded="true"] .rr-select-icon {
+  transform: rotate(180deg);
+}
+
+/* --- Listbox popup: same surface/elevation/entrance as the menu panels
+   (RRU-054/055), with a max-height + scroll so tall lists never escape the
+   viewport (DoD #1). No focusable panel: roving focus lives on the options. --- */
+
+.rr-select-listbox {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: var(--rr-z-overlay);
+  max-height: calc(100vh - var(--rr-space-10));
+  overflow: auto;
+  padding: var(--rr-space-1);
+  background: var(--rr-color-background-surface);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-md);
+  animation: rr-select-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+/* Option: non-focusable by default (tabIndex -1); the roving write places
+   `tabIndex=0` + focus on the active one. Selected options carry the sunken
+   cell + semibold label — the static "current" cue (commit, not follow-focus). */
+
+.rr-select-item {
+  display: flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  width: 100%;
+  padding: var(--rr-space-2) var(--rr-space-3);
+  border-radius: var(--rr-radius-sm);
+  color: var(--rr-color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rr-select-item:hover {
+  background: var(--rr-color-background-sunken);
+}
+
+.rr-select-item:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: -2px;
+}
+
+.rr-select-item[aria-selected="true"] {
+  background: var(--rr-color-background-sunken);
+  font-weight: var(--rr-font-weight-semibold);
+}
+
+/* Disabled: LAST so it beats `:hover` (Button precedent) and the look is
+   shared (WCAG 1.4.3 exempts these — color.md §6 note). Disabled options are
+   never focusable: the keyboard hook skips them before roving writes. */
+
+.rr-select-item--disabled {
+  color: var(--rr-color-action-disabled-text);
+  background: none;
+  cursor: not-allowed;
+}
+
+/* Group label cell: muted headline for the cluster. NOT an option — it never
+   takes roving focus (skipped by the `[role="option"]` selector). */
+
+.rr-select-group-label {
+  padding: var(--rr-space-2) var(--rr-space-3);
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-medium);
+  letter-spacing: var(--rr-font-tracking-wide);
+  color: var(--rr-color-text-muted);
+}
+
+.rr-select-group + .rr-select-group {
+  margin-top: var(--rr-space-1);
+}
+
+@keyframes rr-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-select-listbox {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

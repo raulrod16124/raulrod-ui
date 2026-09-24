@@ -38,6 +38,12 @@ const INTERNAL_EXPORTS = [
   "nextItemIndex",
   "prevItemIndex",
   "typeaheadIndex",
+  // Select (RRU-057): its own context + the listbox keyboard internals — same
+  // rule as the rest of the overlay composites.
+  "SelectContext",
+  "useSelectContext",
+  "useListboxKeyboard",
+  "focusSelectedOption",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {

@@ -69,6 +69,16 @@ export {
   DropdownMenuTrigger,
 } from "./dropdown-menu/index.js";
 export { Tooltip } from "./tooltip/index.js";
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectIcon,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./select/index.js";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
@@ -97,6 +107,18 @@ export type {
   DropdownMenuTriggerProps,
 } from "./dropdown-menu/index.js";
 export type { TooltipProps } from "./tooltip/index.js";
+export type {
+  SelectContentProps,
+  SelectGroupProps,
+  SelectIconProps,
+  SelectItemProps,
+  SelectLabelProps,
+  SelectPlacement,
+  SelectProps,
+  SelectSize,
+  SelectTriggerProps,
+  SelectValueProps,
+} from "./select/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,
