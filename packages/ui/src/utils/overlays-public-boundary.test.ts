@@ -17,6 +17,8 @@ const INTERNAL_EXPORTS = [
   "LAYER_ORDER",
   "getFocusableElements",
   "isFocusableElement",
+  // Dialog (RRU-053): single context per composite, never public (ADR-004).
+  "DialogContext",
 ] as const;
 
 describe("overlay infrastructure is private (DoD #3)", () => {

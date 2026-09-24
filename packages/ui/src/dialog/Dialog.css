@@ -1,0 +1,158 @@
+/* Dialog — modal overlay (RRU-053, ADR-003). Only tokens (var(--rr-*)).
+   Documented mechanics/design exceptions (component-pattern.mdx §5, RRU-031/033
+   precedent family):
+   - backdrop scrim via `color-mix(in srgb, var(--rr-color-text-primary) 45%,
+     transparent)`: dark in light theme / light in dark theme (change by intent,
+     RRU-021) with ZERO new tokens; the mix argument `transparent` is a color
+     keyword with no token counterpart (precedent Button `transparent`, RRU-041).
+     Edge case of ADR-003's "no arbitrary values": the scrim base IS a semantic
+     token, only the alpha is tunable.
+   - `max-width: 28rem` and `max-height: calc(100vh - var(--rr-space-8))`: no
+     container token exists (geometric layout, precedent sr-only clips RRU-033);
+     the height cap keeps long content scrollable inside the overflow allowed
+     by WCAG 1.4.10 (reflow) without losing the window edges.
+   - `1px` transparent border on the trigger (button chrome, precedent RRU-041).
+   Layering: `z-index: var(--rr-z-modal)` (RRU-023, resolveLayerVar); stacked
+   dialogs paint by DOM order within the same token level (local composition,
+   ADR-004 alternative D). */
+
+.rr-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: var(--rr-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--rr-space-6);
+}
+
+.rr-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--rr-color-text-primary) 45%, transparent);
+  animation: rr-dialog-backdrop-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+.rr-dialog-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-4);
+  width: 100%;
+  max-width: 28rem;
+  max-height: calc(100vh - var(--rr-space-8));
+  overflow-y: auto;
+  padding: var(--rr-space-6);
+  background: var(--rr-color-background-surface);
+  color: var(--rr-color-text-primary);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-md);
+  font-family: var(--rr-font-family-sans);
+  animation: rr-dialog-content-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+/* The panel is the initial-focus target (tabIndex=-1, non-tabbable): the
+   visible focus indicator only appears when it is reached through the Tab
+   cycle (focus-visible), which the adjacent elements make impossible — kept
+   for programmatic-override safety and keyboard robustness. */
+.rr-dialog-content:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-dialog-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-1);
+}
+
+.rr-dialog-title {
+  margin: 0;
+  font-size: var(--rr-font-size-xl);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-tight);
+  letter-spacing: var(--rr-font-tracking-tight);
+}
+
+.rr-dialog-description {
+  margin: 0;
+  font-size: var(--rr-font-size-base);
+  color: var(--rr-color-text-muted);
+}
+
+.rr-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rr-space-2);
+  margin-top: var(--rr-space-2);
+}
+
+/* Trigger — native button with the primary Button look (RRU-041 tokens), so a
+   dialog without a custom trigger already looks consistent; the consumer can
+   also wrap/replace it since the slot's styling is token-driven. */
+.rr-dialog-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rr-space-2);
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-medium);
+  line-height: var(--rr-font-leading-none);
+  border: 1px solid transparent;
+  border-radius: var(--rr-radius-md);
+  background: var(--rr-color-action-primary-background);
+  color: var(--rr-color-action-primary-text);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-dialog-trigger:hover {
+  background: var(--rr-color-action-primary-background-hover);
+}
+
+.rr-dialog-trigger[aria-expanded="true"] {
+  background: var(--rr-color-action-primary-background-active);
+}
+
+.rr-dialog-trigger:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-dialog-trigger:disabled {
+  background: var(--rr-color-action-disabled-background);
+  color: var(--rr-color-action-disabled-text);
+  cursor: not-allowed;
+}
+
+@keyframes rr-dialog-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rr-dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-2)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-dialog-backdrop,
+  .rr-dialog-content {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

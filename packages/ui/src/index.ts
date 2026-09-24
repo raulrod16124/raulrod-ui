@@ -48,6 +48,24 @@ export {
   FormFieldLabel,
   useFormField,
 } from "./form-field/index.js";
+export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./dialog/index.js";
+export type {
+  DialogContentProps,
+  DialogDescriptionProps,
+  DialogFooterProps,
+  DialogHeaderProps,
+  DialogProps,
+  DialogTitleProps,
+  DialogTriggerProps,
+} from "./dialog/index.js";
 export type {
   FormFieldControlProps,
   FormFieldControlSlotProps,
