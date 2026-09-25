@@ -71,6 +71,19 @@ export type {
   TableScope,
   TableSize,
 } from "./table/index.js";
+export { DataTable } from "./data-table/index.js";
+export type {
+  DataTableColumn,
+  DataTableFiltering,
+  DataTableKey,
+  DataTablePagination,
+  DataTableProps,
+  DataTableRowId,
+  DataTableRowSelection,
+  DataTableSort,
+  DataTableSortDirection,
+  DataTableSorting,
+} from "./data-table/index.js";
 export {
   FormField,
   FormFieldControl,
