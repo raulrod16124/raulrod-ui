@@ -119,6 +119,42 @@ describe("Table SSR contract (semantic grid listed high on the server)", () => {
     expect(loading).not.toContain(">real<");
   });
 
+  it("error is a shared full-width alert row with loading precedence", () => {
+    const failed = render(
+      <Table>
+        <Table.Head>
+          <Table.Row>
+            {th("a")}
+            {th("b")}
+          </Table.Row>
+        </Table.Head>
+        <Table.Body empty="Nothing" error="Failed">
+          <Table.Row>{cell("real")}</Table.Row>
+        </Table.Body>
+      </Table>,
+    );
+    expect(failed).toContain(
+      '<td colSpan="2" class="rr-table__cell rr-table__error"><div role="alert">Failed</div></td>',
+    );
+    expect(failed).not.toContain(">real<");
+    expect(failed).not.toContain("Nothing");
+
+    const loading = render(
+      <Table loading>
+        <Table.Head>
+          <Table.Row>
+            {th("a")}
+            {th("b")}
+          </Table.Row>
+        </Table.Head>
+        <Table.Body error="Failed" />
+      </Table>,
+    );
+    expect(loading).toContain('<table class="rr-table__table" aria-busy="true">');
+    expect(loading.match(/rr-skeleton--rectangle/g)).toHaveLength(6);
+    expect(loading).not.toContain('role="alert"');
+  });
+
   it("loading announces aria-busy on the table and swaps the body for skeleton rows", () => {
     const markup = render(
       <Table loading loadingRows={3}>
@@ -335,6 +371,45 @@ describe("Table behavior (happy-dom, user-visible state)", () => {
     );
     expect(document.querySelector(".rr-table__empty")).toBeNull();
     expect(document.querySelectorAll("tbody .rr-table__row")).toHaveLength(1);
+  });
+
+  it("error clears back to data rows without leaving the empty state behind", () => {
+    mount(
+      <Table>
+        <Table.Head>
+          <Table.Row>
+            {th("a")}
+            {th("b")}
+          </Table.Row>
+        </Table.Head>
+        <Table.Body empty="Nothing" error="Failed">
+          <Table.Row>
+            {cell("x")}
+            {cell("y")}
+          </Table.Row>
+        </Table.Body>
+      </Table>,
+    );
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe("Failed");
+
+    rerender(
+      <Table>
+        <Table.Head>
+          <Table.Row>
+            {th("a")}
+            {th("b")}
+          </Table.Row>
+        </Table.Head>
+        <Table.Body empty="Nothing">
+          <Table.Row>
+            {cell("x")}
+            {cell("y")}
+          </Table.Row>
+        </Table.Body>
+      </Table>,
+    );
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    expect(document.querySelector("tbody")?.textContent).toBe("xy");
   });
 
   it("row span (colSpan) stays honored on the consumer's own cells", () => {

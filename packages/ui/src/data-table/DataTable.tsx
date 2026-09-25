@@ -187,17 +187,6 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
     );
   });
 
-  const errorRow = hasError ? (
-    <Table.Row>
-      <Table.Cell
-        colSpan={Math.max(1, columns.length + (rowSelection ? 1 : 0))}
-        className="rr-data-table__error"
-      >
-        <div role="alert">{error}</div>
-      </Table.Cell>
-    </Table.Row>
-  ) : null;
-
   return (
     <div {...props} ref={ref} className={cx("rr-data-table", className)}>
       {filtering && (
@@ -275,7 +264,9 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
             })}
           </Table.Row>
         </Table.Head>
-        <Table.Body empty={empty}>{hasError ? errorRow : tableRows}</Table.Body>
+        <Table.Body empty={empty} error={error}>
+          {tableRows}
+        </Table.Body>
       </Table>
       {pagination && pageCount > 1 && !loading && !hasError && (
         <div className="rr-data-table__footer">

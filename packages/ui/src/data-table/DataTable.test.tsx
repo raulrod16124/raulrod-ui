@@ -206,6 +206,7 @@ describe("DataTable SSR and type contract", () => {
     const failed = render(userTable({ error: "Failed", empty: "Nothing" }));
     expect(failed).toContain('role="alert"');
     expect(failed).toContain("Failed");
+    expect(failed).toContain('class="rr-table__cell rr-table__error"');
     expect(failed).not.toContain(">Ada<");
 
     const empty = render(

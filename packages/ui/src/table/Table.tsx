@@ -132,7 +132,7 @@ TableHead.displayName = "TableHead";
  *  otherwise, when it has no rows and `empty` is provided, a single full-width
  *  empty-state row is rendered (fail-soft: real rows always win). */
 export const TableBody = forwardRef<HTMLTableSectionElement, TableBodyProps>(function TableBody(
-  { empty, className, children, ...props },
+  { empty, error, className, children, ...props },
   ref,
 ) {
   const table = useTableContext();
@@ -160,10 +160,19 @@ export const TableBody = forwardRef<HTMLTableSectionElement, TableBodyProps>(fun
       </TableRow>
     ) : null;
 
+  const hasError = error !== undefined && error !== null && error !== false;
+  const errorRow = hasError ? (
+    <TableRow>
+      <TableCell colSpan={Math.max(table.colCount, 1)} className="rr-table__error">
+        <div role="alert">{error}</div>
+      </TableCell>
+    </TableRow>
+  ) : null;
+
   return (
     <TableContext.Provider value={{ ...table, scopeDefault: "row" }}>
       <tbody {...props} ref={ref} className={cx("rr-table__body", className)}>
-        {table.loading ? skeletonRows : hasRows ? children : isEmptyRow}
+        {table.loading ? skeletonRows : hasError ? errorRow : hasRows ? children : isEmptyRow}
       </tbody>
     </TableContext.Provider>
   );

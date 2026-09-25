@@ -68,6 +68,7 @@ export interface TableBodyProps extends HTMLAttributes<HTMLTableSectionElement> 
   /** Empty-state content, rendered in a single centered full-width row when the
    *  body has no rows (default `undefined` → no empty row). */
   empty?: ReactNode;
+  error?: ReactNode;
 }
 
 /** Props of the `<Table.Foot>` slot: the native `<tfoot>` section. */

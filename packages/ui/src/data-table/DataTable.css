@@ -58,8 +58,3 @@
   display: flex;
   justify-content: flex-end;
 }
-
-.rr-data-table__error {
-  color: var(--rr-color-text-danger);
-  text-align: center;
-}

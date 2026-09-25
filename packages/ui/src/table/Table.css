@@ -112,6 +112,12 @@
   text-align: center;
 }
 
+.rr-table__error {
+  padding: var(--rr-space-8);
+  color: var(--rr-color-text-danger);
+  text-align: center;
+}
+
 /* Caption: the table's accessible name (WCAG 1.3.1) reads above the table
    (native caption-side top); `text-align: start` overrides the browser's
    centered caption default. */
