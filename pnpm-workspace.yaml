@@ -3,4 +3,7 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  # esbuild ships its platform binary in a postinstall script; Vite (the
+  # playground app, RRU-069) cannot run without it.
+  esbuild: true
   unrs-resolver: true

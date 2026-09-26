@@ -1,0 +1,64 @@
+/* Page layout of the playground (RRU-069).
+ *
+ * The app's own stylesheet, kept in its own file so the cascade is explicit:
+ * `main.tsx` imports the design system's stylesheet and `app.tsx` imports this
+ * one, which puts the system FIRST and the consumer overrides last. Both are
+ * token-driven — the same rule the components follow (Playbook §4 Paso 3) — but
+ * the app is allowed a layout max-width, because a page is not a component. */
+body {
+  margin: 0;
+  background: var(--rr-color-background-default);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+}
+
+.pg-shell {
+  margin: 0 auto;
+  max-width: 64rem;
+  padding: var(--rr-space-8) var(--rr-space-6);
+}
+
+.pg-header {
+  border-bottom: 1px solid var(--rr-color-border-default);
+  margin-bottom: var(--rr-space-8);
+  padding-bottom: var(--rr-space-6);
+}
+
+.pg-header__title {
+  margin: 0;
+}
+
+.pg-theme-switch {
+  align-items: center;
+  display: flex;
+  gap: var(--rr-space-2);
+}
+
+.pg-section {
+  border-top: 1px solid var(--rr-color-border-default);
+  padding: var(--rr-space-8) 0;
+}
+
+.pg-section__title {
+  margin: 0 0 var(--rr-space-4);
+}
+
+.pg-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rr-space-3);
+}
+
+/* The dialog is portaled to `body`, so the harness must not constrain it from
+   an ancestor with a stacking context or a transform. */
+.pg-field {
+  max-width: 24rem;
+}
+
+.pg-label {
+  color: var(--rr-color-text-primary);
+  cursor: pointer;
+}

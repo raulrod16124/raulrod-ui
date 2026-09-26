@@ -23,7 +23,7 @@
       "outputs": ["coverage/**"]
     },
     "test:e2e": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "build"],
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
       "outputs": ["playwright-report/**", "test-results/**"]
     },

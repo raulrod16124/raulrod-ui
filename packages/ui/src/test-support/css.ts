@@ -15,7 +15,7 @@
 // not enable them globally, or every component in `src/` would silently
 // accept Node globals (`process`, `Buffer`) in a browser-only library.
 /// <reference types="node" />
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath, URL as NodeURL } from "node:url";
 
@@ -36,6 +36,41 @@ const srcDir = fileURLToPath(new NodeURL("../", import.meta.url));
  */
 export function readComponentCss(path: string): Promise<string> {
   return readFile(join(srcDir, path), "utf8");
+}
+
+/** The public barrel that re-exports every component stylesheet (`src/styles.css`, RRU-069). */
+export function readStyleBarrel(): Promise<string> {
+  return readComponentCss("styles.css");
+}
+
+/**
+ * Enumerates the authored component stylesheets as `src/`-relative POSIX paths
+ * (`button/Button.css`), sorted. Only `<kebab-folder>/<Pascal>.css` counts: it
+ * is the shape the Playbook §4 Paso 1 fixes, and it keeps the barrel contract
+ * checkable from the filesystem instead of from a hand-written list, which
+ * would drift silently the first time someone ships a component.
+ */
+export async function listComponentStylePaths(): Promise<string[]> {
+  const folders = (await readdir(srcDir, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  const stylesheets = await Promise.all(
+    folders.map(async (folder) => {
+      const files = await readdir(join(srcDir, folder));
+      return files.filter((file) => file.endsWith(".css")).map((file) => `${folder}/${file}`);
+    }),
+  );
+
+  return stylesheets.flat().sort();
+}
+
+/** Every `@import` target of a stylesheet, comments stripped first so prose cannot satisfy it. */
+export function styleImports(css: string): string[] {
+  return [...stripCssComments(css).matchAll(/@import\s+["']([^"']+)["']/g)].flatMap((match) =>
+    match[1] === undefined ? [] : [match[1]],
+  );
 }
 
 /** Strips CSS comments so prose in a header cannot satisfy a negative assertion. */

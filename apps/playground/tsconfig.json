@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    // No global Node types: `src/` is a browser app and must not silently
+    // accept `process`/`Buffer` (same rule as `packages/ui/src/test-support/
+    // source.ts`). The two config files request them per file, with
+    // `/// <reference types="node" />`.
+    "types": []
+  },
+  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts"]
+}
