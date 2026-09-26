@@ -43,9 +43,12 @@ import { useId } from "../utils/use-id.js";
  * the Title/Description slots and derives `aria-labelledby`/`aria-describedby`
  * from their PRESENCE — never an empty reference. The trigger gets
  * `aria-haspopup="dialog"` + `aria-expanded` + `aria-controls` pointing at the
- * content id. When open, focus lands on the panel (`tabIndex={-1}`, ARIA APG
- * modal-dialog) and is trapped; Escape, backdrop pointer-down and the Close
- * button dismiss; closing restores focus to the trigger (DoD #1).
+ * content id, and the panel STAMPS that same id (RRU-115: an `aria-controls`
+ * whose target does not exist is an idref the consumer cannot resolve — same
+ * wiring Popover/Select/DropdownMenu already had). When open, focus lands on the
+ * panel (`tabIndex={-1}`, ARIA APG modal-dialog) and is trapped; Escape, backdrop
+ * pointer-down and the Close button dismiss; closing restores focus to the
+ * trigger (DoD #1).
  */
 
 export function Dialog({ open, defaultOpen = false, onOpenChange, children }: DialogProps) {
@@ -107,7 +110,10 @@ DialogTrigger.displayName = "DialogTrigger";
  *  lifecycle — focus trap (over overlay node), scroll lock, focus return and
  *  dismissal (Escape + outside/backdrop pointer-down, both topmost-aware). The
  *  internal `panelRef` (the dismissable node, excluding the backdrop) is merged
- *  with the consumer's forwarded ref on the dialog element. `tabIndex={-1}`
+ *  with the consumer's forwarded ref on the dialog element. The panel's `id` is
+ *  the `contentId` of the root, forced AFTER the spread (RRU-115) so the
+ *  consumer cannot leave the trigger's `aria-controls` pointing at a node that
+ *  does not exist; a consumer-supplied `id` is therefore ignored. `tabIndex={-1}`
  *  makes the panel the initial-focus target (ARIA APG). Renders `null`
  *  (and runs the hooks inactive) while closed → SSR-safe, same first markup. */
 export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(function DialogContent(
@@ -142,6 +148,7 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
         <div
           {...props}
           ref={mergeRefs(panelRef, ref)}
+          id={dialog.contentId}
           role="dialog"
           aria-modal="true"
           tabIndex={-1}

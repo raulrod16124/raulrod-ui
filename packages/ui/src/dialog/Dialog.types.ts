@@ -16,7 +16,9 @@ export interface DialogContextValue {
   open: boolean;
   /** Opens/closes the dialog through the root (fires `onOpenChange`). */
   setOpen: (open: boolean) => void;
-  /** Id of `<Dialog.Content>`; wired to the trigger's `aria-controls`. */
+  /** Id of `<Dialog.Content>`, stamped on the panel and wired to the trigger's
+   *  `aria-controls` (RRU-115: both ends of the relationship are owned by the
+   *  root, so the reference always resolves to a real node while open). */
   contentId: string;
   /** `<Dialog.Title>` id, referenced by `aria-labelledby` (present only when the slot is). */
   labelId?: string;
@@ -55,7 +57,9 @@ export interface DialogTriggerProps extends Omit<ButtonHTMLAttributes<HTMLButton
 /** Props of the `<Dialog.Content>` slot: the `<div role="dialog">` rendered
  *  through a portal while open. Carries `aria-modal`, `aria-labelledby` /
  *  `aria-describedby` (derived from slot presence) and is `tabIndex={-1}`
- *  (receives the initial focus; ARIA APG modal-dialog pattern). */
+ *  (receives the initial focus; ARIA APG modal-dialog pattern). The `id` is
+ *  owned by the root (the trigger's `aria-controls` target, RRU-115) and forced
+ *  after the spread, so an `id` passed here is ignored. */
 export interface DialogContentProps extends HTMLAttributes<HTMLDivElement> {}
 
 /** Props of the `<Dialog.Header>` slot: layout wrapper (column, gap) for the

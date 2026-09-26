@@ -129,9 +129,22 @@ describe("Dialog ARIA wiring (DoD #2)", () => {
     const trigger = screen.getByTestId("trigger");
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(trigger.getAttribute("aria-controls")).toBeTruthy();
+    // The reference is generated up-front by the root and must NOT change when
+    // the panel mounts: a trigger that re-points `aria-controls` on every open
+    // announces a different relationship each time.
+    const controls = trigger.getAttribute("aria-controls");
+    expect(controls).toBeTruthy();
 
     const { panel } = await openViaTrigger();
+
+    expect(trigger.getAttribute("aria-controls")).toBe(controls);
+    // RRU-115: the announced id must RESOLVE to the panel that is on screen.
+    // Asserting only that the attribute is non-empty is exactly what let this
+    // idref stay dangling for four epics, and it is not something the a11y gate
+    // can catch: axe reports `aria-controls` as "incomplete" (never a violation)
+    // on any element that carries `aria-haspopup`.
+    expect(panel.id).toBe(controls);
+    expect(document.getElementById(controls ?? "")).toBe(panel);
 
     expect(panel).toHaveAttribute("aria-modal", "true");
     expect(panel.getAttribute("aria-labelledby")).toBe(
@@ -165,6 +178,50 @@ describe("Dialog ARIA wiring (DoD #2)", () => {
     const panel = dialog();
     expect(panel).not.toHaveAttribute("aria-labelledby");
     expect(panel).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("two Dialogs in one tree: every trigger resolves to its OWN panel", async () => {
+    // `useId` guarantees unique ids, but nothing verified that the reference
+    // actually LANDED on the panel: a collision (or a shared base id) would
+    // silently point both triggers at whichever panel mounted last, and a screen
+    // reader would announce the wrong dialog for one of them.
+    const user = userEvent.setup();
+    render(
+      <>
+        <Dialog>
+          <Dialog.Trigger data-testid="trigger-a">Open A</Dialog.Trigger>
+          <Dialog.Content>
+            <Dialog.Title>Dialog A</Dialog.Title>
+          </Dialog.Content>
+        </Dialog>
+        <Dialog>
+          <Dialog.Trigger data-testid="trigger-b">Open B</Dialog.Trigger>
+          <Dialog.Content>
+            <Dialog.Title>Dialog B</Dialog.Title>
+          </Dialog.Content>
+        </Dialog>
+      </>,
+    );
+
+    const triggerA = screen.getByTestId("trigger-a");
+    const triggerB = screen.getByTestId("trigger-b");
+    const controlsA = triggerA.getAttribute("aria-controls");
+    const controlsB = triggerB.getAttribute("aria-controls");
+
+    expect(controlsA).toBeTruthy();
+    expect(controlsB).toBeTruthy();
+    expect(controlsA).not.toBe(controlsB);
+
+    await user.click(triggerA);
+    const panelA = dialog();
+    expect(panelA).toHaveAccessibleName("Dialog A");
+    expect(document.getElementById(controlsA ?? "")).toBe(panelA);
+
+    pressKey("Escape");
+    await user.click(triggerB);
+    const panelB = dialog();
+    expect(panelB).toHaveAccessibleName("Dialog B");
+    expect(document.getElementById(controlsB ?? "")).toBe(panelB);
   });
 });
 

@@ -48,6 +48,35 @@ test.describe("dialog", () => {
     await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
   });
 
+  test("the trigger's aria-controls resolves to the dialog it opens", async ({ page }) => {
+    const trigger = page.getByTestId("dialog-trigger");
+    await trigger.click();
+
+    const panel = dialog(page);
+    await expect(panel).toBeVisible();
+
+    // What a screen reader does with that button: take the id it announces and
+    // look the node up in the document. This only means something in a REAL DOM
+    // — the panel is portaled to <body>, so it also proves both ends of the
+    // relationship live in the same document. A button announcing an id that
+    // resolves nowhere is a button that cannot say what it opens, and no
+    // automated gate catches it: axe reports `aria-controls` on an element with
+    // `aria-haspopup` as "incomplete", never as a violation.
+    const announced = await trigger.evaluate((node) => {
+      const id = node.getAttribute("aria-controls");
+      return {
+        id,
+        resolved: id === null ? null : (document.getElementById(id)?.getAttribute("role") ?? null),
+      };
+    });
+
+    expect(announced.id).toBeTruthy();
+    expect(announced.resolved).toBe("dialog");
+    // Identity, not a coincidence of attributes: the announced id must BE this
+    // panel, not some other node that happens to look like a dialog.
+    expect(await panel.evaluate((node) => node.id)).toBe(announced.id);
+  });
+
   test("traps Tab inside the dialog and wraps around", async ({ page }) => {
     await page.getByTestId("dialog-trigger").click();
     const panel = dialog(page);
