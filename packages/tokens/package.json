@@ -10,12 +10,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && node scripts/emit-css.mjs",
+    "build": "tsc -p tsconfig.build.json && node tools/emit-css.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/check-contrast.mjs"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }

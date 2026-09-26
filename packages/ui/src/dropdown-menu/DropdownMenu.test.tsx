@@ -11,12 +11,13 @@
 // portal content; pointer-enter is simulated from `pointerover`). Behavior
 // over implementation.
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
 
 import {
   DropdownMenu,
@@ -29,69 +30,46 @@ import {
   DropdownMenuTrigger,
 } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
-
 /** Menu-direct keys (roving/type-ahead/Tab) travel through the DOCUMENT
  *  listener (use-menu-keyboard); the hook resolves the target from
  *  `document.activeElement` (containment check) so a document-level dispatch
  *  behaves like a real keypress when focus sits inside the panel. Escape is
  *  handled by the dismissable layer (document listener, no containment). */
 function pressKey(key: string, init: KeyboardEventInit = {}): void {
-  act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...init }));
-  });
+  fireEvent.keyDown(document, { key, ...init });
 }
 
 /** React-handler keys (SubTrigger's own onKeyDown) must be dispatched ON the
  *  node so they bubble through the (portaled) React delegation target. */
-function keydownOn(selector: string, key: string): void {
-  const node = document.querySelector<HTMLElement>(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
-  });
+function keydownOn(target: Element, key: string): void {
+  fireEvent.keyDown(target, { key });
 }
 
-function pointerDownOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
+function pointerDownOn(target: Element): void {
+  fireEvent.pointerDown(target);
 }
 
-function pointerOverOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
-  });
+function pointerOverOn(target: Element): void {
+  fireEvent.pointerOver(target);
 }
 
-function openViaTrigger(): { trigger: HTMLButtonElement; menu: HTMLElement } {
-  const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-  expect(trigger, "trigger must exist").not.toBeNull();
+const menuPanel = () => screen.queryByRole("menu");
+/** Positive lookup: fails loudly with a useful message when absent. */
+const item = (id: string) => screen.getByTestId(id);
+/** Negative lookup: for "this must be GONE" assertions. */
+const maybeItem = (id: string) => screen.queryByTestId(id);
+const triggerButton = () => screen.getByTestId("trigger");
+
+/** The trigger is focused BEFORE the click, exactly as a browser does, so the
+ *  focus-RESTORATION assertions describe a real user gesture. */
+function openViaTrigger(): { trigger: HTMLElement; menu: HTMLElement } {
+  const trigger = screen.getByTestId("trigger");
   act(() => trigger.focus());
-  act(() => trigger.click());
+  fireEvent.click(trigger);
 
-  const menu = document.querySelector<HTMLElement>("[role='menu']")!;
-  expect(menu, "menu must be open after trigger click").not.toBeNull();
-  return { trigger, menu };
+  const opened = screen.getByRole("menu");
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  return { trigger, menu: opened };
 }
 
 /** Default fixture: Edit, Share (disabled), Separator, [Sub: More → Duplicate,
@@ -148,8 +126,6 @@ function mockGeometry(anchor: RectMock, panel: RectMock): void {
 }
 
 beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
   HTMLDivElement.prototype.getBoundingClientRect = function () {
     return panelRectMock !== null
       ? ({ ...panelRectMock } as unknown as DOMRect)
@@ -163,10 +139,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
   anchorRectMock = null;
   panelRectMock = null;
   HTMLDivElement.prototype.getBoundingClientRect = realDivRect;
@@ -178,9 +150,9 @@ afterEach(() => {
 describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
   it("trigger ARIA contract: haspopup/expanded/controls; panel is role=menu; sub-trigger contract", () => {
     render(composedMenu());
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
 
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
+    const trigger = item("trigger");
     expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(trigger.getAttribute("aria-controls")).toBeTruthy();
@@ -190,7 +162,7 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
     expect(menu.getAttribute("role")).toBe("menu");
     expect(trigger.getAttribute("aria-controls")).toBe(menu.id);
 
-    const subTrigger = document.querySelector<HTMLElement>("[data-testid='more']")!;
+    const subTrigger = item("more");
     expect(subTrigger.getAttribute("aria-haspopup")).toBe("menu");
     expect(subTrigger.getAttribute("aria-expanded")).toBe("false");
     expect(subTrigger.getAttribute("aria-controls")).toBeTruthy();
@@ -203,8 +175,8 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
       document.querySelector<HTMLButtonElement>("[data-testid='edit']"),
     );
     // Roving tabindex write: the focused item carries 0, everything else -1.
-    expect(document.querySelector<HTMLButtonElement>("[data-testid='edit']")!.tabIndex).toBe(0);
-    expect(document.querySelector<HTMLButtonElement>("[data-testid='share']")!.tabIndex).toBe(-1);
+    expect(item("edit").tabIndex).toBe(0);
+    expect(item("share").tabIndex).toBe(-1);
   });
 
   it("item activation fires onSelect, closes the tree and restores focus to the trigger", () => {
@@ -221,11 +193,11 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
       </DropdownMenu>,
     );
     const { trigger } = openViaTrigger();
-    act(() => document.querySelector<HTMLButtonElement>("[data-testid='item']")!.click());
+    act(() => item("item").click());
 
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -233,7 +205,7 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
     render(composedMenu());
     const { trigger } = openViaTrigger();
     pressKey("Escape");
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -245,15 +217,15 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
       </div>,
     );
     openViaTrigger();
-    pointerDownOn("[data-testid='outside']");
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    pointerDownOn(item("outside"));
+    expect(menuPanel()).toBeNull();
 
     openViaTrigger();
-    pointerDownOn("[data-testid='edit']");
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    pointerDownOn(item("edit"));
+    expect(menuPanel()).not.toBeNull();
   });
 
-  it("re-clicking the trigger toggles closed once (trigger is inside the dismiss layer)", () => {
+  it("re-clicking the trigger toggles closed once (trigger is inside the dismiss layer)", async () => {
     const onOpenChange = vi.fn();
     render(
       <div>
@@ -266,16 +238,16 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
         </DropdownMenu>
       </div>,
     );
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    const trigger = item("trigger");
+    expect(menuPanel()).not.toBeNull();
 
     // Pointer-down on the trigger must NOT dismiss (it is an inside node), so
     // the following click performs a single toggle to closed — not close→reopen.
-    pointerDownOn("[data-testid='trigger']");
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
-    act(() => trigger.click());
+    pointerDownOn(item("trigger"));
+    expect(menuPanel()).not.toBeNull();
+    await userEvent.click(trigger);
 
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
     expect(onOpenChange).toHaveBeenCalledTimes(1);
@@ -285,7 +257,7 @@ describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
     render(composedMenu());
     const { trigger } = openViaTrigger();
     pressKey("Tab");
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 });
@@ -296,15 +268,15 @@ describe("DropdownMenu keyboard: roving focus + type-ahead (DoD #2)", () => {
     openViaTrigger();
     // [edit(0), share(disabled), more(2), settings(3)]
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='more']"));
-    expect(document.querySelector<HTMLElement>("[data-testid='edit']")!.tabIndex).toBe(-1);
-    expect(document.querySelector<HTMLElement>("[data-testid='more']")!.tabIndex).toBe(0);
+    expect(document.activeElement).toBe(item("more"));
+    expect(item("edit").tabIndex).toBe(-1);
+    expect(item("more").tabIndex).toBe(0);
 
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='settings']"));
+    expect(document.activeElement).toBe(item("settings"));
 
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='edit']"));
+    expect(document.activeElement).toBe(item("edit"));
   });
 
   it("ArrowUp moves backwards, wrapping and skipping disabled", () => {
@@ -312,21 +284,21 @@ describe("DropdownMenu keyboard: roving focus + type-ahead (DoD #2)", () => {
     openViaTrigger();
     // From the first item (edit) ArrowUp wraps to the LAST enabled (settings).
     pressKey("ArrowUp");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='settings']"));
+    expect(document.activeElement).toBe(item("settings"));
     pressKey("ArrowUp");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='more']"));
+    expect(document.activeElement).toBe(item("more"));
     // share is disabled: more → edit directly.
     pressKey("ArrowUp");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='edit']"));
+    expect(document.activeElement).toBe(item("edit"));
   });
 
   it("Home / End jump to the first / last enabled item", () => {
     render(composedMenu());
     openViaTrigger();
     pressKey("End");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='settings']"));
+    expect(document.activeElement).toBe(item("settings"));
     pressKey("Home");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='edit']"));
+    expect(document.activeElement).toBe(item("edit"));
   });
 
   it("type-ahead: rolling buffer matches the next item, skipping disabled", () => {
@@ -346,10 +318,10 @@ describe("DropdownMenu keyboard: roving focus + type-ahead (DoD #2)", () => {
     openViaTrigger();
     // Focus Edit; "s" skips the DISABLED "Save" and lands on "Settings".
     pressKey("s");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='settings']"));
+    expect(document.activeElement).toBe(item("settings"));
     // Rolling buffer "se" keeps matching "Settings" (no jump to elsewhere).
     pressKey("e");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='settings']"));
+    expect(document.activeElement).toBe(item("settings"));
   });
 
   it("type-ahead is case-insensitive", () => {
@@ -364,13 +336,13 @@ describe("DropdownMenu keyboard: roving focus + type-ahead (DoD #2)", () => {
     );
     openViaTrigger();
     pressKey("B");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='beta']"));
+    expect(document.activeElement).toBe(item("beta"));
   });
 });
 
 describe("DropdownMenu submenu (RRU-055)", () => {
   function openSubmenu(): {
-    trigger: HTMLButtonElement;
+    trigger: HTMLElement;
     menu: HTMLElement;
     sub: HTMLElement;
     more: HTMLElement;
@@ -378,11 +350,11 @@ describe("DropdownMenu submenu (RRU-055)", () => {
     const { trigger, menu } = openViaTrigger();
     // Move focus from edit(0) to more(2), skipping disabled share(1).
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='more']"));
-    const more = document.querySelector<HTMLElement>("[data-testid='more']")!;
-    keydownOn("[data-testid='more']", "ArrowRight");
+    expect(document.activeElement).toBe(item("more"));
+    const more = item("more");
+    keydownOn(item("more"), "ArrowRight");
 
-    const sub = document.querySelector<HTMLElement>("[data-testid='sub']")!;
+    const sub = item("sub");
     expect(sub, "submenu must be open after ArrowRight").not.toBeNull();
     return { trigger, menu, sub, more };
   }
@@ -390,9 +362,9 @@ describe("DropdownMenu submenu (RRU-055)", () => {
   it("ArrowRight on a sub-trigger opens the submenu and focuses its first item", () => {
     render(composedMenu());
     const { menu, more } = openSubmenu();
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='duplicate']"));
+    expect(document.activeElement).toBe(item("duplicate"));
     expect(more.getAttribute("aria-expanded")).toBe("true");
-    const sub = document.querySelector<HTMLElement>("[data-testid='sub']")!;
+    const sub = item("sub");
     expect(more.getAttribute("aria-controls")).toBe(sub.id);
     // Root stays open — the sub floats beside it, not instead of it.
     expect(menu.isConnected).toBe(true);
@@ -401,22 +373,22 @@ describe("DropdownMenu submenu (RRU-055)", () => {
   it("ArrowDown inside the submenu roves between sub items", () => {
     render(composedMenu());
     openSubmenu();
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='duplicate']"));
+    expect(document.activeElement).toBe(item("duplicate"));
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='delete']"));
+    expect(document.activeElement).toBe(item("delete"));
     pressKey("ArrowDown");
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='duplicate']"));
+    expect(document.activeElement).toBe(item("duplicate"));
   });
 
   it("ArrowLeft closes the submenu and returns focus to the sub-trigger; root stays open", () => {
     render(composedMenu());
     openSubmenu();
     pressKey("ArrowLeft");
-    expect(document.querySelector("[data-testid='sub']")).toBeNull();
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='more']"));
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    expect(maybeItem("sub")).toBeNull();
+    expect(document.activeElement).toBe(item("more"));
+    expect(menuPanel()).not.toBeNull();
     // The sub-trigger's aria-expanded follows its now-closed sub-level.
-    const more = document.querySelector<HTMLElement>("[data-testid='more']")!;
+    const more = item("more");
     expect(more.getAttribute("aria-expanded")).toBe("false");
   });
 
@@ -425,43 +397,43 @@ describe("DropdownMenu submenu (RRU-055)", () => {
     const { trigger } = openSubmenu();
 
     pressKey("Escape");
-    expect(document.querySelector("[data-testid='sub']")).toBeNull();
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='more']"));
+    expect(maybeItem("sub")).toBeNull();
+    expect(menuPanel()).not.toBeNull();
+    expect(document.activeElement).toBe(item("more"));
 
     pressKey("Escape");
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("selecting a sub-item closes the ENTIRE tree and returns focus to the root trigger", () => {
+  it("selecting a sub-item closes the ENTIRE tree and returns focus to the root trigger", async () => {
     render(composedMenu());
     const { trigger } = openSubmenu();
-    act(() => document.querySelector<HTMLButtonElement>("[data-testid='delete']")!.click());
+    act(() => item("delete").click());
 
-    expect(document.querySelector("[data-testid='sub']")).toBeNull();
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(maybeItem("sub")).toBeNull();
+    expect(menuPanel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     // Stale-guard: reopening mounts a fresh Sub → the submenu must be closed.
-    act(() => trigger.click());
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
-    expect(document.querySelector("[data-testid='sub']")).toBeNull();
+    await userEvent.click(trigger);
+    expect(menuPanel()).not.toBeNull();
+    expect(maybeItem("sub")).toBeNull();
   });
 
   it("pointer-enter on the sub-trigger opens the submenu (mouse flow)", () => {
     render(composedMenu());
     openViaTrigger();
-    pointerOverOn("[data-testid='more']");
-    expect(document.querySelector("[data-testid='sub']")).not.toBeNull();
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='duplicate']"));
+    pointerOverOn(item("more"));
+    expect(item("sub")).not.toBeNull();
+    expect(document.activeElement).toBe(item("duplicate"));
   });
 });
 
 describe("DropdownMenu controlled/uncontrolled + composition", () => {
-  it("controlled: onOpenChange fires and the root keeps the gate", () => {
+  it("controlled: onOpenChange fires and the root keeps the gate", async () => {
     const onOpenChange = vi.fn();
-    render(
+    const view = render(
       <DropdownMenu open={false} onOpenChange={onOpenChange}>
         <DropdownMenu.Trigger>Options</DropdownMenu.Trigger>
         <DropdownMenu.Content>
@@ -469,11 +441,11 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
         </DropdownMenu.Content>
       </DropdownMenu>,
     );
-    document.querySelector<HTMLButtonElement>(".rr-dropdown-trigger")!.click();
+    await userEvent.click(document.querySelector<HTMLButtonElement>(".rr-dropdown-trigger")!);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
 
-    rerender(
+    view.rerender(
       <DropdownMenu open onOpenChange={onOpenChange}>
         <DropdownMenu.Trigger>Options</DropdownMenu.Trigger>
         <DropdownMenu.Content>
@@ -481,18 +453,26 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
         </DropdownMenu.Content>
       </DropdownMenu>,
     );
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    expect(menuPanel()).not.toBeNull();
 
     pressKey("Escape");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    expect(menuPanel()).not.toBeNull();
   });
 
   it("uncontrolled: defaultOpen renders; Escape closes", () => {
     render(composedMenu({ defaultOpen: true }));
-    expect(document.querySelector("[role='menu']")).not.toBeNull();
+    expect(menuPanel()).not.toBeNull();
     pressKey("Escape");
-    expect(document.querySelector("[role='menu']")).toBeNull();
+    expect(menuPanel()).toBeNull();
+  });
+
+  it("has no axe violations with the menu and submenu open", async () => {
+    render(composedMenu());
+    openViaTrigger();
+    await userEvent.click(item("more"));
+
+    await expect(auditA11y(document.body)).resolves.toHaveNoViolations();
   });
 
   it("exports the slots both standalone and mounted on the root (ADR-004)", () => {
@@ -505,7 +485,7 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
     expect(DropdownMenu.SubContent).toBe(DropdownMenuSubContent);
   });
 
-  it("merges className and passes through props on the slots", () => {
+  it("merges className and passes through props on the slots", async () => {
     render(
       <DropdownMenu>
         <DropdownMenu.Trigger className="probe" data-x="1">
@@ -532,7 +512,7 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
     expect(trigger.getAttribute("data-x")).toBe("1");
 
     act(() => trigger.focus());
-    act(() => trigger.click());
+    await userEvent.click(trigger);
     expect(document.querySelector(".rr-dropdown-menu")!.className).toBe("rr-dropdown-menu probe");
     expect(document.querySelector(".rr-dropdown-menu")!.getAttribute("data-x")).toBe("1");
     // Item + separator + sub-trigger class/props.
@@ -548,15 +528,13 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
       "rr-dropdown-separator probe",
     );
 
-    pointerOverOn("[data-testid='more']");
+    pointerOverOn(item("more"));
     const subContents = document.querySelectorAll<HTMLElement>(".rr-dropdown-menu");
     expect(subContents.length).toBe(2);
     const subPanel = subContents[1]!;
     expect(subPanel.className).toBe("rr-dropdown-menu probe");
     expect(subPanel.getAttribute("data-x")).toBe("1");
-    expect(document.querySelector<HTMLElement>("[data-testid='more']")!.className).toBe(
-      "rr-dropdown-item probe",
-    );
+    expect(item("more").className).toBe("rr-dropdown-item probe");
   });
 });
 
@@ -582,7 +560,7 @@ describe("DropdownMenu positioning integration (DoD #1)", () => {
     render(composedMenu());
     openViaTrigger();
     pressKey("ArrowDown");
-    keydownOn("[data-testid='more']", "ArrowRight");
+    keydownOn(item("more"), "ArrowRight");
 
     const panels = document.querySelectorAll<HTMLElement>(".rr-dropdown-menu");
     expect(panels.length).toBe(2);

@@ -5,58 +5,29 @@
 // binding to real `[role="tab"]` nodes + the WAI-ARIA Tabs contract is
 // exercised. Behavior over implementation.
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
 
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
+/** The event object is returned so the APG preventDefault contract stays
+ *  assertable (`defaultPrevented`) instead of inferred from a side effect. */
+function pressKeyOn(target: Element, key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+  fireEvent(target, event);
+  return event;
 }
 
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
+const trigger = (id: string): HTMLButtonElement => screen.getByTestId(id);
+const panel = (id: string): HTMLElement => screen.getByTestId(id);
 
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
-
-function pressKeyOn(selector: string, key: string, init: KeyboardEventInit = {}): KeyboardEvent {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  let captured: KeyboardEvent | null = null;
-  act(() => {
-    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
-    captured = event;
-    node!.dispatchEvent(event);
-  });
-  return captured!;
-}
-
-function clickOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-  });
-}
-
-function trigger(id: string): HTMLButtonElement {
-  return document.querySelector<HTMLButtonElement>(`[data-testid='${id}']`)!;
-}
-
-function panel(id: string): HTMLDivElement {
-  return document.querySelector<HTMLDivElement>(`[data-testid='${id}']`)!;
+async function clickOn(id: string): Promise<void> {
+  await userEvent.click(screen.getByTestId(id));
 }
 
 interface ComposedTabsInput {
@@ -103,18 +74,6 @@ function composedTabs({
     </Tabs>
   );
 }
-
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
-
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
-});
 
 describe("Tabs ARIA contract (DoD #2, WAI-ARIA Tabs)", () => {
   it("list=tablist, triggers=role tab buttons with persistent ids + panel wiring", () => {
@@ -167,7 +126,7 @@ describe("Tabs ARIA contract (DoD #2, WAI-ARIA Tabs)", () => {
   });
 
   it("disabled triggers carry native disabled + modifier and never the roving tab stop", () => {
-    render(composedTabs());
+    const { unmount } = render(composedTabs());
     const disabled = trigger("tab-disabled");
     expect(disabled.disabled).toBe(true);
     expect(disabled.className).toContain("rr-tabs-trigger--disabled");
@@ -184,33 +143,33 @@ describe("Tabs ARIA contract (DoD #2, WAI-ARIA Tabs)", () => {
 });
 
 describe("Tabs selection: click + clickability", () => {
-  it("clicking a tab selects it, shows its panel and fires onValueChange", () => {
+  it("clicking a tab selects it, shows its panel and fires onValueChange", async () => {
     const onValueChange = vi.fn();
     render(composedTabs({ defaultValue: "overview", onValueChange }));
-    clickOn("[data-testid='tab-settings']");
+    await clickOn("tab-settings");
     expect(onValueChange).toHaveBeenLastCalledWith("settings");
     expect(trigger("tab-settings").getAttribute("aria-selected")).toBe("true");
     expect(panel("panel-settings").hasAttribute("hidden")).toBe(false);
     expect(panel("panel-overview").hasAttribute("hidden")).toBe(true);
   });
 
-  it("re-selecting the SAME tab does not re-fire onValueChange", () => {
+  it("re-selecting the SAME tab does not re-fire onValueChange", async () => {
     const onValueChange = vi.fn();
     render(composedTabs({ defaultValue: "overview", onValueChange }));
-    clickOn("[data-testid='tab-overview']");
+    await clickOn("tab-overview");
     expect(onValueChange).not.toHaveBeenCalled();
     expect(trigger("tab-overview").getAttribute("aria-selected")).toBe("true");
   });
 
-  it("disabled tabs swallow the click (never select, never fire)", () => {
+  it("disabled tabs swallow the click (never select, never fire)", async () => {
     const onValueChange = vi.fn();
     render(composedTabs({ defaultValue: "overview", onValueChange }));
-    clickOn("[data-testid='tab-disabled']");
+    await clickOn("tab-disabled");
     expect(onValueChange).not.toHaveBeenCalled();
     expect(trigger("tab-overview").getAttribute("aria-selected")).toBe("true");
   });
 
-  it("the consumer onClick is chained after the internal select", () => {
+  it("the consumer onClick is chained after the internal select", async () => {
     const onClick = vi.fn();
     const onValueChange = vi.fn();
     render(
@@ -225,11 +184,9 @@ describe("Tabs selection: click + clickability", () => {
         <Tabs.Panel value="settings">S</Tabs.Panel>
       </Tabs>,
     );
-    clickOn("[data-testid='tab-overview']");
+    await clickOn("tab-overview");
     expect(onClick).toHaveBeenCalledTimes(1);
-    expect(
-      document.querySelector("[data-testid='tab-overview']")!.getAttribute("aria-selected"),
-    ).toBe("true");
+    expect(trigger("tab-overview")).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -239,13 +196,13 @@ describe("Tabs keyboard: automatic activation roving (WAI-ARIA)", () => {
     render(composedTabs({ defaultValue: "overview", onValueChange }));
     act(() => trigger("tab-overview").focus());
 
-    pressKeyOn("[data-testid='tab-overview']", "ArrowRight"); // → activity
+    pressKeyOn(trigger("tab-overview"), "ArrowRight"); // → activity
     expect(trigger("tab-activity").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-activity"));
-    pressKeyOn("[data-testid='tab-activity']", "ArrowRight"); // → settings (skips disabled)
+    pressKeyOn(trigger("tab-activity"), "ArrowRight"); // → settings (skips disabled)
     expect(trigger("tab-settings").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-settings"));
-    pressKeyOn("[data-testid='tab-settings']", "ArrowRight"); // wraps → overview
+    pressKeyOn(trigger("tab-settings"), "ArrowRight"); // wraps → overview
     expect(trigger("tab-overview").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-overview"));
     expect(onValueChange).toHaveBeenCalledTimes(3);
@@ -255,7 +212,7 @@ describe("Tabs keyboard: automatic activation roving (WAI-ARIA)", () => {
   it("ArrowLeft wraps backward", () => {
     render(composedTabs({ defaultValue: "overview" }));
     act(() => trigger("tab-overview").focus());
-    pressKeyOn("[data-testid='tab-overview']", "ArrowLeft"); // wraps → settings (skips disabled)
+    pressKeyOn(trigger("tab-overview"), "ArrowLeft"); // wraps → settings (skips disabled)
     expect(trigger("tab-settings").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-settings"));
   });
@@ -263,10 +220,10 @@ describe("Tabs keyboard: automatic activation roving (WAI-ARIA)", () => {
   it("Home/End jump to the first/last ENABLED tab", () => {
     render(composedTabs({ defaultValue: "settings" }));
     act(() => trigger("tab-settings").focus());
-    pressKeyOn("[data-testid='tab-settings']", "Home");
+    pressKeyOn(trigger("tab-settings"), "Home");
     expect(trigger("tab-overview").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-overview"));
-    pressKeyOn("[data-testid='tab-overview']", "End");
+    pressKeyOn(trigger("tab-overview"), "End");
     expect(trigger("tab-settings").getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(trigger("tab-settings"));
   });
@@ -274,36 +231,36 @@ describe("Tabs keyboard: automatic activation roving (WAI-ARIA)", () => {
   it("arrow/Home/End preventDefault; Tab passes through UNprevented (APG)", () => {
     render(composedTabs({ defaultValue: "overview" }));
     act(() => trigger("tab-overview").focus());
-    expect(pressKeyOn("[data-testid='tab-overview']", "ArrowRight").defaultPrevented).toBe(true);
-    expect(pressKeyOn("[data-testid='tab-activity']", "ArrowLeft").defaultPrevented).toBe(true);
-    expect(pressKeyOn("[data-testid='tab-overview']", "Home").defaultPrevented).toBe(true);
-    expect(pressKeyOn("[data-testid='tab-overview']", "End").defaultPrevented).toBe(true);
-    expect(pressKeyOn("[data-testid='tab-overview']", "Tab").defaultPrevented).toBe(false);
+    expect(pressKeyOn(trigger("tab-overview"), "ArrowRight").defaultPrevented).toBe(true);
+    expect(pressKeyOn(trigger("tab-activity"), "ArrowLeft").defaultPrevented).toBe(true);
+    expect(pressKeyOn(trigger("tab-overview"), "Home").defaultPrevented).toBe(true);
+    expect(pressKeyOn(trigger("tab-overview"), "End").defaultPrevented).toBe(true);
+    expect(pressKeyOn(trigger("tab-overview"), "Tab").defaultPrevented).toBe(false);
   });
 
   it("the consumer onKeyDown on the list is chained after the internal move", () => {
     const onListKeyDown = vi.fn();
     render(composedTabs({ defaultValue: "overview", onListKeyDown }));
     act(() => trigger("tab-overview").focus());
-    pressKeyOn("[data-testid='tab-overview']", "ArrowRight");
+    pressKeyOn(trigger("tab-overview"), "ArrowRight");
     expect(onListKeyDown).toHaveBeenCalledTimes(1);
     expect(trigger("tab-activity").getAttribute("aria-selected")).toBe("true");
   });
 });
 
 describe("Tabs controlled/uncontrolled", () => {
-  it("uncontrolled: defaultValue seeds; changes flow through onValueChange", () => {
+  it("uncontrolled: defaultValue seeds; changes flow through onValueChange", async () => {
     const onValueChange = vi.fn();
     render(composedTabs({ defaultValue: "overview", onValueChange }));
-    clickOn("[data-testid='tab-activity']");
+    await clickOn("tab-activity");
     expect(onValueChange).toHaveBeenLastCalledWith("activity");
     expect(trigger("tab-activity").getAttribute("aria-selected")).toBe("true");
   });
 
-  it("controlled: onValueChange fires but the root keeps the value gate", () => {
+  it("controlled: onValueChange fires but the root keeps the value gate", async () => {
     const onValueChange = vi.fn();
-    render(composedTabs({ value: "overview", onValueChange }));
-    clickOn("[data-testid='tab-settings']");
+    const { rerender } = render(composedTabs({ value: "overview", onValueChange }));
+    await clickOn("tab-settings");
     expect(onValueChange).toHaveBeenLastCalledWith("settings");
     expect(trigger("tab-overview").getAttribute("aria-selected")).toBe("true");
     expect(panel("panel-overview").hasAttribute("hidden")).toBe(false);
@@ -355,6 +312,15 @@ describe("Tabs SSR parity + composition contract", () => {
     expect(markup).toContain('class="rr-tabs-trigger probe-t"');
     expect(markup).toContain('class="rr-tabs-panel probe-p"');
     expect(markup).toContain('title="panel"');
+  });
+
+  it("has no axe violations in the selected and unselected shapes", async () => {
+    const selected = render(composedTabs({ defaultValue: "activity" }));
+    await expect(auditA11y(selected.container)).resolves.toHaveNoViolations();
+    selected.unmount();
+
+    const idle = render(composedTabs());
+    await expect(auditA11y(idle.container)).resolves.toHaveNoViolations();
   });
 
   it("exports the slots both standalone and mounted on the root (ADR-004)", () => {

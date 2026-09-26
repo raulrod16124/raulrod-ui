@@ -55,6 +55,9 @@ module.exports = [
           extensions: [".mjs", ".cjs", ".js", ".json", ".node", ".ts", ".mts", ".cts", ".tsx"],
           extensionAlias: {
             ".js": [".ts", ".tsx", ".js"],
+            // Root-level ESM config shared by the test harness (vitest.preset.mts,
+            // RRU-068) is imported from package configs with the emitted extension.
+            ".mjs": [".mts", ".mjs"],
           },
         }),
       ],
@@ -71,6 +74,17 @@ module.exports = [
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
       "import-x/order": ["error", importOrder],
+    },
+  },
+
+  // Ambient declaration files cannot use top-level `import` (that would turn them
+  // into modules, and `declare module` would become an augmentation of a package
+  // that has no types), so they must reference external types with `import()`
+  // type annotations — exactly what the rule below forbids everywhere else.
+  {
+    files: ["**/*.d.ts"],
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "off",
     },
   },
 

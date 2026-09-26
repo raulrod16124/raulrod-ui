@@ -1,22 +1,18 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig, mergeConfig } from "vitest/config";
 
-// Minimal Vitest harness adopted on RRU-052 to verify the shared overlay
-// infrastructure (focus trap/return, dismissable layer, scroll lock) against a
-// real DOM. `happy-dom` keeps the environment lightweight — no canvas/CSS
-// layout needed for focus/keyboard/scroll tests. RRU-068 will formalize the
-// repo-wide config and migrate the `check-*.mjs` chain; until then this file
-// stays package-local.
-export default defineConfig({
-  resolve: {
-    // The repo writes TS imports with `.js` extensions (moduleResolution:
-    // bundler, RRU-011). Vite/Vitest must resolve those to the `.ts` sources.
-    extensionAlias: {
-      ".js": [".ts", ".tsx"],
+import preset from "../../vitest.preset.mjs";
+
+// Per-package additions on top of the shared harness (RRU-068, root
+// `vitest.preset.mts`): components need a DOM, plus the Testing Library +
+// jest-dom + jest-axe setup. `happy-dom` stays the environment (adopted in
+// RRU-052, already green for the overlay specs) — no canvas/CSS layout is needed
+// for focus, keyboard and ARIA assertions.
+export default mergeConfig(
+  preset,
+  defineConfig({
+    test: {
+      environment: "happy-dom",
+      setupFiles: ["./src/test-support/setup.ts"],
     },
-  },
-  test: {
-    environment: "happy-dom",
-    setupFiles: ["vitest.setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
-  },
-});
+  }),
+);

@@ -6,17 +6,14 @@
 // through user events/async flows — behavior over implementation.
 import type { ToastApi } from "./Toast.types.js";
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act, useEffect } from "react";
-import { createRoot } from "react-dom/client";
+import { act, fireEvent, render } from "@testing-library/react";
+import { useEffect } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ToastProvider, useToast } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
 let api: ToastApi | null = null;
 
 /** Captures the imperative api for driving the provider from the tests. The
@@ -28,16 +25,6 @@ function ApiProbe() {
     api = ctx;
   }, [ctx]);
   return null;
-}
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
 }
 
 function pushToast(input: Parameters<ToastApi["toast"]>[0]): string {
@@ -52,30 +39,21 @@ const viewport = (): HTMLDivElement | null => document.querySelector(".rr-toast-
 const toasts = (): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>(".rr-toast"));
 
 function pointerOver(): void {
-  act(() => {
-    viewport()!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, composed: true }));
-  });
+  fireEvent.pointerOver(viewport() as Element);
 }
 
 function pointerOut(): void {
-  act(() => {
-    viewport()!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, composed: true }));
-  });
+  fireEvent.pointerOut(viewport() as Element);
 }
 
 beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
   api = null;
 });
 
 afterEach(() => {
-  unmount();
-  host?.remove();
-  host = null;
+  // the viewport + toasts are portal-mounted: RTL's cleanup unmounts the tree,
+  // which takes the portal with it (no manual DOM surgery)
   api = null;
-  document.querySelectorAll(".rr-toast").forEach((n) => n.remove());
-  document.querySelectorAll(".rr-toast-viewport").forEach((n) => n.remove());
 });
 
 describe("live roles (DoD #1)", () => {

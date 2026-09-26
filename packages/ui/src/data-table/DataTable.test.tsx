@@ -6,12 +6,12 @@ import type {
   DataTableSorting,
 } from "./DataTable.types.js";
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
 
 import {
   filterDataTableRows,
@@ -53,7 +53,7 @@ function userTable(overrides: Partial<DataTableProps<User, number>> = {}): React
   );
 }
 
-function render(element: ReactElement): string {
+function ssr(element: ReactElement): string {
   return renderToStaticMarkup(element);
 }
 
@@ -61,21 +61,15 @@ function textRows(): string[] {
   return Array.from(document.querySelectorAll("tbody tr"), (row) => row.textContent ?? "");
 }
 
+const header = () => screen.getAllByRole("columnheader");
+const bodyRows = () => screen.getAllByRole("row").slice(1);
+
 function click(element: Element): void {
-  act(() => {
-    if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
-      element.click();
-    }
-  });
+  fireEvent.click(element);
 }
 
 function changeInput(input: HTMLInputElement, value: string): void {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-  if (!setter) throw new Error("HTMLInputElement value setter is unavailable");
-  act(() => {
-    setter.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
+  fireEvent.change(input, { target: { value } });
 }
 
 describe("DataTable pure data operations", () => {
@@ -161,7 +155,7 @@ describe("DataTable SSR and type contract", () => {
   });
 
   it("renders a semantic responsive table from generic column definitions", () => {
-    const markup = render(userTable());
+    const markup = ssr(userTable());
     expect(markup).toMatch(/^<div class="rr-data-table">/);
     expect(markup).toContain('<div class="rr-table rr-table--size-sm">');
     expect(markup).toContain('<caption class="rr-table__caption">Users</caption>');
@@ -170,14 +164,12 @@ describe("DataTable SSR and type contract", () => {
     expect(markup).not.toContain('role="grid"');
     expect(markup).not.toMatch(/tabindex|onkeydown/i);
     expect(
-      render(
-        <DataTable<User> data={users} columns={columns} getRowId={getUserId} caption="Users" />,
-      ),
+      ssr(<DataTable<User> data={users} columns={columns} getRowId={getUserId} caption="Users" />),
     ).toContain(">Ada<");
   });
 
   it("serializes filtering, sorting and row selection controls accessibly", () => {
-    const markup = render(
+    const markup = ssr(
       userTable({
         filtering: { defaultValue: "engineering", label: "Find users" },
         sorting: { defaultValue: { key: "name", direction: "asc" } },
@@ -198,18 +190,18 @@ describe("DataTable SSR and type contract", () => {
   });
 
   it("applies loading before error, error before rows and rows before empty", () => {
-    const loading = render(userTable({ loading: true, loadingRows: 2, error: "Failed" }));
+    const loading = ssr(userTable({ loading: true, loadingRows: 2, error: "Failed" }));
     expect(loading).toContain('aria-busy="true"');
     expect(loading.match(/rr-skeleton--rectangle/g)).toHaveLength(6);
     expect(loading).not.toContain('role="alert"');
 
-    const failed = render(userTable({ error: "Failed", empty: "Nothing" }));
+    const failed = ssr(userTable({ error: "Failed", empty: "Nothing" }));
     expect(failed).toContain('role="alert"');
     expect(failed).toContain("Failed");
     expect(failed).toContain('class="rr-table__cell rr-table__error"');
     expect(failed).not.toContain(">Ada<");
 
-    const empty = render(
+    const empty = ssr(
       <DataTable<User, number>
         data={[]}
         columns={columns}
@@ -221,17 +213,17 @@ describe("DataTable SSR and type contract", () => {
     expect(empty).toContain("Nothing");
     expect(empty).not.toContain(">Ada<");
 
-    const noError = render(userTable({ error: false }));
+    const noError = ssr(userTable({ error: false }));
     expect(noError).toContain(">Ada<");
     expect(noError).not.toContain('role="alert"');
 
-    const loadingWithPagination = render(userTable({ loading: true, pagination: { pageSize: 2 } }));
+    const loadingWithPagination = ssr(userTable({ loading: true, pagination: { pageSize: 2 } }));
     expect(loadingWithPagination).toContain('aria-busy="true"');
     expect(loadingWithPagination).not.toContain("rr-pagination");
   });
 
   it("merges root props, stays a forwardRef and hides single-page pagination", () => {
-    const markup = render(
+    const markup = ssr(
       userTable({
         className: "probe",
         id: "users",
@@ -249,30 +241,15 @@ describe("DataTable SSR and type contract", () => {
 });
 
 describe("DataTable behavior", () => {
-  let host: HTMLDivElement | null = null;
-  let root: Root | null = null;
+  let view: ReturnType<typeof render> | null = null;
 
   function mount(element: ReactElement): void {
-    host = document.createElement("div");
-    document.body.appendChild(host);
-    root = createRoot(host);
-    act(() => root?.render(element));
+    view = render(element);
   }
 
   function rerender(element: ReactElement): void {
-    act(() => root?.render(element));
+    view?.rerender(element);
   }
-
-  function unmount(): void {
-    act(() => root?.unmount());
-    root = null;
-    host?.remove();
-    host = null;
-  }
-
-  afterEach(() => {
-    unmount();
-  });
 
   it("sorts uncontrolled on repeated header activation and retains focus", () => {
     const onChange = vi.fn();
@@ -473,6 +450,23 @@ describe("DataTable behavior", () => {
     expect(document.querySelector<HTMLInputElement>('[aria-label="Select Bea"]')?.checked).toBe(
       true,
     );
+  });
+
+  it("has no axe violations with filters, sort and selection controls rendered", async () => {
+    mount(
+      userTable({
+        filtering: { defaultValue: "", label: "Find users" },
+        sorting: { onChange: vi.fn() },
+        rowSelection: {
+          getRowLabel: getUserLabel,
+          selectedRowIds: new Set<number>(),
+          onChange: vi.fn(),
+        },
+        pagination: { pageSize: 2 },
+      }),
+    );
+
+    await expect(auditA11y()).resolves.toHaveNoViolations();
   });
 
   it("forwards the public ref to the DataTable root", () => {

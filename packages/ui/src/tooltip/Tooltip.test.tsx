@@ -5,47 +5,27 @@
 // the inline style. Position math itself is unit-tested in utils/popover.test.ts;
 // here the DOM measurement + hook wiring is exercised with stubbed rects
 // (happy-dom has no layout engine). Behavior over implementation.
-import type { ReactElement, ReactNode } from "react";
-import type { Root } from "react-dom/client";
+import type { ReactElement } from "react";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Tooltip, type TooltipProps } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
-
-const panel = (): HTMLElement | null => document.querySelector("[role='tooltip']");
+const panel = (): HTMLElement | null => screen.queryByRole("tooltip");
 const triggerSpan = (): HTMLElement => document.querySelector<HTMLElement>(".rr-tooltip-trigger")!;
-const triggerButton = (): HTMLButtonElement =>
-  document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
+const triggerButton = (): HTMLButtonElement => screen.getByRole("button", { name: "go" });
 
+// React synthesizes onPointerEnter/onPointerLeave from the BUBBLING
+// pointerover/pointerout pairs (pointerenter itself does not bubble, so
+// dispatching it would never reach React's root delegation).
 function hoverEnter(el: Element): void {
-  // React synthesizes onPointerEnter/onPointerLeave from the BUBBLING
-  // pointerover/pointerout pairs (pointerenter itself does not bubble, so
-  // dispatching it would never reach React's root delegation).
-  act(() => {
-    el.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, composed: true }));
-  });
+  fireEvent.pointerOver(el);
 }
 
 function hoverLeave(el: Element): void {
-  act(() => {
-    el.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, composed: true }));
-  });
+  fireEvent.pointerOut(el);
 }
 
 function advance(ms: number): void {
@@ -63,15 +43,7 @@ function harness(props: Partial<TooltipProps> = {}): ReactElement {
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
-
 afterEach(() => {
-  unmount();
-  host?.remove();
-  host = null;
   vi.useRealTimers();
 });
 
@@ -180,13 +152,13 @@ describe("Tooltip hover trigger with delays (card: hover/focus trigger)", () => 
 describe("Tooltip focus trigger (keyboard accessibility — DoD a11y)", () => {
   it("opens immediately on focus, without the hover delay", () => {
     vi.useFakeTimers();
-    render(harness());
+    const { rerender } = render(harness());
     act(() => triggerButton().focus());
     expect(panel()).not.toBeNull();
     // No timer may be pending that would re-fire the open.
     advance(1000);
     const onOpenChange = vi.fn();
-    rerenderOnOpenChange(onOpenChange);
+    rerender(harness({ onOpenChange }));
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 
@@ -223,16 +195,11 @@ describe("Tooltip focus trigger (keyboard accessibility — DoD a11y)", () => {
   });
 });
 
-function rerenderOnOpenChange(onOpenChange: unknown): void {
-  const ui = harness({ onOpenChange: onOpenChange as (open: boolean) => void });
-  act(() => root!.render(ui));
-}
-
 describe("Tooltip controlled/uncontrolled + onOpenChange", () => {
   it("controlled: locked closed still reports the hover intent; open renders", () => {
     vi.useFakeTimers();
     const onOpenChange = vi.fn();
-    render(harness({ open: false, onOpenChange }));
+    const { unmount } = render(harness({ open: false, onOpenChange }));
     hoverEnter(triggerSpan());
     advance(500);
     expect(panel()).toBeNull();

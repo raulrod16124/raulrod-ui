@@ -5,55 +5,29 @@
 // synthetic rects); here the DOM measurement + hook wiring is exercised with
 // stubbed rects (happy-dom has no layout engine). Behavior over implementation.
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { auditA11y } from "../test-support/axe.js";
+
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
+/** Portaled content lives outside RTL's `container`, so query the document. */
+const qs = <T extends Element>(selector: string): T | null =>
+  document.body.querySelector<T>(selector);
 
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
+const panel = () => screen.queryByRole("dialog");
+const triggerButton = () => screen.getByTestId("trigger");
 
 function pressKey(key: string, init: KeyboardEventInit = {}): void {
-  act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...init }));
-  });
+  fireEvent.keyDown(document, { key, ...init });
 }
 
-function pointerDownOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
-}
-
-function openViaTrigger(): { trigger: HTMLButtonElement; panel: HTMLElement } {
-  const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-  expect(trigger, "trigger must exist").not.toBeNull();
-  act(() => trigger.focus());
-  act(() => trigger.click());
-
-  const panel = document.querySelector<HTMLElement>("[role='dialog']")!;
-  expect(panel, "popover must be open after trigger click").not.toBeNull();
-  return { trigger, panel };
+function pointerDownOn(target: Element): void {
+  fireEvent.pointerDown(target);
 }
 
 function composedPopover({
@@ -82,22 +56,20 @@ interface RectMock {
   width: number;
   height: number;
 }
-let anchorRectMock: RectMock | null = null;
-let panelRectMock: RectMock | null = null;
 
 const realDivRect = HTMLDivElement.prototype.getBoundingClientRect;
 const realButtonRect = HTMLButtonElement.prototype.getBoundingClientRect;
-const realInnerWidth = Object.getOwnPropertyDescriptor(window, "innerWidth");
-const realInnerHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
+let anchorRectMock: RectMock | null = null;
+let panelRectMock: RectMock | null = null;
+let realInnerWidth: PropertyDescriptor | undefined;
+let realInnerHeight: PropertyDescriptor | undefined;
 
-function mockGeometry(anchor: RectMock, panel: RectMock): void {
+function mockGeometry(anchor: RectMock, panelRect: RectMock): void {
   anchorRectMock = anchor;
-  panelRectMock = panel;
+  panelRectMock = panelRect;
 }
 
 beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
   HTMLDivElement.prototype.getBoundingClientRect = function () {
     return panelRectMock !== null
       ? ({ ...panelRectMock } as unknown as DOMRect)
@@ -111,10 +83,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
   anchorRectMock = null;
   panelRectMock = null;
   HTMLDivElement.prototype.getBoundingClientRect = realDivRect;
@@ -123,30 +91,39 @@ afterEach(() => {
   if (realInnerHeight) Object.defineProperty(window, "innerHeight", realInnerHeight);
 });
 
-describe("Popover open/close flow (DoD #2)", () => {
-  it("trigger ARIA contract: haspopup/expanded/controls, content is a non-modal dialog", () => {
-    render(composedPopover());
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+/** userEvent focuses the trigger on click the way a real browser does. */
+async function openViaTrigger(): Promise<{ trigger: HTMLElement; panel: HTMLElement }> {
+  const user = userEvent.setup();
+  const trigger = triggerButton();
 
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  await user.click(trigger);
+
+  const opened = screen.getByRole("dialog");
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  return { trigger, panel: opened };
+}
+
+describe("Popover open/close flow (DoD #2)", () => {
+  it("trigger ARIA contract: haspopup/expanded/controls, content is a non-modal dialog", async () => {
+    render(composedPopover());
+    expect(panel()).toBeNull();
+
+    const trigger = triggerButton();
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(trigger.getAttribute("aria-controls")).toBeTruthy();
 
-    const { panel } = openViaTrigger();
-    expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    expect(panel.getAttribute("role")).toBe("dialog");
-    expect(panel.hasAttribute("aria-modal")).toBe(false); // non-modal
+    const { panel: content } = await openViaTrigger();
+    expect(content).toHaveAttribute("role", "dialog");
+    expect(content).not.toHaveAttribute("aria-modal"); // non-modal
     // aria-controls resolves to the panel's own id.
-    expect(trigger.getAttribute("aria-controls")).toBe(panel.id);
+    expect(trigger.getAttribute("aria-controls")).toBe(content.id);
   });
 
-  it("initial focus lands on the first focusable child; falls back to the panel", () => {
-    render(composedPopover());
-    const { panel } = openViaTrigger();
-    expect(document.activeElement).toBe(
-      document.querySelector<HTMLButtonElement>("[data-testid='first']"),
-    );
+  it("initial focus lands on the first focusable child; falls back to the panel", async () => {
+    const { unmount } = render(composedPopover());
+    await openViaTrigger();
+    expect(document.activeElement).toBe(screen.getByTestId("first"));
 
     // Fallback case: a content WITHOUT any focusable child → the panel
     // (tabIndex=-1, ARIA APG non-modal dialog) becomes the initial-focus target.
@@ -159,36 +136,38 @@ describe("Popover open/close flow (DoD #2)", () => {
         </Popover.Content>
       </Popover>,
     );
-    const { panel: barePanel } = openViaTrigger();
+    const { panel: barePanel } = await openViaTrigger();
     expect(document.activeElement).toBe(barePanel);
-    void panel;
   });
 
-  it("Escape closes and restores focus to the trigger", () => {
+  it("Escape closes and restores focus to the trigger", async () => {
     render(composedPopover());
-    const { trigger } = openViaTrigger();
+    const { trigger } = await openViaTrigger();
+
     pressKey("Escape");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+
+    expect(panel()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("outside pointer-down closes; pointer-down inside the panel does not", () => {
+  it("outside pointer-down closes; pointer-down inside the panel does not", async () => {
     render(
       <div>
         <button data-testid="outside">outside</button>
         {composedPopover()}
       </div>,
     );
-    openViaTrigger();
-    pointerDownOn("[data-testid='outside']");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    await openViaTrigger();
+    pointerDownOn(screen.getByTestId("outside"));
+    expect(panel()).toBeNull();
 
-    openViaTrigger();
-    pointerDownOn("[data-testid='first']");
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    await openViaTrigger();
+    pointerDownOn(screen.getByTestId("first"));
+    expect(panel()).not.toBeNull();
   });
 
-  it("re-clicking the trigger toggles closed (trigger is inside the dismiss layer)", () => {
+  it("re-clicking the trigger toggles closed (trigger is inside the dismiss layer)", async () => {
+    const user = userEvent.setup();
     const onOpenChange = vi.fn();
     render(
       <Popover defaultOpen onOpenChange={onOpenChange}>
@@ -198,22 +177,22 @@ describe("Popover open/close flow (DoD #2)", () => {
         </Popover.Content>
       </Popover>,
     );
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    const trigger = triggerButton();
+    expect(panel()).not.toBeNull();
 
     // Pointer-down on the trigger must NOT dismiss (it is an inside node), so
     // the following click performs a single toggle to closed — not close→reopen.
-    pointerDownOn("[data-testid='trigger']");
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
-    act(() => trigger.click());
+    pointerDownOn(trigger);
+    expect(panel()).not.toBeNull();
+    await user.click(trigger);
 
-    expect(document.querySelector("[role='dialog']")).toBeNull();
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(panel()).toBeNull();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
     expect(onOpenChange).toHaveBeenCalledTimes(1);
   });
 
-  it("focus may leave the panel without closing (non-modal)", () => {
+  it("focus may leave the panel without closing (non-modal)", async () => {
     render(
       <div>
         <button data-testid="elsewhere">outside</button>
@@ -223,36 +202,46 @@ describe("Popover open/close flow (DoD #2)", () => {
         </Popover>
       </div>,
     );
-    const { panel } = openViaTrigger();
-    expect(document.activeElement).toBe(panel);
+    const { panel: content } = await openViaTrigger();
+    expect(document.activeElement).toBe(content);
 
     // Non-modal: moving focus elsewhere (the Tab path a trap would keep
     // cycling inside the overlay) neither closes the popover nor holds focus.
     // happy-dom has no native Tab navigation — the focus-trap is the only
     // thing that would move focus on its own — so the behavioral contract is
     // asserted with a real focus move.
-    act(() => document.querySelector<HTMLButtonElement>("[data-testid='elsewhere']")!.focus());
-    expect(document.activeElement).toBe(document.querySelector("[data-testid='elsewhere']"));
-    expect(panel.isConnected).toBe(true);
+    const elsewhere = screen.getByTestId("elsewhere");
+    act(() => elsewhere.focus());
+    expect(document.activeElement).toBe(elsewhere);
+    expect(content.isConnected).toBe(true);
+  });
+
+  it("has no axe violations while open (labelled non-modal dialog)", async () => {
+    render(composedPopover());
+    await openViaTrigger();
+
+    await expect(auditA11y(document.body)).resolves.toHaveNoViolations();
   });
 });
 
 describe("Popover ARIA wiring + controlled/uncontrolled", () => {
-  it("associates the Title via aria-labelledby when present; never empty otherwise", () => {
-    render(composedPopover());
-    const { panel } = openViaTrigger();
-    const title = document.querySelector(".rr-popover-title")!;
-    expect(panel.getAttribute("aria-labelledby")).toBe(title.id);
+  it("associates the Title via aria-labelledby when present; never empty otherwise", async () => {
+    const { unmount } = render(composedPopover());
+    const { panel: titled } = await openViaTrigger();
+    const title = qs(".rr-popover-title") as HTMLElement;
+    expect(titled.getAttribute("aria-labelledby")).toBe(title.id);
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBe(titled);
 
     unmount();
     render(composedPopover({ withTitle: false }));
-    const { panel: barePanel } = openViaTrigger();
-    expect(barePanel.hasAttribute("aria-labelledby")).toBe(false);
+    const { panel: barePanel } = await openViaTrigger();
+    expect(barePanel).not.toHaveAttribute("aria-labelledby");
   });
 
-  it("controlled: onOpenChange fires and the root keeps the gate", () => {
+  it("controlled: onOpenChange fires and the root keeps the gate", async () => {
+    const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    render(
+    const { rerender } = render(
       <Popover open={false} onOpenChange={onOpenChange}>
         <Popover.Trigger>Open</Popover.Trigger>
         <Popover.Content>
@@ -260,9 +249,10 @@ describe("Popover ARIA wiring + controlled/uncontrolled", () => {
         </Popover.Content>
       </Popover>,
     );
-    document.querySelector<HTMLButtonElement>(".rr-popover-trigger")!.click();
+
+    await user.click(screen.getByRole("button", { name: "Open" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    expect(panel()).toBeNull();
 
     rerender(
       <Popover open onOpenChange={onOpenChange}>
@@ -272,18 +262,18 @@ describe("Popover ARIA wiring + controlled/uncontrolled", () => {
         </Popover.Content>
       </Popover>,
     );
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    expect(panel()).not.toBeNull();
 
     pressKey("Escape");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    expect(panel()).not.toBeNull();
   });
 
   it("uncontrolled: defaultOpen renders; Escape closes", () => {
     render(composedPopover({ defaultOpen: true }));
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    expect(panel()).not.toBeNull();
     pressKey("Escape");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    expect(panel()).toBeNull();
   });
 });
 
@@ -293,6 +283,8 @@ describe("Popover positioning integration (DoD #1)", () => {
     // and stay fully inside (anchorCenter 60, panelTop 312 — see popover.test.ts).
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 480 });
+    realInnerWidth = Object.getOwnPropertyDescriptor(window, "innerWidth");
+    realInnerHeight = Object.getOwnPropertyDescriptor(window, "innerHeight");
     mockGeometry(
       { left: 80, top: 400, width: 120, height: 40 },
       { left: 0, top: 0, width: 160, height: 80 },
@@ -307,9 +299,10 @@ describe("Popover positioning integration (DoD #1)", () => {
         </Popover.Content>
       </Popover>,
     );
-    const panel = document.querySelector<HTMLElement>(".rr-popover-content")!;
-    expect(panel.style.left).toBe("60px");
-    expect(panel.style.top).toBe("312px");
+
+    const content = qs(".rr-popover-content") as HTMLElement;
+    expect(content.style.left).toBe("60px");
+    expect(content.style.top).toBe("312px");
   });
 });
 
@@ -323,16 +316,17 @@ describe("Popover SSR parity + composition contract", () => {
         </Popover.Content>
       </Popover>,
     );
+
     expect(markup).toContain("rr-popover-trigger probe");
     expect(markup).toContain('aria-haspopup="dialog"');
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).not.toContain('role="dialog"');
   });
 
-  it("merges className and passes through props on the slots", () => {
+  it("merges className and passes through props on the slots", async () => {
     render(
       <Popover>
-        <Popover.Trigger className="probe" data-x="1">
+        <Popover.Trigger className="probe" data-x="1" data-testid="trigger">
           Open
         </Popover.Trigger>
         <Popover.Content className="probe" data-x="1">
@@ -342,16 +336,14 @@ describe("Popover SSR parity + composition contract", () => {
         </Popover.Content>
       </Popover>,
     );
-    const trigger = document.querySelector<HTMLButtonElement>(".rr-popover-trigger")!;
+    const trigger = screen.getByRole("button", { name: "Open" });
     expect(trigger.className).toBe("rr-popover-trigger probe");
-    expect(trigger.getAttribute("data-x")).toBe("1");
+    expect(trigger).toHaveAttribute("data-x", "1");
 
-    act(() => trigger.focus());
-    act(() => trigger.click());
-    expect(document.querySelector(".rr-popover-content")!.className).toBe(
-      "rr-popover-content probe",
-    );
-    expect(document.querySelector(".rr-popover-title")!.className).toBe("rr-popover-title probe");
+    await openViaTrigger();
+
+    expect(qs(".rr-popover-content")?.className).toBe("rr-popover-content probe");
+    expect(qs(".rr-popover-title")?.className).toBe("rr-popover-title probe");
   });
 
   it("exports the slots both standalone and mounted on the root (ADR-004)", () => {

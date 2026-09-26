@@ -13,16 +13,22 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/check-utils.mjs && node scripts/check-layout.mjs && node scripts/check-text.mjs && node scripts/check-visually-hidden.mjs && node scripts/check-portal.mjs && node scripts/check-pattern.mjs && node scripts/check-button.mjs && node scripts/check-icon-button.mjs && node scripts/check-input.mjs && node scripts/check-form-field.mjs && node scripts/check-textarea.mjs && node scripts/check-checkbox.mjs && node scripts/check-radio.mjs && node scripts/check-switch.mjs && node scripts/check-badge.mjs && node scripts/check-avatar.mjs && node scripts/check-skeleton.mjs && node scripts/check-progress.mjs && node scripts/check-pagination.mjs && node scripts/check-table.mjs && vitest run"
+    "test": "vitest run"
   },
   "dependencies": {
     "@raulrod/icons": "workspace:*"
   },
   "devDependencies": {
     "@raulrod/tokens": "workspace:*",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "axe-core": "^4.13.0",
     "happy-dom": "^20.14.5",
+    "jest-axe": "^11.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2",

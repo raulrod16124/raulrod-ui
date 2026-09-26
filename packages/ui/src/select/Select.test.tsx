@@ -7,12 +7,11 @@
 // is utils/popover.test.ts + the Popover flip integration). Behavior over
 // implementation.
 import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   FormField,
@@ -21,6 +20,7 @@ import {
   FormFieldError,
   FormFieldLabel,
 } from "../form-field/index.js";
+import { auditA11y } from "../test-support/axe.js";
 
 import {
   Select,
@@ -33,66 +33,42 @@ import {
   SelectValue,
 } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
-
+/** The event is returned so the APG preventDefault contract stays assertable. */
 function pressKey(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
-  let captured: KeyboardEvent | null = null;
-  act(() => {
-    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
-    captured = event;
-    document.dispatchEvent(event);
-  });
-  return captured!;
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+  fireEvent(document, event);
+  return event;
 }
 
-function pointerDownOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
+function pointerDownOn(target: Element): void {
+  fireEvent.pointerDown(target);
 }
 
-function clickOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-  });
+async function clickOn(id: string): Promise<void> {
+  await userEvent.click(screen.getByTestId(id));
 }
 
 function options(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('[role="option"]'));
+  return screen.getAllByRole("option");
 }
 
+const listbox = () => screen.queryByRole("listbox");
+const triggerButton = () => screen.getByTestId("trigger");
+
 interface OpenSelect {
-  trigger: HTMLButtonElement;
+  trigger: HTMLElement;
   panel: HTMLElement;
 }
 
-function openViaTrigger(): OpenSelect {
-  const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-  expect(trigger, "trigger must exist").not.toBeNull();
-  act(() => trigger.focus());
-  act(() => trigger.click());
+/** userEvent focuses the trigger on click the way a real browser does. */
+async function openViaTrigger(): Promise<OpenSelect> {
+  const user = userEvent.setup();
+  const trigger = triggerButton();
 
-  const panel = document.querySelector<HTMLElement>("[role='listbox']")!;
-  expect(panel, "select must be open after trigger click").not.toBeNull();
+  await user.click(trigger);
+
+  const panel = screen.getByRole("listbox");
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
   return { trigger, panel };
 }
 
@@ -134,22 +110,10 @@ function composedSelect({
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
-
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
-});
-
 describe("Select combobox contract (DoD #2)", () => {
-  it("trigger: combobox + haspopup + expanded + controls → the listbox; non-modal", () => {
+  it("trigger: combobox + haspopup + expanded + controls → the listbox; non-modal", async () => {
     render(composedSelect());
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
 
     const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
     expect(trigger.getAttribute("role")).toBe("combobox");
@@ -158,7 +122,7 @@ describe("Select combobox contract (DoD #2)", () => {
     expect(trigger.getAttribute("aria-controls")).toBeTruthy();
     expect(trigger.getAttribute("type")).toBe("button");
 
-    const { panel } = openViaTrigger();
+    const { panel } = await openViaTrigger();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(panel.getAttribute("role")).toBe("listbox");
     expect(panel.hasAttribute("aria-modal")).toBe(false); // non-modal
@@ -166,9 +130,9 @@ describe("Select combobox contract (DoD #2)", () => {
     expect(trigger.getAttribute("aria-controls")).toBe(panel.id);
   });
 
-  it("options carry role/roving tabIndex/data-value; selected has aria-selected", () => {
+  it("options carry role/roving tabIndex/data-value; selected has aria-selected", async () => {
     render(composedSelect({ defaultValue: "madrid" }));
-    openViaTrigger();
+    await openViaTrigger();
 
     const entries = options();
     expect(entries).toHaveLength(4);
@@ -186,22 +150,22 @@ describe("Select combobox contract (DoD #2)", () => {
     expect(berlin.getAttribute("tabindex")).toBe("-1");
   });
 
-  it("announces the selection through a polite live region inside the trigger", () => {
+  it("announces the selection through a polite live region inside the trigger", async () => {
     render(composedSelect());
     const status = document.querySelector<HTMLElement>("[role='status']")!;
     expect(status).not.toBeNull();
     expect(status.getAttribute("aria-live")).toBe("polite");
 
-    clickOn("[data-testid='trigger']");
-    clickOn("[data-testid='item-madrid']");
+    await clickOn("trigger");
+    await clickOn("item-madrid");
     expect(status.textContent).toBe("Madrid");
   });
 });
 
 describe("Select open/close flow", () => {
-  it("initial focus: the selected (ENABLED) option on open; else the first enabled", () => {
-    render(composedSelect({ defaultValue: "oaxaca" })); // selected value is disabled
-    openViaTrigger();
+  it("initial focus: the selected (ENABLED) option on open; else the first enabled", async () => {
+    const { unmount } = render(composedSelect({ defaultValue: "oaxaca" })); // selected value is disabled
+    await openViaTrigger();
     // A disabled selected value cannot hold focus (WCAG) → falls back to the
     // FIRST ENABLED option.
     expect(document.activeElement).toBe(options()[0]!);
@@ -209,48 +173,48 @@ describe("Select open/close flow", () => {
 
     unmount();
     render(composedSelect({ defaultValue: "paris" }));
-    openViaTrigger();
+    await openViaTrigger();
     const paris = options().find((entry) => entry.getAttribute("data-value") === "paris")!;
     expect(document.activeElement).toBe(paris);
   });
 
-  it("Escape closes and restores focus to the trigger", () => {
+  it("Escape closes and restores focus to the trigger", async () => {
     render(composedSelect());
-    const { trigger } = openViaTrigger();
+    const { trigger } = await openViaTrigger();
     pressKey("Escape");
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("outside pointer-down closes; pointer-down inside the panel does not", () => {
+  it("outside pointer-down closes; pointer-down inside the panel does not", async () => {
     render(
       <div>
         <button data-testid="outside">outside</button>
         {composedSelect()}
       </div>,
     );
-    openViaTrigger();
-    pointerDownOn("[data-testid='outside']");
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    await openViaTrigger();
+    pointerDownOn(screen.getByTestId("outside"));
+    expect(listbox()).toBeNull();
 
-    openViaTrigger();
-    pointerDownOn("[data-testid='item-madrid']");
-    expect(document.querySelector("[role='listbox']")).not.toBeNull();
+    await openViaTrigger();
+    pointerDownOn(screen.getByTestId("item-madrid"));
+    expect(listbox()).not.toBeNull();
   });
 
-  it("re-clicking the trigger toggles closed (trigger is inside the dismiss layer)", () => {
+  it("re-clicking the trigger toggles closed (trigger is inside the dismiss layer)", async () => {
     const onOpenChange = vi.fn();
     render(composedSelect({ defaultOpen: true, onOpenChange }));
     const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    expect(document.querySelector("[role='listbox']")).not.toBeNull();
+    expect(listbox()).not.toBeNull();
 
     // Pointer-down on the trigger is INSIDE → must NOT dismiss, so the click
     // performs a single toggle to closed — not close→reopen.
-    pointerDownOn("[data-testid='trigger']");
-    expect(document.querySelector("[role='listbox']")).not.toBeNull();
-    act(() => trigger.click());
+    pointerDownOn(trigger);
+    expect(listbox()).not.toBeNull();
+    await userEvent.click(trigger);
 
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
     expect(onOpenChange).toHaveBeenCalledTimes(1);
@@ -258,9 +222,9 @@ describe("Select open/close flow", () => {
 });
 
 describe("Select keyboard: roving focus + type-ahead + commit", () => {
-  it("ArrowDown/ArrowUp wrap and SKIP disabled options; Home/End jump", () => {
+  it("ArrowDown/ArrowUp wrap and SKIP disabled options; Home/End jump", async () => {
     render(composedSelect());
-    openViaTrigger();
+    await openViaTrigger();
     const berlin = options()[0]!;
     const madrid = options()[1]!;
     const oaxaca = options()[2]!; // disabled
@@ -288,49 +252,49 @@ describe("Select keyboard: roving focus + type-ahead + commit", () => {
     void madrid;
   });
 
-  it("type-ahead moves to the option whose label starts with the typed string", () => {
+  it("type-ahead moves to the option whose label starts with the typed string", async () => {
     render(composedSelect());
-    openViaTrigger();
+    await openViaTrigger();
     expect(document.activeElement).toBe(options()[0]);
     pressKey("p"); // → Paris
     const paris = options().find((entry) => entry.getAttribute("data-value") === "paris")!;
     expect(document.activeElement).toBe(paris);
   });
 
-  it("Enter on an option selects AND closes AND focus-returns (commit, not follow-focus)", () => {
+  it("Enter on an option selects AND closes AND focus-returns (commit, not follow-focus)", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ onValueChange }));
-    const { trigger } = openViaTrigger();
+    const { trigger } = await openViaTrigger();
     pressKey("Enter");
     expect(onValueChange).toHaveBeenLastCalledWith("berlin");
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("Space selects the focused option", () => {
+  it("Space selects the focused option", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ onValueChange }));
-    openViaTrigger();
+    await openViaTrigger();
     pressKey("ArrowDown");
     pressKey(" ");
     expect(onValueChange).toHaveBeenLastCalledWith("madrid");
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
   });
 
-  it("Tab closes WITHOUT preventDefault (APG)", () => {
+  it("Tab closes WITHOUT preventDefault (APG)", async () => {
     const onOpenChange = vi.fn();
     render(composedSelect({ onOpenChange }));
-    openViaTrigger();
+    await openViaTrigger();
     const event = pressKey("Tab");
     expect(event.defaultPrevented).toBe(false);
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
 
-  it("disabled options are never focusable nor selectable (keyboard or click)", () => {
+  it("disabled options are never focusable nor selectable (keyboard or click)", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ onValueChange }));
-    openViaTrigger();
+    await openViaTrigger();
     const oaxaca = document.querySelector<HTMLElement>("[data-testid='item-oaxaca']")!;
     expect(oaxaca.getAttribute("aria-disabled")).toBe("true");
 
@@ -346,14 +310,14 @@ describe("Select keyboard: roving focus + type-ahead + commit", () => {
     );
 
     // Click on the disabled option does nothing.
-    clickOn("[data-testid='item-oaxaca']");
+    await clickOn("item-oaxaca");
     expect(onValueChange).not.toHaveBeenCalled();
-    expect(document.querySelector("[role='listbox']")).not.toBeNull();
+    expect(listbox()).not.toBeNull();
   });
 });
 
 describe("Select controlled/uncontrolled + value wiring", () => {
-  it("uncontrolled: defaultValue seeds; Value renders the label; changes flow via onValueChange", () => {
+  it("uncontrolled: defaultValue seeds; Value renders the label; changes flow via onValueChange", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ defaultValue: "paris", onValueChange }));
     expect(document.querySelector(".rr-select-value")!.textContent).toBe("Paris");
@@ -363,8 +327,8 @@ describe("Select controlled/uncontrolled + value wiring", () => {
         .classList.contains("rr-select-value--placeholder"),
     ).toBe(false);
 
-    clickOn("[data-testid='trigger']");
-    clickOn("[data-testid='item-madrid']");
+    await clickOn("trigger");
+    await clickOn("item-madrid");
     expect(onValueChange).toHaveBeenLastCalledWith("madrid");
     expect(document.querySelector(".rr-select-value")!.textContent).toBe("Madrid");
   });
@@ -376,28 +340,28 @@ describe("Select controlled/uncontrolled + value wiring", () => {
     expect(value.classList.contains("rr-select-value--placeholder")).toBe(true);
   });
 
-  it("re-selecting the SAME value closes but does NOT re-fire onValueChange", () => {
+  it("re-selecting the SAME value closes but does NOT re-fire onValueChange", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ defaultValue: "madrid", onValueChange }));
-    clickOn("[data-testid='trigger']");
-    clickOn("[data-testid='item-madrid']");
+    await clickOn("trigger");
+    await clickOn("item-madrid");
     expect(onValueChange).not.toHaveBeenCalled();
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
   });
 
-  it("controlled: onValueChange fires but the root keeps the value gate", () => {
+  it("controlled: onValueChange fires but the root keeps the value gate", async () => {
     const onValueChange = vi.fn();
     render(composedSelect({ value: "berlin", onValueChange }));
-    clickOn("[data-testid='trigger']");
-    clickOn("[data-testid='item-madrid']");
+    await clickOn("trigger");
+    await clickOn("item-madrid");
     expect(onValueChange).toHaveBeenLastCalledWith("madrid");
     // The controlled root ignores the internal update → label stays Berlin.
     expect(document.querySelector(".rr-select-value")!.textContent).toBe("Berlin");
   });
 
-  it("controlled open: onOpenChange fires but the root keeps the gate", () => {
+  it("controlled open: onOpenChange fires but the root keeps the gate", async () => {
     const onOpenChange = vi.fn();
-    render(
+    const { rerender } = render(
       <Select open={false} onOpenChange={onOpenChange}>
         <Select.Trigger data-testid="trigger">
           <Select.Value>Pick…</Select.Value>
@@ -407,9 +371,9 @@ describe("Select controlled/uncontrolled + value wiring", () => {
         </Select.Content>
       </Select>,
     );
-    document.querySelector<HTMLButtonElement>(".rr-select-trigger")!.click();
+    await userEvent.click(screen.getByRole("combobox"));
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(document.querySelector("[role='listbox']")).toBeNull();
+    expect(listbox()).toBeNull();
 
     rerender(
       <Select open onOpenChange={onOpenChange}>
@@ -421,11 +385,11 @@ describe("Select controlled/uncontrolled + value wiring", () => {
         </Select.Content>
       </Select>,
     );
-    expect(document.querySelector("[role='listbox']")).not.toBeNull();
+    expect(listbox()).not.toBeNull();
 
     pressKey("Escape");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(document.querySelector("[role='listbox']")).not.toBeNull(); // gate stays
+    expect(listbox()).not.toBeNull(); // gate stays
   });
 });
 
@@ -526,11 +490,63 @@ describe("Select SSR parity + composition contract", () => {
     expect(markup).not.toContain('role="listbox"');
   });
 
-  it("merges className and passes through props on the slots", () => {
-    render(composedSelect({ defaultOpen: true }));
-    document.querySelector<HTMLElement>(".rr-select-listbox")!.className =
-      "rr-select-listbox probe";
-    expect(document.querySelector(".rr-select-listbox")!.className).toBe("rr-select-listbox probe");
+  it("merges className and passes through props on the slots", async () => {
+    render(
+      <Select defaultOpen>
+        <Select.Trigger className="probe" data-x="1" data-testid="trigger">
+          <Select.Value>Pick…</Select.Value>
+        </Select.Trigger>
+        <Select.Content className="probe" data-x="2">
+          <Select.Item value="berlin">Berlin</Select.Item>
+        </Select.Content>
+      </Select>,
+    );
+
+    const trigger = screen.getByTestId("trigger");
+    expect(trigger.className).toBe("rr-select-trigger rr-select-trigger--md probe");
+    expect(trigger).toHaveAttribute("data-x", "1");
+
+    const panel = screen.getByRole("listbox");
+    expect(panel.className).toBe("rr-select-listbox probe");
+    expect(panel).toHaveAttribute("data-x", "2");
+  });
+
+  it("has no axe violations with the listbox open (labeled integration)", async () => {
+    render(
+      <FormField>
+        <FormFieldLabel>City</FormFieldLabel>
+        <FormFieldControl>
+          {(field) => (
+            <Select defaultValue="madrid">
+              <Select.Trigger {...field} data-testid="trigger">
+                <Select.Value>Pick a city…</Select.Value>
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="berlin">Berlin</Select.Item>
+                <Select.Item value="madrid">Madrid</Select.Item>
+              </Select.Content>
+            </Select>
+          )}
+        </FormFieldControl>
+      </FormField>,
+    );
+    await openViaTrigger();
+
+    await expect(auditA11y(document.body)).resolves.toHaveNoViolations();
+  });
+
+  // KNOWN GAP, deliberately NOT hidden by disabling the rule: `role="combobox"`
+  // does not take its accessible name from contents, so a trigger the consumer
+  // does not label is an unnamed combobox. Documented here so the follow-up
+  // (RRU-057) is visible in the diff; the labeled FormField integration above
+  // is the supported way to use Select.
+  it("documents the known gap: a bare trigger is an UNNAMED combobox", async () => {
+    render(composedSelect({ defaultValue: "madrid" }));
+    await openViaTrigger();
+
+    const results = await auditA11y(document.body);
+
+    expect(results.violations.map((violation) => violation.id)).toContain("button-name");
   });
 
   it("exports the slots both standalone and mounted on the root (ADR-004)", () => {

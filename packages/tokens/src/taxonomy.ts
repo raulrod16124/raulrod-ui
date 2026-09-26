@@ -18,3 +18,21 @@ export type SemanticKey = `${string}.${string}`;
 
 /** Component keys: dot-separated `component.variant.property(.state)` (e.g. `button.primary.background.hover`). */
 export type ComponentKey = `${string}.${string}.${string}`;
+
+/** Theme-aware value of a semantic color token: the same intent per theme. */
+export interface SemanticColorPair {
+  readonly light: string;
+  readonly dark: string;
+}
+
+/** Structural value shape of the semantic layer: a color pair or a scalar.
+ *  The concrete layer narrows this to hex pairs via `PrimitiveHex`
+ *  (see `semantic.ts`); tooling (CSS emission, gates) needs the loose shape. */
+export type SemanticLayerValue = SemanticColorPair | string | number;
+
+/** The three layers as consumed by the CSS emitter and the token gate. */
+export interface TokenLayers {
+  readonly primitives: Readonly<Record<string, string | number>>;
+  readonly semantic: Readonly<Record<string, SemanticLayerValue>>;
+  readonly component: Readonly<Record<string, string>>;
+}

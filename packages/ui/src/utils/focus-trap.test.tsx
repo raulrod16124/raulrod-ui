@@ -1,33 +1,15 @@
 // Behavioral spec for useFocusTrap (RRU-052, DoD #1). Runs in happy-dom with a
 // REAL DOM: dispatch actual keydown events and assert focus movement through
 // document.activeElement. Behavior over implementation.
-import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
-
-import { act, useRef } from "react";
-import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useRef } from "react";
+import { describe, expect, it } from "vitest";
 
 import { useFocusTrap } from "./focus-trap.js";
 import { getFocusableElements } from "./focusable.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root!.unmount());
-  root = null;
-}
-
 function pressTab(shiftKey: boolean): void {
-  act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey, bubbles: true }));
-  });
+  fireEvent.keyDown(document, { key: "Tab", shiftKey });
 }
 
 function Trap({ active }: { active: boolean }) {
@@ -55,30 +37,20 @@ function EmptyTrap({ active }: { active: boolean }) {
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
-
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
-});
+const node = (testId: string) => screen.getByTestId(testId);
 
 describe("useFocusTrap", () => {
   it("keeps Tab focus inside the container, cycling forward with wrap-around", () => {
     render(<Trap active />);
-    const trap = document.querySelector<HTMLDivElement>("[data-testid='trap']")!;
-    const a = document.querySelector<HTMLButtonElement>("[data-testid='a']")!;
-    const b = document.querySelector<HTMLButtonElement>("[data-testid='b']")!;
-    const d = document.querySelector<HTMLInputElement>("[data-testid='d']")!;
+    const trap = node("trap");
+    const a = node("a");
+    const b = node("b");
+    const d = node("d");
 
     // Sanity: the tab order skips the tabindex=-1 button (C).
     expect(getFocusableElements(trap).map((el) => el.dataset.testid)).toEqual(["a", "b", "d"]);
 
-    act(() => a.focus());
+    a.focus();
     expect(document.activeElement).toBe(a);
 
     pressTab(false);
@@ -94,11 +66,11 @@ describe("useFocusTrap", () => {
 
   it("wraps backwards with Shift+Tab", () => {
     render(<Trap active />);
-    const a = document.querySelector<HTMLButtonElement>("[data-testid='a']")!;
-    const b = document.querySelector<HTMLButtonElement>("[data-testid='b']")!;
-    const d = document.querySelector<HTMLInputElement>("[data-testid='d']")!;
+    const a = node("a");
+    const b = node("b");
+    const d = node("d");
 
-    act(() => a.focus());
+    a.focus();
     pressTab(true);
     // a is first tabbable: Shift+Tab wraps to the last tabbable (d).
     expect(document.activeElement).toBe(d);
@@ -109,8 +81,9 @@ describe("useFocusTrap", () => {
 
   it("does not intercept Tab while inactive", () => {
     render(<Trap active={false} />);
-    const a = document.querySelector<HTMLButtonElement>("[data-testid='a']")!;
-    act(() => a.focus());
+    const a = node("a");
+
+    a.focus();
     pressTab(false);
     // No trap: our listener is gone, focus stays untouched.
     expect(document.activeElement).toBe(a);
@@ -118,8 +91,9 @@ describe("useFocusTrap", () => {
 
   it("swallows Tab when the container has no focusable descendants (cannot leak)", () => {
     render(<EmptyTrap active />);
-    const span = document.querySelector("[data-testid='emptytrap'] span")!;
-    act(() => (span as HTMLElement).focus());
+    const span = screen.getByText("no focusables here");
+
+    span.focus();
     expect(document.activeElement).toBe(span);
     pressTab(false);
     expect(document.activeElement).toBe(span);

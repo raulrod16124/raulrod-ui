@@ -1,12 +1,9 @@
 // Behavioral spec for useDismissableLayer (RRU-052, DoD #2): Escape and outside
 // pointer interaction dismiss only the TOPMOST active layer. Runs in happy-dom
 // with real DOM events. Behavior over implementation.
-import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
-
-import { act, useRef } from "react";
-import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useRef } from "react";
+import { describe, expect, it, vi } from "vitest";
 
 import { useDismissableLayer } from "./dismissable-layer.js";
 
@@ -14,37 +11,16 @@ import { useDismissableLayer } from "./dismissable-layer.js";
  *  keep it to `{ current: T }`) so the test stays import-light. */
 type MutableRefLike<T> = { current: T | null };
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root!.unmount());
-  root = null;
-}
-
 function pressEscape(): void {
-  act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-  });
+  fireEvent.keyDown(document, { key: "Escape" });
 }
 
 function pointerDownOutside(): void {
-  const outside = document.querySelector<HTMLButtonElement>("[data-testid='outside']")!;
-  act(() => {
-    outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
+  fireEvent.pointerDown(screen.getByTestId("outside"));
 }
 
 function pointerDownOnLayer(testId: string): void {
-  const layer = document.querySelector<HTMLDivElement>(`[data-testid='${testId}']`)!;
-  act(() => {
-    layer.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
+  fireEvent.pointerDown(screen.getByTestId(testId));
 }
 
 interface LayerProps {
@@ -93,22 +69,10 @@ function LayerWithExtra({
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
-
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
-});
-
 describe("useDismissableLayer", () => {
   it("dismisses on Escape only while active", () => {
     const onEscape = vi.fn();
-    render(<Layer id="layer" active={false} onEscape={onEscape} />);
+    const { unmount } = render(<Layer id="layer" active={false} onEscape={onEscape} />);
 
     pressEscape();
     expect(onEscape).not.toHaveBeenCalled();
@@ -210,8 +174,7 @@ describe("useDismissableLayer", () => {
 
     // Pointer-down on the trigger (an extra-inside node, sibling of the layer)
     // must NOT count as outside.
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    act(() => trigger.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    fireEvent.pointerDown(screen.getByTestId("trigger"));
     expect(onOutside).not.toHaveBeenCalled();
 
     // A genuine outside node still dismisses, and Escape still works.

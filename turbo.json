@@ -2,10 +2,11 @@
   "$schema": "https://turborepo.dev/schema.json",
   "cacheDir": "node_modules/.cache/turbo",
   "globalEnv": ["CI"],
+  "globalDependencies": ["vitest.preset.mts", "tsconfig.base.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "**/scripts/*.mjs"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
       "outputs": ["dist/**"]
     },
     "lint": {
@@ -18,7 +19,7 @@
     },
     "test": {
       "dependsOn": ["^build", "build"],
-      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "**/scripts/*.mjs"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
       "outputs": ["coverage/**"]
     },
     "test:e2e": {

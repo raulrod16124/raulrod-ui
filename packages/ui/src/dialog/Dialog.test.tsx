@@ -2,13 +2,12 @@
 // the DoD #1 flow (open → Tab → Escape → close → focus return) is exercised
 // with actual focus tracking + key/pointer events, as established for the
 // overlay primitives in RRU-052. Behavior over implementation.
-import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
-
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
 
 import {
   Dialog,
@@ -20,54 +19,21 @@ import {
   DialogTrigger,
 } from "./index.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
+/** Portaled content lives outside RTL's `container`, so query the document. */
+const qs = <T extends Element>(selector: string): T | null =>
+  document.body.querySelector<T>(selector);
 
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
-
-function unmount(): void {
-  act(() => root?.unmount());
-  root = null;
-}
+const dialog = () => screen.getByRole("dialog");
 
 function pressKey(key: string, init: KeyboardEventInit = {}): void {
-  act(() => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...init }));
-  });
+  fireEvent.keyDown(document, { key, ...init });
 }
 
-function pointerDownOn(selector: string): void {
-  const node = document.querySelector(selector);
-  expect(node, `element ${selector} must exist`).not.toBeNull();
-  act(() => {
-    node!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-  });
+function pointerDownOn(target: Element): void {
+  fireEvent.pointerDown(target);
 }
 
-function openViaTrigger(selector = ".rr-dialog-trigger"): {
-  trigger: HTMLButtonElement;
-  panel: HTMLElement;
-} {
-  const trigger = document.querySelector<HTMLButtonElement>(selector)!;
-  expect(trigger, `trigger ${selector} must exist`).not.toBeNull();
-  // Real browsers focus the button on click; happy-dom does not, so model the
-  // user gesture explicitly (needed to assert focus RESTORATION, DoD #1).
-  act(() => trigger.focus());
-  act(() => trigger.click());
-
-  const panel = document.querySelector<HTMLElement>("[role='dialog']")!;
-  expect(panel, "dialog must be open after trigger click").not.toBeNull();
-  return { trigger, panel };
-}
-
-function composedDialog({ defaultOpen = false }: { defaultOpen?: boolean } = {}): ReactElement {
+function composedDialog({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
   return (
     <Dialog defaultOpen={defaultOpen}>
       <Dialog.Trigger data-testid="trigger">Delete project</Dialog.Trigger>
@@ -85,24 +51,25 @@ function composedDialog({ defaultOpen = false }: { defaultOpen?: boolean } = {})
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
+/** userEvent focuses the trigger on click the way a real browser does, so the
+ *  focus-RESTORATION assertion is now a real user gesture, not a staged one. */
+async function openViaTrigger() {
+  const user = userEvent.setup();
+  const trigger = screen.getByTestId("trigger");
 
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
-});
+  await user.click(trigger);
+
+  const panel = dialog();
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  return { trigger, panel };
+}
 
 describe("Dialog full flow (DoD #1)", () => {
-  it("open → initial focus on the panel → Tab wraps → Escape closes → focus back to the trigger", () => {
+  it("open → initial focus on the panel → Tab wraps → Escape closes → focus back to the trigger", async () => {
     render(composedDialog());
 
-    expect(document.querySelector("[role='dialog']")).toBeNull();
-    const { trigger, panel } = openViaTrigger();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const { trigger, panel } = await openViaTrigger();
 
     // Initial focus lands on the dialog container (ARIA APG modal pattern).
     expect(document.activeElement).toBe(panel);
@@ -110,9 +77,10 @@ describe("Dialog full flow (DoD #1)", () => {
     // Tab: panel is not in the tab order (tabIndex=-1), so the first Tab goes
     // to the first focusable (Cancel); the next wraps to the last (Delete), and
     // the next wraps back to the first.
+    const cancel = screen.getByTestId("cancel");
+    const confirm = screen.getByTestId("confirm");
+
     pressKey("Tab", { shiftKey: false });
-    const cancel = document.querySelector<HTMLButtonElement>("[data-testid='cancel']")!;
-    const confirm = document.querySelector<HTMLButtonElement>("[data-testid='confirm']")!;
     expect(document.activeElement).toBe(cancel);
     pressKey("Tab");
     expect(document.activeElement).toBe(confirm);
@@ -121,85 +89,101 @@ describe("Dialog full flow (DoD #1)", () => {
 
     // Escape dismisses (topmost layer) and focus returns to the trigger.
     pressKey("Escape");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("backdrop pointer-down closes; pointer-down inside the panel does not", () => {
+  it("backdrop pointer-down closes; pointer-down inside the panel does not", async () => {
     render(composedDialog());
-    openViaTrigger();
+    await openViaTrigger();
 
-    pointerDownOn(".rr-dialog-backdrop");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    pointerDownOn(qs(".rr-dialog-backdrop") as Element);
+    expect(screen.queryByRole("dialog")).toBeNull();
 
-    openViaTrigger();
-    pointerDownOn("[data-testid='confirm']");
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    await openViaTrigger();
+    pointerDownOn(screen.getByTestId("confirm"));
+    expect(screen.queryByRole("dialog")).not.toBeNull();
   });
 
-  it("scroll lock is applied on open and restored on close", () => {
+  it("scroll lock is applied on open and restored on close", async () => {
     render(composedDialog());
-    openViaTrigger();
+    await openViaTrigger();
     expect(document.body.style.overflow).toBe("hidden");
 
     pressKey("Escape");
     expect(document.body.style.overflow).toBe("");
   });
+
+  it("has no axe violations while open (labelled, described, modal)", async () => {
+    render(composedDialog());
+    await openViaTrigger();
+
+    await expect(auditA11y(document.body)).resolves.toHaveNoViolations();
+  });
 });
 
 describe("Dialog ARIA wiring (DoD #2)", () => {
-  it("associates Title/Description when present; trigger carries haspopup/expanded/controls", () => {
+  it("associates Title/Description when present; trigger carries haspopup/expanded/controls", async () => {
     render(composedDialog());
 
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    const trigger = screen.getByTestId("trigger");
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(trigger.getAttribute("aria-controls")).toBeTruthy();
 
-    const { panel } = openViaTrigger();
+    const { panel } = await openViaTrigger();
 
-    expect(panel.getAttribute("aria-modal")).toBe("true");
+    expect(panel).toHaveAttribute("aria-modal", "true");
     expect(panel.getAttribute("aria-labelledby")).toBe(
-      document.querySelector(".rr-dialog-title")!.getAttribute("id"),
+      qs(".rr-dialog-title")?.getAttribute("id") ?? null,
     );
     expect(panel.getAttribute("aria-describedby")).toBe(
-      document.querySelector(".rr-dialog-description")!.getAttribute("id"),
+      qs(".rr-dialog-description")?.getAttribute("id") ?? null,
     );
-    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("never emits an empty aria-labelledby/aria-describedby without the slots", () => {
+  it("the Title is the dialog's accessible name (found by role+name)", async () => {
+    render(composedDialog());
+    await openViaTrigger();
+
+    expect(screen.getByRole("dialog", { name: "Delete project?" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveAccessibleDescription("This action cannot be undone.");
+  });
+
+  it("never emits an empty aria-labelledby/aria-describedby without the slots", async () => {
     render(
       <Dialog>
-        <Dialog.Trigger>Open</Dialog.Trigger>
+        <Dialog.Trigger data-testid="trigger">Open</Dialog.Trigger>
         <Dialog.Content>
           <p>No title or description slots.</p>
         </Dialog.Content>
       </Dialog>,
     );
-    openViaTrigger();
-    const panel = document.querySelector<HTMLElement>("[role='dialog']")!;
-    expect(panel.hasAttribute("aria-labelledby")).toBe(false);
-    expect(panel.hasAttribute("aria-describedby")).toBe(false);
+    await openViaTrigger();
+
+    const panel = dialog();
+    expect(panel).not.toHaveAttribute("aria-labelledby");
+    expect(panel).not.toHaveAttribute("aria-describedby");
   });
 });
 
 describe("Dialog controlled/uncontrolled", () => {
-  it("controlled: onOpenChange fires and the root keeps the gate (open follows the prop)", () => {
+  it("controlled: onOpenChange fires and the root keeps the gate (open follows the prop)", async () => {
+    const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    const ui = (
+    const { rerender } = render(
       <Dialog open={false} onOpenChange={onOpenChange}>
         <Dialog.Trigger>Open</Dialog.Trigger>
         <Dialog.Content>
           <Dialog.Title>Title</Dialog.Title>
         </Dialog.Content>
-      </Dialog>
+      </Dialog>,
     );
-    render(ui);
 
-    document.querySelector<HTMLButtonElement>(".rr-dialog-trigger")!.click();
+    await user.click(screen.getByRole("button", { name: "Open" }));
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
 
     rerender(
       <Dialog open onOpenChange={onOpenChange}>
@@ -209,18 +193,20 @@ describe("Dialog controlled/uncontrolled", () => {
         </Dialog.Content>
       </Dialog>,
     );
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    expect(screen.queryByRole("dialog")).not.toBeNull();
 
     pressKey("Escape");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+    // the prop is still true: the root does not close itself
+    expect(screen.queryByRole("dialog")).not.toBeNull();
   });
 
   it("uncontrolled: defaultOpen renders the dialog; Escape closes it", () => {
     render(composedDialog({ defaultOpen: true }));
-    expect(document.querySelector("[role='dialog']")).not.toBeNull();
+
+    expect(screen.queryByRole("dialog")).not.toBeNull();
     pressKey("Escape");
-    expect(document.querySelector("[role='dialog']")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
 
@@ -234,6 +220,7 @@ describe("Dialog SSR parity + composition contract", () => {
         </Dialog.Content>
       </Dialog>,
     );
+
     expect(markup).toContain("rr-dialog-trigger");
     expect(markup).toContain('aria-expanded="false"');
     // The content is portal-mounted (null until client hydration, RRU-034): the
@@ -241,10 +228,10 @@ describe("Dialog SSR parity + composition contract", () => {
     expect(markup).not.toContain('role="dialog"');
   });
 
-  it("merges className and passes through props on the slots", () => {
+  it("merges className and passes through props on the slots", async () => {
     render(
       <Dialog>
-        <Dialog.Trigger className="probe" data-x="1">
+        <Dialog.Trigger className="probe" data-x="1" data-testid="trigger">
           Open
         </Dialog.Trigger>
         <Dialog.Content className="probe" data-x="1">
@@ -261,18 +248,17 @@ describe("Dialog SSR parity + composition contract", () => {
       </Dialog>,
     );
 
-    const trigger = document.querySelector<HTMLButtonElement>(".rr-dialog-trigger")!;
+    const trigger = screen.getByRole("button", { name: "Open" });
     expect(trigger.className).toBe("rr-dialog-trigger probe");
-    expect(trigger.getAttribute("data-x")).toBe("1");
+    expect(trigger).toHaveAttribute("data-x", "1");
 
-    openViaTrigger();
-    expect(document.querySelector(".rr-dialog-content")!.className).toBe("rr-dialog-content probe");
-    expect(document.querySelector(".rr-dialog-header")!.className).toBe("rr-dialog-header probe");
-    expect(document.querySelector(".rr-dialog-title")!.className).toBe("rr-dialog-title probe");
-    expect(document.querySelector(".rr-dialog-description")!.className).toBe(
-      "rr-dialog-description probe",
-    );
-    expect(document.querySelector(".rr-dialog-footer")!.className).toBe("rr-dialog-footer probe");
+    await openViaTrigger();
+
+    expect(qs(".rr-dialog-content")?.className).toBe("rr-dialog-content probe");
+    expect(qs(".rr-dialog-header")?.className).toBe("rr-dialog-header probe");
+    expect(qs(".rr-dialog-title")?.className).toBe("rr-dialog-title probe");
+    expect(qs(".rr-dialog-description")?.className).toBe("rr-dialog-description probe");
+    expect(qs(".rr-dialog-footer")?.className).toBe("rr-dialog-footer probe");
   });
 
   it("exports the slots both standalone and mounted on the root (ADR-004)", () => {

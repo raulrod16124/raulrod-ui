@@ -3,10 +3,13 @@
 // (landmark + per-control names + exactly one `aria-current` + live region) and
 // the DOM behavior (controlled/uncontrolled, change guard, disabled boundaries,
 // silent clamp) are exercised as user gestures (Tabs.test.tsx precedent).
-import { type ReactElement, act } from "react";
-import { type Root, createRoot } from "react-dom/client";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
+import { expectTokenLineage, readComponentCss, stripCssComments } from "../test-support/css.js";
 
 import { paginationRange } from "./pagination-range.js";
 
@@ -167,113 +170,179 @@ describe("Pagination SSR contract (landmark + a11y serialized on the server)", (
 });
 
 describe("Pagination behavior (happy-dom, user gestures)", () => {
-  let host: HTMLDivElement | null = null;
-  let root: Root | null = null;
-
-  const mount = (ui: ReactElement) => {
-    host = document.createElement("div");
-    document.body.appendChild(host);
-    root = createRoot(host);
-    act(() => root!.render(ui));
-  };
-
-  const unmount = () => {
-    act(() => root?.unmount());
-    root = null;
-    host?.remove();
-    host = null;
-  };
-
-  const click = (label: string) => {
-    const node = document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
-    expect(node, `button ${label} must exist`).not.toBeNull();
-    act(() => node!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-  };
-
   const currentPage = (): string =>
-    (document.querySelector<HTMLButtonElement>('[aria-current="page"]')?.textContent ?? "").trim();
+    (screen.getByRole("button", { current: "page" }).textContent ?? "").trim();
+  const control = (label: string): HTMLButtonElement => screen.getByRole("button", { name: label });
 
-  afterEach(() => {
-    unmount();
-  });
-
-  it("uncontrolled: defaultPage seeds; clicking a page fires onPageChange and moves aria-current", () => {
+  it("uncontrolled: defaultPage seeds; clicking a page fires onPageChange and moves aria-current", async () => {
     const onPageChange = vi.fn();
-    mount(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
+    render(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
     expect(currentPage()).toBe("5");
-    click("Go to page 6"); // 6 is inside the [4,5,6] window → rendered
+
+    await userEvent.click(control("Go to page 6")); // 6 is inside the [4,5,6] window → rendered
+
     expect(onPageChange).toHaveBeenLastCalledWith(6);
     expect(currentPage()).toBe("6");
   });
 
-  it("the change guard: clicking the CURRENT page never fires (Tabs precedent)", () => {
+  it("the change guard: clicking the CURRENT page never fires (Tabs precedent)", async () => {
     const onPageChange = vi.fn();
-    mount(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
-    click("Go to page 5");
+    render(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
+
+    await userEvent.click(control("Go to page 5"));
+
     expect(onPageChange).not.toHaveBeenCalled();
     expect(currentPage()).toBe("5");
   });
 
-  it("disabled boundary controls swallow the click", () => {
+  it("disabled boundary controls swallow the click", async () => {
     const onPageChange = vi.fn();
-    mount(<Pagination pageCount={5} defaultPage={1} onPageChange={onPageChange} />);
-    click("Previous page");
+    render(<Pagination pageCount={5} defaultPage={1} onPageChange={onPageChange} />);
+
+    await userEvent.click(control("Previous page"));
+
     expect(onPageChange).not.toHaveBeenCalled();
     expect(currentPage()).toBe("1");
   });
 
-  it("previous/next navigate by one and clamp at the edges", () => {
+  it("previous/next navigate by one and clamp at the edges", async () => {
     const onPageChange = vi.fn();
-    mount(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
-    click("Next page");
+    render(<Pagination pageCount={12} defaultPage={5} onPageChange={onPageChange} />);
+
+    await userEvent.click(control("Next page"));
     expect(currentPage()).toBe("6");
-    click("Previous page");
+
+    await userEvent.click(control("Previous page"));
     expect(currentPage()).toBe("5");
     expect(onPageChange).toHaveBeenCalledTimes(2);
   });
 
-  it("controlled: the prop gates the value (fires callback, does not move internally)", () => {
+  it("controlled: the prop gates the value (fires callback, does not move internally)", async () => {
     const onPageChange = vi.fn();
-    mount(<Pagination pageCount={12} page={5} onPageChange={onPageChange} />);
-    click("Go to page 6"); // inside the [4,5,6] window → rendered
+    const { rerender } = render(<Pagination pageCount={12} page={5} onPageChange={onPageChange} />);
+
+    await userEvent.click(control("Go to page 6")); // inside the [4,5,6] window → rendered
+
     expect(onPageChange).toHaveBeenLastCalledWith(6);
     expect(currentPage()).toBe("5");
 
-    act(() => {
-      root!.render(<Pagination pageCount={12} page={6} onPageChange={onPageChange} />);
-    });
+    rerender(<Pagination pageCount={12} page={6} onPageChange={onPageChange} />);
     expect(currentPage()).toBe("6");
   });
 
   it("silent clamp: out-of-range page renders clamped (fail soft, never crash)", () => {
     const low = vi.fn();
-    mount(<Pagination pageCount={5} page={0} onPageChange={low} />);
+    const { rerender } = render(<Pagination pageCount={5} page={0} onPageChange={low} />);
     expect(currentPage()).toBe("1");
 
-    act(() => {
-      root!.render(<Pagination pageCount={5} page={99} onPageChange={low} />);
-    });
+    rerender(<Pagination pageCount={5} page={99} onPageChange={low} />);
+
     expect(currentPage()).toBe("5");
-    expect(document.querySelector('[aria-label="Next page"]')).toHaveProperty("disabled", true);
+    expect(control("Next page")).toBeDisabled();
   });
 
   it("tab order is native: no tabindex rewrite, no roving; ellipsis never a focus stop", () => {
-    mount(<Pagination pageCount={12} defaultPage={5} />);
-    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("button"));
-    expect(buttons.length).toBe(7); // prev + 5 window/edges + next
+    const { container } = render(<Pagination pageCount={12} defaultPage={5} />);
+    const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button"));
+
+    expect(buttons).toHaveLength(7); // prev + 5 window/edges + next
     for (const button of buttons) {
       // no roving tabindex: native focusability only (disabled skips naturally)
       expect(button.hasAttribute("tabindex")).toBe(false);
       expect(button.type).toBe("button");
     }
     // the 2 ellipsis spans (aria-hidden) are the only decorative nodes
-    expect(document.querySelectorAll(".rr-pagination__ellipsis")).toHaveLength(2);
+    expect(container.querySelectorAll(".rr-pagination__ellipsis")).toHaveLength(2);
   });
 
-  it("the status live region stays MOUNTED and tracks the page (4.1.3 precondition)", () => {
-    mount(<Pagination pageCount={12} defaultPage={5} />);
-    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 5 of 12");
-    click("Next page");
-    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 6 of 12");
+  it("the status live region stays MOUNTED and tracks the page (4.1.3 precondition)", async () => {
+    render(<Pagination pageCount={12} defaultPage={5} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Page 5 of 12");
+
+    await userEvent.click(control("Next page"));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Page 6 of 12");
+  });
+
+  it("has no axe violations in the dense and windowed shapes", async () => {
+    // audited separately: two bars with the SAME landmark label in one container
+    // would trip axe's landmark-unique rule without saying anything about Pagination
+    const dense = render(<Pagination pageCount={5} defaultPage={3} />);
+    await expect(auditA11y(dense.container)).resolves.toHaveNoViolations();
+    dense.unmount();
+
+    const windowed = render(<Pagination pageCount={12} defaultPage={5} />);
+    await expect(auditA11y(windowed.container)).resolves.toHaveNoViolations();
+  });
+});
+
+describe("Pagination authored CSS contract", () => {
+  it("lays the bar out as a wrapping flex rail with the space-1 gap", async () => {
+    const list =
+      /\.rr-pagination__list\s*\{([^}]*)\}/.exec(
+        await readComponentCss("pagination/Pagination.css"),
+      )?.[1] ?? "";
+
+    expect(list).toMatch(/display:\s*flex/);
+    expect(list).toMatch(/flex-wrap:\s*wrap/);
+    expect(list).toMatch(/gap:\s*var\(--rr-space-1\)/);
+  });
+
+  it("keeps a 32px hit target and the small label typography (WCAG 2.5.8)", async () => {
+    const item =
+      /\.rr-pagination__item\s*\{([^}]*)\}/.exec(
+        await readComponentCss("pagination/Pagination.css"),
+      )?.[1] ?? "";
+
+    expect(item).toMatch(/min-width:\s*var\(--rr-space-8\)/);
+    expect(item).toMatch(/height:\s*var\(--rr-space-8\)/);
+    expect(item).toMatch(/font-size:\s*var\(--rr-font-size-sm\)/);
+    expect(item).toMatch(/font-weight:\s*var\(--rr-font-weight-medium\)/);
+  });
+
+  it("rings the current item on focus-visible with the 2px focus family", async () => {
+    const focus =
+      /\.rr-pagination__item:focus-visible\s*\{([^}]*)\}/.exec(
+        await readComponentCss("pagination/Pagination.css"),
+      )?.[1] ?? "";
+
+    expect(focus).toMatch(/outline:\s*2px solid\s+var\(--rr-color-focus-ring\)/);
+    expect(focus).toMatch(/outline-offset:\s*2px/);
+  });
+
+  it("marks the current page with fill plus a non-color cue (1.4.1)", async () => {
+    const current =
+      /\.rr-pagination__item\[aria-current="page"\][^{]*\{([^}]*)\}/.exec(
+        await readComponentCss("pagination/Pagination.css"),
+      )?.[1] ?? "";
+
+    expect(current).toMatch(/background:\s*var\(--rr-color-action-primary-background\)/);
+    expect(current).toMatch(/color:\s*var\(--rr-color-action-primary-text\)/);
+    expect(current).toMatch(/font-weight:\s*var\(--rr-font-weight-semibold\)/);
+  });
+
+  it("keeps the disabled rule last so it wins at equal specificity, and mutes the ellipsis", async () => {
+    const css = await readComponentCss("pagination/Pagination.css");
+    const ellipsis = /\.rr-pagination__ellipsis\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    const disabled = /\.rr-pagination__item:disabled\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+
+    expect(disabled).toMatch(/color:\s*var\(--rr-color-action-disabled-text\)/);
+    expect(css.indexOf(":disabled")).toBeGreaterThan(css.indexOf('[aria-current="page"]'));
+    expect(ellipsis).toMatch(/color:\s*var\(--rr-color-text-muted\)/);
+    expect(ellipsis).toMatch(/min-width:\s*var\(--rr-space-8\)/);
+  });
+
+  it("holds the token-only rule: no hex, no pixel design values, no keyframes, no positioning", async () => {
+    const css = stripCssComments(await readComponentCss("pagination/Pagination.css"));
+    const withoutFocusRing = css.replace(/outline[^;]*;/g, "");
+
+    expect(withoutFocusRing).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(withoutFocusRing).not.toMatch(/\d+px\b/);
+    expect(css, "no keyframes → nothing to gate under reduced motion").not.toMatch(/@keyframes/);
+    expect(css).not.toMatch(/position:\s*(absolute|fixed)/);
+  });
+
+  it("only consumes tokens that @raulrod/tokens defines", async () => {
+    await expectTokenLineage(await readComponentCss("pagination/Pagination.css"));
   });
 });

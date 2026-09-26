@@ -1,24 +1,29 @@
-import type { ProgressProps } from "./Progress.types.js";
-import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
-
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+// Behavioral spec for Progress (RRU-063, tracked in RRU-068).
+// Progress is the one component whose contract is mostly ARIA: the track owns
+// `role="progressbar"` with the label as its accessible name, `aria-valuenow` is
+// clamped so assistive tech never reads a nonsense value, and the indeterminate
+// state omits `aria-valuenow` (a moving bar has no current value) while keeping
+// its visual indicator decorative. The DOM half of the contract — rerendering
+// the announced value, forwarding the ref — lives here too, and the authored CSS
+// contract (motion tokens + reduced motion) is asserted in the same file.
+import { render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { auditA11y } from "../test-support/axe.js";
+import { expectTokenLineage, readComponentCss, stripCssComments } from "../test-support/css.js";
 
 import { Progress } from "./index.js";
 
-function render(props: ProgressProps): string {
-  return renderToStaticMarkup(<Progress {...props} />);
-}
+const progressbar = (name: string) => screen.getByRole("progressbar", { name });
 
 describe("Progress SSR contract", () => {
   it("renders a determinate progressbar with its accessible name and fixed range", () => {
-    const markup = render({ label: "Upload progress", value: 40 });
+    const markup = renderToStaticMarkup(<Progress label="Upload" value={40} />);
 
     expect(markup).toContain('role="progressbar"');
-    expect(markup).toContain('aria-label="Upload progress"');
+    expect(markup).toContain('aria-label="Upload"');
     expect(markup).toContain('aria-valuemin="0"');
     expect(markup).toContain('aria-valuemax="100"');
     expect(markup).toContain('aria-valuenow="40"');
@@ -27,19 +32,31 @@ describe("Progress SSR contract", () => {
   });
 
   it("clamps determinate values and treats non-finite values as the minimum", () => {
-    expect(render({ label: "Low", value: -20 })).toContain('aria-valuenow="0"');
-    expect(render({ label: "High", value: 140 })).toContain('aria-valuenow="100"');
-    expect(render({ label: "Unknown", value: Number.NaN })).toContain('aria-valuenow="0"');
+    expect(renderToStaticMarkup(<Progress label="Low" value={-1} />)).toContain(
+      'aria-valuenow="0"',
+    );
+    expect(renderToStaticMarkup(<Progress label="High" value={101} />)).toContain(
+      'aria-valuenow="100"',
+    );
+    expect(renderToStaticMarkup(<Progress label="Unknown" value={Number.NaN} />)).toContain(
+      'aria-valuenow="0"',
+    );
   });
 
   it("omits aria-valuenow and emits the indeterminate modifier when progress is unknown", () => {
-    const markup = render({ label: "Loading", indeterminate: true });
+    const markup = renderToStaticMarkup(<Progress label="Loading" indeterminate />);
 
     expect(markup).toContain('class="rr-progress rr-progress--indeterminate"');
     expect(markup).toContain('aria-valuemin="0"');
     expect(markup).toContain('aria-valuemax="100"');
     expect(markup).not.toContain("aria-valuenow");
     expect(markup).toContain('class="rr-progress__indicator" style="width:35%"');
+  });
+
+  it("keeps the visual indicator decorative", () => {
+    const markup = renderToStaticMarkup(<Progress label="Loading" indeterminate />);
+
+    expect(markup).toContain('aria-hidden="true" class="rr-progress__indicator"');
   });
 
   it("merges className and passes native attributes through to the root", () => {
@@ -59,74 +76,97 @@ describe("Progress SSR contract", () => {
     expect(markup).toContain('title="Processing files"');
     expect(markup).toContain('data-state="active"');
     expect(markup).toContain('aria-valuetext="25 percent complete"');
-    expect(markup).toContain('class="rr-progress probe"');
-  });
-
-  it("keeps the visual indicator decorative", () => {
-    const markup = render({ label: "Loading", indeterminate: true });
-    expect(markup).toContain('aria-hidden="true" class="rr-progress__indicator"');
+    expect(markup).toMatch(/class="rr-progress probe"/);
   });
 });
 
 describe("Progress DOM contract", () => {
-  let host: HTMLDivElement | null = null;
-  let root: Root | null = null;
-
-  function mount(element: ReactElement): void {
-    host = document.createElement("div");
-    document.body.appendChild(host);
-    root = createRoot(host);
-    act(() => root?.render(element));
-  }
-
-  function rerender(element: ReactElement): void {
-    act(() => root?.render(element));
-  }
-
-  afterEach(() => {
-    act(() => root?.unmount());
-    root = null;
-    host?.remove();
-    host = null;
-  });
-
   it("updates the announced value and visual width when props change", () => {
-    mount(<Progress label="Upload" value={20} />);
-    let progress = document.querySelector<HTMLElement>(".rr-progress");
-    let indicator = document.querySelector<HTMLElement>(".rr-progress__indicator");
-    expect(progress?.getAttribute("aria-valuenow")).toBe("20");
-    expect(indicator?.style.width).toBe("20%");
+    const { rerender } = render(<Progress label="Upload" value={20} />);
+    expect(progressbar("Upload")).toHaveAttribute("aria-valuenow", "20");
+    expect(document.querySelector<HTMLElement>(".rr-progress__indicator")?.style.width).toBe("20%");
 
     rerender(<Progress label="Upload" value={80} />);
-    progress = document.querySelector<HTMLElement>(".rr-progress");
-    indicator = document.querySelector<HTMLElement>(".rr-progress__indicator");
-    expect(progress?.getAttribute("aria-valuenow")).toBe("80");
-    expect(indicator?.style.width).toBe("80%");
+    expect(progressbar("Upload")).toHaveAttribute("aria-valuenow", "80");
+    expect(document.querySelector<HTMLElement>(".rr-progress__indicator")?.style.width).toBe("80%");
 
     rerender(<Progress label="Upload" indeterminate />);
-    progress = document.querySelector<HTMLElement>(".rr-progress");
-    expect(progress?.hasAttribute("aria-valuenow")).toBe(false);
-    expect(progress?.className).toContain("rr-progress--indeterminate");
+    expect(progressbar("Upload")).not.toHaveAttribute("aria-valuenow");
+    expect(progressbar("Upload").className).toContain("rr-progress--indeterminate");
   });
 
   it("forwards the ref to the progressbar root", () => {
-    const ref: { current: HTMLDivElement | null } = { current: null };
-    mount(
-      <Progress
-        label="Upload"
-        value={10}
-        ref={(node) => {
-          ref.current = node;
-        }}
-      />,
-    );
+    const ref = createRef<HTMLDivElement>();
+    render(<Progress label="Upload" value={10} ref={ref} />);
 
     expect(ref.current).toBe(document.querySelector(".rr-progress"));
-    expect(ref.current?.getAttribute("role")).toBe("progressbar");
+    expect(ref.current).toHaveAttribute("role", "progressbar");
   });
 
   it("is a genuine forwardRef with a stable displayName", () => {
     expect(Progress.$$typeof).toBe(Symbol.for("react.forward_ref"));
     expect(Progress.displayName).toBe("Progress");
+  });
+
+  it("has no axe violations in both states", async () => {
+    const { container } = render(
+      <>
+        <Progress label="Upload" value={40} />
+        <Progress label="Loading" indeterminate />
+      </>,
+    );
+
+    await expect(auditA11y(container)).resolves.toHaveNoViolations();
+  });
+});
+
+describe("Progress authored CSS contract", () => {
+  it("builds the track and the indicator from tokens", async () => {
+    const css = await readComponentCss("progress/Progress.css");
+    const track = /\.rr-progress\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    const indicator = /\.rr-progress__indicator\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+
+    expect(track).toMatch(/display:\s*block/);
+    expect(track).toMatch(/width:\s*100%/);
+    expect(track).toMatch(/height:\s*var\(--rr-space-2\)/);
+    expect(track).toMatch(/overflow:\s*hidden/);
+    expect(track).toMatch(/background-color:\s*var\(--rr-color-background-sunken\)/);
+    expect(track).toMatch(/border-radius:\s*var\(--rr-radius-full\)/);
+    expect(indicator).toMatch(/display:\s*block/);
+    expect(indicator).toMatch(/height:\s*100%/);
+    expect(indicator).toMatch(/background-color:\s*var\(--rr-color-action-primary-background\)/);
+    expect(indicator).toMatch(
+      /transition:\s*width var\(--rr-motion-duration-base\) var\(--rr-motion-easing-standard\)/,
+    );
+  });
+
+  it("animates the indeterminate state with the motion tokens and loops", async () => {
+    const css = await readComponentCss("progress/Progress.css");
+
+    expect(css).toMatch(/@keyframes rr-progress-indeterminate/);
+    expect(css).toMatch(
+      /\.rr-progress--indeterminate \.rr-progress__indicator\s*\{[\s\S]*animation:\s*rr-progress-indeterminate var\(--rr-motion-duration-slow\)\s+var\(--rr-motion-easing-standard\)\s+infinite/,
+    );
+  });
+
+  it("disables the motion under prefers-reduced-motion", async () => {
+    const css = await readComponentCss("progress/Progress.css");
+
+    expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
+    expect(css).toMatch(
+      /\.rr-progress--indeterminate \.rr-progress__indicator\s*\{\s*animation-name:\s*var\(--rr-motion-behavior-reduced\)/,
+    );
+    expect(css).toMatch(/transition:\s*none/);
+  });
+
+  it("holds the token-only rule: no hex, no pixel design values", async () => {
+    const css = stripCssComments(await readComponentCss("progress/Progress.css"));
+
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(css).not.toMatch(/\d+px\b/);
+  });
+
+  it("only consumes tokens that @raulrod/tokens defines", async () => {
+    await expectTokenLineage(await readComponentCss("progress/Progress.css"));
   });
 });

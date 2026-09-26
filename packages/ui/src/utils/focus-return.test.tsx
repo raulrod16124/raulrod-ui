@@ -1,30 +1,19 @@
 // Behavioral spec for useFocusReturn (RRU-052, DoD #1): focus returns to the
 // element that had focus when the overlay activated — on deactivation and on
 // unmount. Runs in happy-dom with real focus via document.activeElement.
-import type { ReactElement } from "react";
-import type { Root } from "react-dom/client";
-
-import { act } from "react";
-import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { useFocusReturn } from "./focus-return.js";
 
-let host: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-function render(ui: ReactElement): void {
-  root = createRoot(host as HTMLDivElement);
-  act(() => root!.render(ui));
-}
-
-function rerender(ui: ReactElement): void {
-  act(() => root!.render(ui));
-}
-
 function Overlay({ active }: { active: boolean }) {
   useFocusReturn({ active });
-  return <div data-testid="panel">panel content</div>;
+  return (
+    <div data-testid="panel" tabIndex={-1}>
+      panel content
+    </div>
+  );
 }
 
 /** The trigger lives OUTSIDE the mountable overlay subtree so unmount tests
@@ -39,58 +28,52 @@ function Scenario({ mounted, active }: { mounted: boolean; active: boolean }) {
   );
 }
 
-beforeEach(() => {
-  host = document.createElement("div");
-  document.body.appendChild(host);
-});
+const trigger = () => screen.getByTestId("trigger");
+const panel = () => screen.getByTestId("panel");
 
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  host?.remove();
-  host = null;
+beforeEach(() => {
+  document.body.focus();
 });
 
 describe("useFocusReturn", () => {
-  it("restores focus to the trigger when the overlay deactivates", () => {
-    render(<Scenario mounted active={false} />);
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    const panel = document.querySelector<HTMLDivElement>("[data-testid='panel']")!;
+  it("restores focus to the trigger when the overlay deactivates", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Scenario mounted active={false} />);
 
-    act(() => trigger.focus());
-    expect(document.activeElement).toBe(trigger);
+    await user.click(trigger());
+    expect(document.activeElement).toBe(trigger());
 
     // Activation captures the trigger (effect runs after the active=true commit).
     rerender(<Scenario mounted active />);
-    act(() => panel.focus());
-    expect(document.activeElement).toBe(panel);
+    await user.click(panel());
+    expect(document.activeElement).toBe(panel());
 
     rerender(<Scenario mounted active={false} />);
-    expect(document.activeElement).toBe(trigger);
+    expect(document.activeElement).toBe(trigger());
   });
 
-  it("restores focus on unmount while active", () => {
-    render(<Scenario mounted active={false} />);
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    const panel = document.querySelector<HTMLDivElement>("[data-testid='panel']")!;
+  it("restores focus on unmount while active", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Scenario mounted active={false} />);
 
-    act(() => trigger.focus());
+    await user.click(trigger());
     // Activate AFTER focusing the trigger so the capture is the trigger.
     rerender(<Scenario mounted active />);
-    act(() => panel.focus());
-    expect(document.activeElement).toBe(panel);
+    await user.click(panel());
+    expect(document.activeElement).toBe(panel());
 
     // Unmount only the overlay: trigger stays in the DOM and receives focus back.
     rerender(<Scenario mounted={false} active={false} />);
-    expect(document.activeElement).toBe(trigger);
+    expect(document.activeElement).toBe(trigger());
   });
 
-  it("does not steal focus when the overlay never activated", () => {
-    render(<Scenario mounted active={false} />);
-    const trigger = document.querySelector<HTMLButtonElement>("[data-testid='trigger']")!;
-    act(() => trigger.focus());
+  it("does not steal focus when the overlay never activated", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Scenario mounted active={false} />);
+
+    await user.click(trigger());
 
     rerender(<Scenario mounted={false} active={false} />);
-    expect(document.activeElement).toBe(trigger);
+    expect(document.activeElement).toBe(trigger());
   });
 });
