@@ -13,6 +13,7 @@ import { Heading, Stack, Text, ToastProvider } from "@raulrod/ui";
 
 import "./app.css";
 
+import { A11yReviewSection } from "./a11y-review-section.js";
 import { FormSection } from "./form-section.js";
 import { OverlaysSection } from "./overlays-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
@@ -45,6 +46,20 @@ export function App() {
                 Form
               </Heading>
               <FormSection />
+            </section>
+
+            {/* The surface the manual a11y review (RRU-071) walks: the sensitive
+                components that had no consumer page to review on. Anchor:
+                `#a11y-review-section-title`. */}
+            <section
+              aria-labelledby="a11y-review-section-title"
+              className="pg-section"
+              id="a11y-review"
+            >
+              <Heading as="h2" className="pg-section__title" id="a11y-review-section-title">
+                A11y review
+              </Heading>
+              <A11yReviewSection />
             </section>
           </Stack>
         </main>

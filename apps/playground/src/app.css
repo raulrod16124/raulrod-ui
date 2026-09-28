@@ -62,3 +62,25 @@ body {
   color: var(--rr-color-text-primary);
   cursor: pointer;
 }
+
+/* A11y review surface (RRU-071). Same token-only rule as the rest of the app;
+   the only non-token values are the two fixed focus colours of the skip link,
+   which is the WCAG 2.4.11/2.4.13 "visible focus" pair (see color.md §6.3). */
+.pg-skip-link {
+  border-radius: var(--rr-radius-sm);
+  color: var(--rr-color-text-inverse);
+  background: var(--rr-color-action-primary-background);
+  padding: var(--rr-space-2) var(--rr-space-3);
+  text-decoration: none;
+}
+
+.pg-skip-link:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.pg-skeleton {
+  display: block;
+  width: 8rem;
+  height: 1rem;
+}
