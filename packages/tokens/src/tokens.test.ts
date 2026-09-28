@@ -12,18 +12,26 @@
 //      inverse `#ffffff`), and no color primitive is orphaned;
 //   5. WCAG AA contrast for every authorized pair, light + dark (color.md §6).
 //
+// The contrast POLICY (formula + authorized table + thresholds) lives in
+// `./contrast.ts` and not here: RRU-072 consumes the same table to check the
+// pairs the component stylesheets paint, and a table that existed only in this
+// spec would force either a duplicate or an unenforced promise.
+//
 // `collectTokenProblems` is a pure function, so the suite also feeds it
 // deliberately broken fixtures: a gate that has never been seen failing is not
 // evidence of anything. That replaces the manual negative probes done in past
 // sessions with a permanent, automated self-check.
+import type { AuthorizedPair } from "./contrast.js";
 import type { SemanticColorPair, SemanticLayerValue, TokenLayers } from "./taxonomy.js";
 
 import { describe, expect, it } from "vitest";
 
+import { AUTHORIZED_PAIRS, COLOR_HEX_RE, contrastRatio } from "./contrast.js";
+
 import { component, primitives, semantic } from "./index.js";
 
 const FIXED_INVERSE = "#ffffff";
-const HEX_RE = /^#[0-9a-f]{6}$/i;
+const HEX_RE = COLOR_HEX_RE;
 // Segments may start with a digit (`font.size.2xs`) and contain internal hyphens
 // (`font.numeric.tabular-nums`). First segment starts with a letter. Min 2
 // segments so single-role keys (`shadow.sm`, `z.modal`, `breakpoint.sm`) are valid.
@@ -74,81 +82,10 @@ const SEMANTIC_DOMAIN_RULES: Record<string, ValueRule | Record<string, ValueRule
   z: (value) => typeof value === "number" && Number.isInteger(value) && value >= 0,
 };
 
-// --- WCAG 2.1 relative luminance and contrast ratio --------------------------
-function parseHex(hex: string): [number, number, number] {
-  const match = HEX_RE.exec(hex);
-  if (!match) throw new Error(`"${hex}" is not a #RRGGBB hex`);
-  return [
-    parseInt(match[0].slice(1, 3), 16),
-    parseInt(match[0].slice(3, 5), 16),
-    parseInt(match[0].slice(5, 7), 16),
-  ];
-}
-
-function toLinear(channel: number): number {
-  const srgb = channel / 255;
-  return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
-}
-
-export function luminance(hex: string): number {
-  const [r, g, b] = parseHex(hex);
-  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-}
-
-export function contrastRatio(foreground: string, background: string): number {
-  const first = luminance(foreground);
-  const second = luminance(background);
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
-}
-
 // --- Authorized contrast pairs (color.md §6) ---------------------------------
-// [foreground, background, threshold, appliesToLight, appliesToDark]
-export type AuthorizedPair = readonly [
-  foreground: string,
-  background: string,
-  threshold: number,
-  inLight: boolean,
-  inDark: boolean,
-];
-
-export const AUTHORIZED_PAIRS: readonly AuthorizedPair[] = [
-  ["color.text.primary", "color.background.default", 4.5, true, true],
-  ["color.text.primary", "color.background.surface", 4.5, true, true],
-  // Table row hover (RRU-065): the body row fills background.sunken on hover
-  // under the same text.primary — color.md §6.1 rows (15.11:1 light /
-  // 11.42:1 dark).
-  ["color.text.primary", "color.background.sunken", 4.5, true, true],
-  ["color.text.muted", "color.background.default", 4.5, true, true],
-  ["color.text.muted", "color.background.surface", 4.5, true, true],
-  ["color.text.danger", "color.background.default", 4.5, true, true],
-  ["color.text.danger", "color.background.surface", 4.5, true, true],
-  // Neutral Badge (RRU-049): reuses sunken + muted instead of dedicated tokens —
-  // color.md §6.1 rows (4.81:1 light / 5.11:1 dark).
-  ["color.text.muted", "color.background.sunken", 4.5, true, true],
-  // Status tints for Badge/Toast (RRU-049, deferred from RRU-021 — color.md
-  // §5.3/§6.1): soft tint background + dark text, AA ≥4.5 in both themes.
-  ["color.text.success", "color.background.success", 4.5, true, true],
-  ["color.text.warning", "color.background.warning", 4.5, true, true],
-  ["color.text.info", "color.background.info", 4.5, true, true],
-  ["color.text.destructive", "color.background.destructive", 4.5, true, true],
-  ["color.action.secondary.text", "color.action.secondary.background", 4.5, true, true],
-  ["color.action.secondary.text", "color.action.secondary.background.hover", 4.5, true, true],
-  ["color.action.primary.text", "color.action.primary.background", 4.5, true, true],
-  ["color.action.primary.text", "color.action.primary.background.hover", 4.5, true, true],
-  ["color.action.destructive.text", "color.action.destructive.background", 4.5, true, true],
-  ["color.action.destructive.text", "color.action.destructive.background.hover", 4.5, true, true],
-  ["color.action.success.text", "color.action.success.background", 4.5, true, true],
-  ["color.action.success.text", "color.action.success.background.hover", 4.5, true, true],
-  ["color.action.info.text", "color.action.info.background", 4.5, true, true],
-  ["color.action.info.text", "color.action.info.background.hover", 4.5, true, true],
-  ["color.border.strong", "color.background.default", 3.0, true, true],
-  ["color.border.danger", "color.background.default", 3.0, true, true],
-  ["color.focus.ring", "color.background.default", 3.0, true, true],
-  ["color.focus.ring", "color.background.surface", 3.0, true, true],
-  ["color.action.primary.background", "color.background.default", 3.0, true, false],
-  ["color.action.primary.background", "color.background.surface", 3.0, true, false],
-  ["color.action.destructive.background", "color.background.default", 3.0, true, false],
-];
+// Re-exported through the package root so `tokens.test.ts` and the component
+// gate in `@raulrod/ui` (RRU-072) assert against ONE table.
+export { AUTHORIZED_PAIRS };
 
 function isThemePair(value: SemanticLayerValue | undefined): value is SemanticColorPair {
   return typeof value === "object" && value !== null && "light" in value && "dark" in value;

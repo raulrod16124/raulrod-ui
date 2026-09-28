@@ -201,4 +201,15 @@
   .rr-select-listbox {
     animation-name: var(--rr-motion-behavior-reduced);
   }
+
+  /* The chevron rotation is MOTION (WCAG 2.3.3), not a colour affordance: it is
+     a `transform` transition, so the RRU-072 policy puts it under the guard.
+     Without this the only reduced-motion opt-out of the component was the listbox
+     fade and the rotation still played. `transition: none` is the established
+     escape (Switch.css / Progress.css precedent) because there is no token for
+     "no transition" — `motion.behavior.default` is `auto`, which is not a valid
+     `<time>`. */
+  .rr-select-icon {
+    transition: none;
+  }
 }

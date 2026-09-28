@@ -6,6 +6,18 @@ import type { primitives } from "./primitives.js";
 import type { semantic } from "./semantic.js";
 
 export { component } from "./component.js";
+export {
+  AUTHORIZED_PAIRS,
+  COLOR_HEX_RE,
+  NON_TEXT_CONTRAST_MIN,
+  TEXT_CONTRAST_MIN,
+  authorizedThemes,
+  contrastRatio,
+  findAuthorizedPair,
+  luminance,
+  requiredContrast,
+} from "./contrast.js";
+export type { AuthorizedPair, PairKind } from "./contrast.js";
 export { primitives } from "./primitives.js";
 export { semantic } from "./semantic.js";
 export type { ComponentKey, PrimitiveKey, SemanticKey, TokenLayer } from "./taxonomy.js";
