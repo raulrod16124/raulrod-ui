@@ -8,7 +8,9 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "dev:playground": "node tools/dev-playground.mjs",
+    "lint": "turbo run lint && pnpm lint:root",
+    "lint:root": "eslint tools",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
