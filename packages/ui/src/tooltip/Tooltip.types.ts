@@ -1,20 +1,20 @@
 import type { PopoverPlacement } from "../utils/popover.js";
 import type { HTMLAttributes, ReactNode } from "react";
 
-/** Shared floating `placement` union (single source in `utils/popover.ts`,
- *  RRU-054) — the Tooltip consumes the same flip/overflow geometry. Re-exported
+/** Shared floating `placement` union (single source in `utils/popover.ts`)
+ *  — the Tooltip consumes the same flip/overflow geometry. Re-exported
  *  under its canonical name for discoverability. */
 export type { PopoverPlacement } from "../utils/popover.js";
 
 /**
- * Props of {@link Tooltip} (RRU-056). SIMPLE API (guide §15 anti-dogma,
+ * Props of {@link Tooltip}. SIMPLE API (guide §15 anti-dogma,
  * ADR-004 "render-prop only for DOM wiring"): the composition root also IS the
  * anchor — a `<span class="rr-tooltip-trigger">` that wraps the consumer's
- * element, so no `asChild`/polymorphism is needed (closed decision RRU-031).
+ * element, so no `asChild`/polymorphism is needed (closed decision).
  *
  * A11y contract: the tooltip content is ALWAYS SUPPLEMENTARY / non-essential
  * (card DoD branch). The underlying control must carry its own complete
- * accessible name (e.g. IconButton's required `label`, RRU-042); the tooltip
+ * accessible name (e.g. IconButton's required `label`); the tooltip
  * is a hover/focus hint and is NOT automatically wired via `aria-describedby`
  * (that relationship would require reaching into the consumer's element,
  * which the no-asChild boundary forbids).
@@ -31,7 +31,7 @@ export interface TooltipProps extends Omit<HTMLAttributes<HTMLSpanElement>, "con
   content: ReactNode;
   /** Side + alignment relative to the trigger (default `"top"`, centered).
    *  Mirrors to the opposite side and clamps to the viewport when space runs
-   *  out (shared `computePopoverPosition` geometry, RRU-054). */
+   *  out (shared `computePopoverPosition` geometry). */
   placement?: PopoverPlacement;
   /** Hover open delay in ms (default `500`). Focus opens WITHOUT delay — a
    *  keyboard user must never wait. */

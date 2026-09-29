@@ -7,7 +7,7 @@ import { flexClasses } from "../utils/flex.js";
 
 /**
  * Horizontal (`flex-direction: row`) layout primitive with token-typed
- * `gap` (RRU-031). Renders a plain `div`; wrap it in the semantic element
+ * `gap`. Renders a plain `div`; wrap it in the semantic element
  * your content needs. Styling lives entirely in `Inline.css` (`rr-*` classes
  * over CSS custom properties, ADR-003).
  */

@@ -1,7 +1,7 @@
 import type { HTMLAttributes, LabelHTMLAttributes, ReactNode } from "react";
 
 /**
- * Props a control must receive to be wired into a {@link FormField} (RRU-044).
+ * Props a control must receive to be wired into a {@link FormField}.
  * Distributed by {@link useFormField} and by `<FormField.Control>` (render-prop
  * or the root as children-as-function). Spread these onto the control element:
  * `id` is what `FormField.Label` points to via `htmlFor`; the ARIA attributes
@@ -11,7 +11,7 @@ import type { HTMLAttributes, LabelHTMLAttributes, ReactNode } from "react";
  * `aria-invalid` is `true` only when the `<FormField.Error>` slot is present;
  * when there is no error the key is omitted (React drops `undefined`), so Input
  * keeps its default border (Input drives its danger border from the native
- * `aria-invalid`, RRU-043 decision).
+ * `aria-invalid` decision).
  */
 export interface FormFieldControlProps {
   /** The generated control id; matched by `FormField.Label#htmlFor`. */
@@ -22,7 +22,7 @@ export interface FormFieldControlProps {
 }
 
 /**
- * Internal context payload of {@link FormField} (RRU-044). `field` is what
+ * Internal context payload of {@link FormField}. `field` is what
  * `useFormField()` and the `<FormField.Control>` render-prop receive; the ids
  * are what the `<FormField.Description>` / `<FormField.Error>` slots stamp on
  * their own elements so the control's ARIA references resolve.
@@ -35,7 +35,7 @@ export interface FormFieldContextValue {
 }
 
 /**
- * Props of {@link FormField} (RRU-044), the composition root that wires
+ * Props of {@link FormField}, the composition root that wires
  * Label–Description–Control–Error. Compound API (component-pattern.mdx §6,
  * guide §13): the root only generates ids + ARIA from the slot PRESENCE in its
  * children tree and exposes that payload through the context; the consumer

@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding a `SwitchSize` member breaks
+/** Exhaustive axis maps: adding a `SwitchSize` member breaks
  *  compilation here until its suffix exists — and the authored CSS contract
  *  check fails until the matching `rr-switch--size-*` selector is written. */
 const switchModifiers: Readonly<{
@@ -21,7 +21,7 @@ const switchModifiers: Readonly<{
 const switchClasses = createVariants(switchModifiers);
 
 /**
- * Native toggle switch (RRU-048, WAI-ARIA switch pattern). Renders a `<label>`
+ * Native toggle switch (WAI-ARIA switch pattern). Renders a `<label>`
  * row wrapping a bare `<input type="checkbox" role="switch">` (native-first,
  * Checkbox/Radio precedent) and a visible `<span>` label with `children`.
  * `role="switch"` and the on/off state come from the native checkbox mapping

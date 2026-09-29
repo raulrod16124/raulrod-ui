@@ -1,8 +1,8 @@
 import type { HTMLAttributes } from "react";
 
 /**
- * Square size axis of {@link Avatar} (RRU-050). `sm`/`md`/`lg` = 32/40/48px,
- * the Switch (RRU-048) scale — `space-8/10/12` — with the initials font scaled
+ * Square size axis of {@link Avatar}. `sm`/`md`/`lg` = 32/40/48px,
+ * the Switch scale — `space-8/10/12` — with the initials font scaled
  * per size (`sm`→`font.size.xs`, `md`→`font.size.sm`, `lg`→`font.size.base`).
  * `md` is the default and lives in the base CSS class (`Stack.gap` /
  * `Button.size` precedent), so an explicit `size` emits the `rr-avatar--size-*`
@@ -11,7 +11,7 @@ import type { HTMLAttributes } from "react";
 export type AvatarSize = "sm" | "md" | "lg";
 
 /**
- * Props of {@link Avatar} (RRU-050): a non-interactive square image, or an
+ * Props of {@link Avatar}: a non-interactive square image, or an
  * initials fallback derived from `name` when there is no image (or the image
  * fails to load). `name` is **required** (IconButton `label` precedent —
  * TS2741 when omitted) because it drives both the initials and the accessible

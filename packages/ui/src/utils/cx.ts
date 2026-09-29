@@ -1,10 +1,10 @@
 /**
- * Class name composition utility (RRU-030).
+ * Class name composition utility.
  * Joins truthy values with a single space, dropping `false`, `null`,
  * `undefined`, `0` and empty strings so callers can write conditional classes
  * inline (`cx("base", isActive && "active")`). Nested arrays are flattened.
- * Zero dependencies by design: no `clsx`/`tailwind-merge` in the MVP (RRU-030
- * DoD); note this utility does NOT deduplicate classes nor merge Tailwind-like
+ * Zero dependencies by design: no `clsx`/`tailwind-merge` in the MVP (DoD);
+ * note this utility does NOT deduplicate classes nor merge Tailwind-like
  * conflicts.
  */
 export type CxValue = string | number | false | null | undefined | CxValue[];

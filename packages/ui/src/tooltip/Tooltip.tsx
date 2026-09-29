@@ -10,13 +10,13 @@ import { useId } from "../utils/use-id.js";
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 
 /**
- * Tooltip (RRU-056): a supplementary hover/focus hint floating next to an
+ * Tooltip: a supplementary hover/focus hint floating next to an
  * arbitrary trigger (guide §14, WAI-ARIA Tooltip pattern). SIMPLE API — no
  * provider, no slots: the root renders the ANCHOR itself, a neutral
  * `<span class="rr-tooltip-trigger">` wrapping the consumer's element, and
  * portals a `<div role="tooltip">` to `document.body` while visible.
  *
- * Why a wrapper span and not `asChild`/polymorphism (closed decision RRU-031,
+ * Why a wrapper span and not `asChild`/polymorphism (closed decision,
  * ADR-004): the anchor measures/predicts through the wrapper, pointer events
  * and focus (blur/focus) bubble from the real control up to it, and a DISABLED
  * control still triggers the tooltip (the wrapper keeps receiving the events).

@@ -1,9 +1,9 @@
 import type { ButtonHTMLAttributes } from "react";
 
 /**
- * Visual variant of {@link IconButton} (RRU-042). Local union mirroring
- * Button's set (RRU-041, user decision: full parity), not derived from
- * `component.ts` (RRU-026): the component layer owns no keys for the
+ * Visual variant of {@link IconButton}. Local union mirroring
+ * Button's set (user decision: full parity), not derived from
+ * `component.ts`: the component layer owns no keys for the
  * outline/ghost/link families and deriving would force speculative tokens
  * (component-pattern.mdx §8).
  */
@@ -11,7 +11,7 @@ export type IconButtonVariant =
   "primary" | "secondary" | "outline" | "ghost" | "destructive" | "link";
 
 /**
- * Size axis of {@link IconButton} (RRU-042). `md` is the default and lives in
+ * Size axis of {@link IconButton}. `md` is the default and lives in
  * the `.rr-icon-button` CSS base class (Stack.gap precedent,
  * component-pattern.mdx §4.1) — no default is applied in JS for this axis.
  * Each size squares the control to Button's height (sm=24/md=34/lg=46), so
@@ -20,7 +20,7 @@ export type IconButtonVariant =
 export type IconButtonSize = "sm" | "md" | "lg";
 
 /**
- * Props of {@link IconButton} (RRU-042): compact icon-only action control.
+ * Props of {@link IconButton}: compact icon-only action control.
  * Always renders a `<button>` (no `as`/`href` polymorphism — that bounded
  * polymorphism is Button's DoD; IconButton's is icon-only semantics).
  *

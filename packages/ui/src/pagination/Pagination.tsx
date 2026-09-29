@@ -11,7 +11,7 @@ import { VisuallyHidden } from "../visually-hidden/index.js";
 import { paginationRange } from "./pagination-range.js";
 
 /**
- * Pagination (RRU-064): a labelled `nav` landmark whose controls each move the
+ * Pagination: a labelled `nav` landmark whose controls each move the
  * user to a page of the same list — previous/next buttons, numbered page
  * buttons and ellipsis markers when the window cannot cover every page.
  * SIMPLE props API (ADR-004 router): every control derives from
@@ -31,13 +31,13 @@ import { paginationRange } from "./pagination-range.js";
  * - The ellipsis is a non-interactive, `aria-hidden` `<span>` inside a `<li>`:
  *   announcing "ellipsis" adds noise without information; it is never a focus
  *   stop (1.3.1 structure stays a real list).
- * - A `role="status"` polite live region (VisuallyHidden, RRU-033 precedent of
- *   Select's `selectedLabel`) is ALWAYS mounted and announces "Page X of Y" on
+ * - A `role="status"` polite live region (VisuallyHidden, Select `selectedLabel`
+ *   precedent) is ALWAYS mounted and announces "Page X of Y" on
  *   each page change — WCAG 4.1.3 for the SPA case, where the list swaps in
  *   place without navigation (precond: the region exists before the update).
  *   `announcePageChange={false}` unmounts it for the composer that owns the
- *   announcement channel (DataTable, RRU-119): two polite regions would queue
- *   the same sentence twice.
+ * announcement channel (DataTable): two polite regions would queue
+ * the same sentence twice.
  * - Boundary disabled: previous at page 1 / next at page pageCount use native
  *   `disabled` (Button precedent) — removed from the tab order, announced as
  *   dimmed, action impossible by construction.

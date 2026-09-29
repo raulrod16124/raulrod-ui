@@ -8,7 +8,7 @@ import { Loader2 } from "@raulrod/icons";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding a `ButtonVariant`/`ButtonSize`
+/** Exhaustive axis maps: adding a `ButtonVariant`/`ButtonSize`
  *  member breaks compilation here until its suffix exists — and the authored
  *  CSS contract check fails until the matching `rr-*--*` selector is written. */
 const buttonModifiers: Readonly<{
@@ -33,7 +33,7 @@ const buttonModifiers: Readonly<{
 const buttonClasses = createVariants(buttonModifiers);
 
 /**
- * Action control (RRU-041). Renders a `<button>`, or an `<a>` when `href` is
+ * Action control. Renders a `<button>`, or an `<a>` when `href` is
  * present (bounded polymorphism — same accepted pattern as Heading's `as`;
  * without `href` it is never a link, DoD #2). `loading` shows the spinner,
  * sets `aria-busy` and disables interaction natively (`disabled`) or via

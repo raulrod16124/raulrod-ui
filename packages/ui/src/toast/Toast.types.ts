@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Semantic tone of a toast (RRU-059), coherent with {@link Badge} variants
- * (RRU-049) and the alert-tint tokens `color.text.*`/`color.background.*`
+ * Semantic tone of a toast, coherent with {@link Badge} variants and the alert-tint tokens `color.text.*`/`color.background.*`
  * (color.md §5.3). The tone decides BOTH the role (DoD #1) and the accent icon.
  */
 export type ToastTone = "info" | "success" | "warning" | "destructive";
@@ -20,7 +19,7 @@ export type ToastRole = "status" | "alert";
  * Payload accepted by {@link ToastApi.toast}. Object-parameter convention
  * (docs/typescript.md §5). `title` is REQUIRED — a toast always carries a piece
  * of content the reader announces (compile-time help, precedent IconButton
- * `label` RRU-042 / Avatar `name` RRU-050).
+ * `label` / Avatar `name`).
  */
 export interface ToastInput {
   /** Semantic tone; defaults to `info`. Drives role + accent icon. */
@@ -39,7 +38,7 @@ export interface ToastInput {
 }
 
 /**
- * Props of {@link ToastProvider} (RRU-059), the composition root of the
+ * Props of {@link ToastProvider}, the composition root of the
  * notification system (ADR-004). A pure provider: it renders no element of its
  * own (documented exception to the ref convention) — the portaled viewport and
  * the toasts are its internal runtime model. The system STARTING STATE is

@@ -7,7 +7,7 @@ import { createVariants } from "../utils/variants.js";
 
 import { RadioGroupContext } from "./RadioGroup.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding a `RadioSize` member breaks
+/** Exhaustive axis maps: adding a `RadioSize` member breaks
  *  compilation here until its suffix exists — and the authored CSS contract
  *  check fails until the matching `rr-radio--size-*` selector is written. */
 const radioModifiers: Readonly<{
@@ -23,7 +23,7 @@ const radioModifiers: Readonly<{
 const radioClasses = createVariants(radioModifiers);
 
 /**
- * Single native radio option (RRU-047). Renders a `<label>` row wrapping a
+ * Single native radio option. Renders a `<label>` row wrapping a
  * bare `<input type="radio">` (Input/Textarea/Checkbox precedent) so the
  * native semantics come for free: `role="radio"` + `aria-checked` from the
  * input, implicit label association (whole row clickable, DoD "labels

@@ -4,7 +4,7 @@ import { useId as useReactId } from "react";
  * Normalizes a raw id fragment (React's `useId` emits `:r0:`) into an
  * alphanumeric core so the result is safe to use anywhere a DOM/CSS
  * identifier is expected (`htmlFor`, `aria-labelledby`, selectors). Pure and
- * deterministic so it can be tested without rendering (RRU-030).
+ * deterministic so it can be tested without rendering.
  * @internal exported only for unit checking; not part of the public API.
  */
 export function sanitizeId(fragment: string): string {

@@ -5,7 +5,7 @@ import { forwardRef, useState } from "react";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding a `TextareaSize` member
+/** Exhaustive axis maps: adding a `TextareaSize` member
  *  breaks compilation here until its suffix exists — and the authored CSS
  *  contract check fails until the matching `rr-textarea--size-*` selector is
  *  written. */
@@ -22,10 +22,10 @@ const textareaModifiers: Readonly<{
 const textareaClasses = createVariants(textareaModifiers);
 
 /**
- * Multiline text field (RRU-045). Renders a `<textarea>`; `size` defaults to
+ * Multiline text field. Renders a `<textarea>`; `size` defaults to
  * `md` in the CSS base class (component-pattern.mdx §4.1). The invalid state
  * is driven by the native `aria-invalid` attribute — no prop, no dual
- * activation path (RRU-043 decision): pass `aria-invalid` and the
+ * activation path: pass `aria-invalid` and the
  * `.rr-textarea[aria-invalid="true"]` rule applies the danger border.
  * Styling lives entirely in `Textarea.css` (`rr-*` classes over CSS custom
  * properties, ADR-003); the resting border uses `color.border.strong` because
@@ -37,7 +37,7 @@ const textareaClasses = createVariants(textareaModifiers);
  * follows its content. `id`/ARIA/`className` stay on the interactive
  * `<textarea>`; the wrapper is purely presentational. The mirror re-syncs on
  * input via internal state + `onChange` chaining (consumer handler still fires
- * untouched); runtime coverage of the dynamic path lands with Vitest (RRU-068).
+ * untouched); runtime coverage of the dynamic path lands with Vitest.
  *
  * Native `name`/`rows`/`cols`/`value`/`onChange`/`placeholder`/`disabled`/
  * `maxLength`/ARIA pass through; `className` is merged via `cx`.

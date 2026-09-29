@@ -7,7 +7,7 @@ import { Loader2 } from "@raulrod/icons";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): same guarantee as Button — adding
+/** Exhaustive axis maps: same guarantee as Button — adding
  *  a `IconButtonVariant`/`IconButtonSize` member breaks compilation here until
  *  its suffix exists, and the authored CSS contract check (check-icon-button.mjs)
  *  fails until the matching `rr-*--*` selector is written. */
@@ -33,12 +33,11 @@ const iconButtonModifiers: Readonly<{
 const iconButtonClasses = createVariants(iconButtonModifiers);
 
 /**
- * Compact icon-only action control (RRU-042). Always renders a `<button>`; the
+ * Compact icon-only action control. Always renders a `<button>`; the
  * icon (usually from `@raulrod/icons`) is passed as `children` and wrapped in
  * an `aria-hidden` span — the accessible name comes exclusively from the
  * required `label` prop, rendered as `aria-label` (DoD #1, ADR-007): no hidden
- * text, no duplicated SVG label. No tooltip in the MVP (closed decision — see
- * RRU-056); the accessible name is the labelling channel.
+ * text, no duplicated SVG label. No tooltip in the MVP; the accessible name is the labelling channel.
  *
  * `loading` swaps the icon for the spinner and disables the control natively,
  * keeping `aria-label` intact (state announced via `aria-busy`). `variant`

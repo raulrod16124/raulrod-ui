@@ -11,7 +11,7 @@ import { getFocusableElementsInDocumentOrder, isFocusableElement } from "./focus
 export interface FocusReturnOptions {
   /** When true the hook captures the current focused element to restore later. */
   active: boolean;
-  /** The overlay's own known trigger (RRU-117). When the captured element is no
+  /** The overlay's own known trigger. When the captured element is no
    *  longer restorable this is the SECOND destination the hook tries — the
    *  "return to the invoker" behaviour even when the invocation left nothing
    *  focusable behind. Popover/Select/DropdownMenu already track their trigger
@@ -28,17 +28,17 @@ function isRestorable(target: Element | null | undefined): target is HTMLElement
 
 /**
  * The last-resort destination when neither the captured element nor the
- * overlay's trigger is restorable (RRU-117): the FIRST focusable, in document
+ * overlay's trigger is restorable: the FIRST focusable, in document
  * order, of the topmost open modal scope — or of the whole document when no
  * modal is active. This is the documented rule for a triggerless overlay:
  *
  *   1. the element that had focus when the overlay opened, if it is still
- *      connected and focusable (RRU-052 — the ordinary trigger case);
+ *      connected and focusable (the ordinary trigger case);
  *   2. the overlay's own trigger (`fallbackRef`), when the captured element is
  *      gone but the trigger survives;
  *   3. the first focusable of the enclosing modal scope, or of the document.
  *      When a modal is still open this CANNOT be behind it — the scope is the
- *      same union the focus trap cycles over (RRU-116), so focus never leaves a
+ *      same union the focus trap cycles over, so focus never leaves a
  *      modal just because a nested overlay whose trigger vanished had to land
  *      somewhere. Deterministic and always visible: a keyboard user always has
  *      a focus ring, never the `<body>` no-op that browsers can't focus.
@@ -79,7 +79,7 @@ function resolveRestoreTarget(
  * unmounts, so re-renders never steal focus. If the captured element is gone
  * or no longer focusable (e.g. the trigger was conditionally removed), the
  * destination follows the rule documented on {@link resolveRestoreTarget}
- * (RRU-117) — never `document.body.focus()`, which is a no-op on a `<body>`
+ * — never `document.body.focus()`, which is a no-op on a `<body>`
  * without `tabindex` and leaves the user with no visible focus ring.
  *
  * The `fallbackRef` is mirrored into a ref by a dedicated effect so this hook

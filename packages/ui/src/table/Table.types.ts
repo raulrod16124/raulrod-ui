@@ -6,14 +6,14 @@ import type {
   ThHTMLAttributes,
 } from "react";
 
-/** Row density axis of {@link Table} (RRU-065, uniform axis §24). `md` is the
+/** Row density axis of {@link Table} (uniform axis §24). `md` is the
  *  CSS base default (the modifier is only emitted when the prop is provided);
  *  `sm` is the dense DataTable meter. Token-derived font sizes: base cells use
  *  `font.size.sm`, `sm` rows drop to `font.size.xs` with tighter padding. */
 export type TableSize = "sm" | "md";
 
 /** Horizontal text alignment of a header/cell across its width — a *layout*
- *  keyword, NOT a design token (Stack/Inline alignment precedent, RRU-031):
+ *  keyword, NOT a design token (Stack/Inline alignment precedent):
  *  `text-align` start/center/end. Default `start`. */
 export type TableAlign = "start" | "center" | "end";
 
@@ -23,7 +23,7 @@ export type TableAlign = "start" | "center" | "end";
 export type TableScope = "col" | "row" | "colgroup" | "rowgroup";
 
 /**
- * Props of {@link Table} (RRU-065), the composition root. Renders a real
+ * Props of {@link Table}, the composition root. Renders a real
  * `<table>` inside a wrapping `<div class="rr-table">` that owns the border,
  * radius and horizontal scroll (responsive overflow, EPIC 6 DoD). The `ref`
  * targets the WRAPPER div (the scrollport): bound its height to constrain the
@@ -31,7 +31,7 @@ export type TableScope = "col" | "row" | "colgroup" | "rowgroup";
  *
  * State: `loading` keeps the consumer's data mounted-out and replaces the body
  * with `loadingRows` Skeleton rows — announced via `aria-busy` on the `<table>`
- * (skeleton is decorative, RRU-062/067), dropped to `0` to render none.
+ * (skeleton is decorative), dropped to `0` to render none.
  *
  * ```
  * <Table size="md" sticky loading caption="Facturas">
@@ -119,7 +119,7 @@ export interface TableColGroupProps extends ColHTMLAttributes<HTMLTableColElemen
 export interface TableColumnProps extends ColHTMLAttributes<HTMLTableColElement> {}
 
 /**
- * Internal context payload of {@link Table} (RRU-065), consumed by the slots.
+ * Internal context payload of {@link Table}, consumed by the slots.
  * The ROOT is the source of truth for the "numbers" (the header column count
  * derived during render — it defines the empty/loading `colSpan`), the density,
  * the loading state its body renders and the default `<th>` scope. The sections

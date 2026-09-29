@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, LabelHTMLAttributes } from "react";
 
 /**
- * Size axis of {@link Switch} (RRU-048). `md` is the default and lives in the
+ * Size axis of {@link Switch}. `md` is the default and lives in the
  * `.rr-switch-input` CSS base class (Stack.gap precedent,
  * component-pattern.mdx §4.1). Tracks are token-based on the space scale
  * with a fixed mechanics frame: sm = 32×16px (`space-8`×`space-4`), md =
@@ -12,7 +12,7 @@ import type { InputHTMLAttributes, LabelHTMLAttributes } from "react";
 export type SwitchSize = "sm" | "md" | "lg";
 
 /**
- * Props of {@link Switch} (RRU-048), a native toggle switch. Renders a
+ * Props of {@link Switch}, a native toggle switch. Renders a
  * `<label>` row (the visible `children` become the accessible name through the
  * native implicit association — DoD "label visible o VisuallyHidden"; wrap
  * `children` in `<VisuallyHidden>` for an invisible but announced label)

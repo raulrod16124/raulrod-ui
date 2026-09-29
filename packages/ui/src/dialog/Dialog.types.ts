@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, RefObject } from "react";
 
 /**
- * Internal context payload of {@link Dialog} (RRU-053), consumed by the slots.
+ * Internal context payload of {@link Dialog}, consumed by the slots.
  * The root is the ONLY provider; slots read `open`/`setOpen` for the
  * controlled/uncontrolled contract and the generated ids/ARIA relationships.
  * `contentId` is the `<Dialog.Content>` id (referenced by the trigger's
@@ -17,12 +17,12 @@ export interface DialogContextValue {
   /** Opens/closes the dialog through the root (fires `onOpenChange`). */
   setOpen: (open: boolean) => void;
   /** Id of `<Dialog.Content>`, stamped on the panel and wired to the trigger's
-   *  `aria-controls` (RRU-115: both ends of the relationship are owned by the
+   *  `aria-controls` (both ends of the relationship are owned by the
    *  root, so the reference always resolves to a real node while open). */
   contentId: string;
   /** The `<Dialog.Trigger>` node, owned by the root. The Trigger registers its
    *  button through `setTriggerRef` (precedent: Popover/Select/DropdownMenu);
-   *  `.Content` reads it as the focus-return fallback (RRU-117): even when a
+   *  `.Content` reads it as the focus-return fallback: even when a
    *  dialog is opened without a user gesture on its own trigger, closing it
    *  still lands the focus back on the button that represents it. */
   triggerRef: RefObject<HTMLButtonElement | null>;
@@ -36,7 +36,7 @@ export interface DialogContextValue {
 }
 
 /**
- * Props of {@link Dialog} (RRU-053), the composition root. Pure provider — it
+ * Props of {@link Dialog}, the composition root. Pure provider — it
  * renders no DOM of its own (composite API, guide §15 / ADR-004): the consumer
  * composes `Dialog.Trigger` + `Dialog.Content` (with `.Header/.Title/.Description/.Footer`)
  * as siblings and the root wires the open state, ids and ARIA between them.
@@ -67,7 +67,7 @@ export interface DialogTriggerProps extends Omit<ButtonHTMLAttributes<HTMLButton
  *  through a portal while open. Carries `aria-modal`, `aria-labelledby` /
  *  `aria-describedby` (derived from slot presence) and is `tabIndex={-1}`
  *  (receives the initial focus; ARIA APG modal-dialog pattern). The `id` is
- *  owned by the root (the trigger's `aria-controls` target, RRU-115) and forced
+ *  owned by the root (the trigger's `aria-controls` target) and forced
  *  after the spread, so an `id` passed here is ignored. */
 export interface DialogContentProps extends HTMLAttributes<HTMLDivElement> {}
 

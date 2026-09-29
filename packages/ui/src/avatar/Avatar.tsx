@@ -6,7 +6,7 @@ import { cx } from "../utils/cx.js";
 import { getInitials } from "../utils/initials.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding an `AvatarSize` member breaks
+/** Exhaustive axis maps: adding an `AvatarSize` member breaks
  *  compilation here until its suffix exists — and the authored CSS contract
  *  check fails until the matching `rr-avatar--size-*` selector is written. */
 const avatarModifiers: Readonly<{
@@ -22,10 +22,10 @@ const avatarModifiers: Readonly<{
 const avatarClasses = createVariants(avatarModifiers);
 
 /**
- * User avatar (RRU-050). Non-interactive square `inline-flex` `<span>` that
+ * User avatar. Non-interactive square `inline-flex` `<span>` that
  * renders an image (`src`) or a decorative initials fallback derived from
  * `name` (single word → first letter; two+ words → first + last; uppercased;
- * empty → "?"). Sizes sm/md/lg = 32/40/48px (Switch RRU-048 scale,
+ * empty → "?"). Sizes sm/md/lg = 32/40/48px (Switch scale,
  * `space-8/10/12`); `md` is the CSS base default (`Button.size` precedent).
  * Styling lives entirely in `Avatar.css` (`rr-*` classes over CSS custom
  * properties, ADR-003). Non-interactive by design (Badge precedent): no
@@ -40,7 +40,7 @@ const avatarClasses = createVariants(avatarModifiers);
  *
  * Image error (client-only, SSR-safe): `failedSrc` is keyed by the `src`
  * value (`failedSrc !== src` retries automatically on a new URL), so there is
- * no `useEffect` / set-state-in-effect (RRU-034 finding). The consumer's
+ * no `useEffect` / set-state-in-effect finding. The consumer's
  * `onError` stays on the root `<span>` via props spread (React error events
  * bubble); the fallback switch itself is internal and automatic.
  */

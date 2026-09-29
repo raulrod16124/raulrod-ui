@@ -34,7 +34,7 @@ interface DataTableComponent {
   displayName?: string;
 }
 
-/** Default localized-English strings (RRU-119): every sentence the component
+/** Default localized-English strings: every sentence the component
  *  COMPOSES is overridable per feature config, with these as the compatible
  *  defaults. Plain strings (`label`, `placeholder`, `empty`, `caption`) were
  *  always consumer-owned; only the composed ones needed a function. */

@@ -20,7 +20,7 @@ export type PopoverAlign = "start" | "center" | "end";
 /** Public `placement` union (re-exported by `Popover.types` / the root
  *  `index.ts`): side + optional start/end alignment. The MVP dropped arrow
  *  support, but start/end on the horizontal sides are needed anyway for
- *  menus (RRU-055 submenus open `right-start` and flip to `left-start`). */
+ *  menus (submenus open `right-start` and flip to `left-start`). */
 export type PopoverPlacement =
   | "top"
   | "top-start"

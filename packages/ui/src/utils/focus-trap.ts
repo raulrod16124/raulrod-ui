@@ -23,8 +23,8 @@ export interface FocusTrapOptions {
 /**
  * Traps keyboard focus inside the modal scope while `active`, cycling
  * Tab/Shift+Tab over the tab-order union (document order) of the container's
- * subtree and the portaled panels of the overlays that opened under this trap
- * (RRU-116), with wrap-around. The scope is not just `container`: panels of
+ * subtree and the portaled panels of the overlays that opened under this trap,
+ * with wrap-around. The scope is not just `container`: panels of
  * nested overlays (a Select/Popover opened from inside a Dialog) mount on
  * `document.body` via Portal, so a subtree query alone would drop them and Tab
  * would skip them (or wrap over a wrong list). Each trap pushes its OWN modal
@@ -32,7 +32,7 @@ export interface FocusTrapOptions {
  * was topmost when it opened and stacked modals never bleed into one another.
  * Only Tab is intercepted: Escape/outside interaction belong to the dismissable
  * layer. Initial focus placement is NOT this hook's job — the overlay (Dialog,
- * …) decides where focus lands on open (RRU-053). Requested in a
+ * …) decides where focus lands on open. Requested in a
  * capture-phase document listener so it wins over any consumer listener.
  */
 export function useFocusTrap({ container, active }: FocusTrapOptions): void {

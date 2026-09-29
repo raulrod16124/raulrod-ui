@@ -1,13 +1,13 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 
 /**
- * Props of {@link Tabs} (RRU-058), the COMPOSITION ROOT of the WAI-ARIA Tabs
- * pattern (guide §14/§15, ADR-004). Like {@link Select} (RRU-057) a PURE
+ * Props of {@link Tabs}, the COMPOSITION ROOT of the WAI-ARIA Tabs
+ * pattern (guide §14/§15, ADR-004). Like {@link Select} a PURE
  * provider: no DOM of its own (documented exception), the slots carry the DOM.
  *
  * Acts CONTROLLED when `value` is provided and UNCONTROLLED otherwise, seeded
  * by `defaultValue` — the value/onValueChange contract mirrors
- * {@link RadioGroup} (RRU-047): `onValueChange` fires only when the value
+ * {@link RadioGroup}: `onValueChange` fires only when the value
  * actually changes (re-selecting the same tab is a no-op call-wise).
  *
  * WAI-ARIA (automatic activation, APG): the list is `role="tablist"`, each
@@ -34,7 +34,7 @@ export interface TabsProps {
 }
 
 /**
- * Props of {@link Tabs.List} slot (RRU-058): the `role="tablist"` rail. Owns
+ * Props of {@link Tabs.List} slot: the `role="tablist"` rail. Owns
  * the keyboard — a single React `onKeyDown` performs the roving focus +
  * automatic activation (WAI-ARIA Tabs), reusing the pure menu math from
  * `utils/menu.ts` (skip disabled + wrap). `id`/`title`/`data-*`/ARIA pass
@@ -46,18 +46,18 @@ export interface TabsListProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Props of {@link Tabs.Trigger} slot (RRU-058): one `role="tab"` `<button>`.
+ * Props of {@link Tabs.Trigger} slot: one `role="tab"` `<button>`.
  * `type="button"` is forced after the spread (consumers cannot break it); the
  * ARIA contract (`role`, `id`/`aria-controls` wiring, roving `tabIndex`,
  * `aria-selected`) is forced too. `value` is the tab's identity — REQUIRED and
- * guaranteed in compile time (Radio `value` precedent, RRU-047). `disabled`
+ * guaranteed in compile time (Radio `value` precedent). `disabled`
  * tabs are never focusable and never selectable (WCAG). `id`/`data-*`/ARIA
  * pass through.
  *
  * Note: `ButtonHTMLAttributes` already declares `value?`, but as
  * `string | readonly string[] | number` — narrowing that interface signature
  * would break `extends`, so it is omitted and redeclared as `string`
- * (Select.Item `value` precedent, RRU-057).
+ * (Select.Item `value` precedent).
  */
 export interface TabsTriggerProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -72,12 +72,12 @@ export interface TabsTriggerProps extends Omit<
 }
 
 /**
- * Props of {@link Tabs.Panel} slot (RRU-058): one `role="tabpanel"`. Wired to
+ * Props of {@link Tabs.Panel} slot: one `role="tabpanel"`. Wired to
  * its trigger through `id`/`aria-labelledby` and kept MOUNTED, hidden only
  * while inactive (`hidden` attribute — the panel content stays in the DOM for
  * `Tab` order and layout, matching APG).
  *
- * KEYBOARD CONSEQUENCE (RRU-118): the ACTIVE panel carries `tabIndex={0}` and is
+ * KEYBOARD CONSEQUENCE: the ACTIVE panel carries `tabIndex={0}` and is
  * therefore a tab stop of its own, so a panel whose content has no focusable
  * element (text only) is still reachable with `Tab` — APG's reason for the
  * attribute. The `tabIndex` prop is **forced by the component** after the
@@ -102,7 +102,7 @@ export interface TabsIdEntry {
 }
 
 /** Ordered model of one tab, aligned with the DOM order of the triggers
- *  (collect-items precedent, Select RRU-057). Internal. */
+ *  (collect-items precedent, Select). Internal. */
 export interface TabsRovingItem {
   value: string;
   disabled: boolean;

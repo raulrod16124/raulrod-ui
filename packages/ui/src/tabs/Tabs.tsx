@@ -21,7 +21,7 @@ import {
 import { useId } from "../utils/use-id.js";
 
 /**
- * Tabs (RRU-058): WAI-ARIA Tabs with automatic activation (APG) — the list is
+ * Tabs: WAI-ARIA Tabs with automatic activation (APG) — the list is
  * a `role="tablist"`, the triggers `role="tab"` with a roving tabindex and
  * `aria-selected` only when a selection exists, and the `role="tabpanel"`
  * panels stay MOUNTED, hidden with the `hidden` attribute while inactive (the
@@ -29,8 +29,8 @@ import { useId } from "../utils/use-id.js";
  * of its own (same documented exception as Popover/DropdownMenu/Select,
  * ADR-004).
  *
- * API (RRU-058): `value`/`defaultValue`/`onValueChange` (RadioGroup precedent,
- * RRU-047 — fires only when the value actually changes).
+ * API: `value`/`defaultValue`/`onValueChange` (RadioGroup precedent
+ * — fires only when the value actually changes).
  *
  * Keyboard (WAI-ARIA Tabs, automatic activation): ArrowLeft/Right wrap and
  * skip disabled; Home/End jump; all reusing the pure math of `utils/menu.ts`

@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding an `InputSize` member breaks
+/** Exhaustive axis maps: adding an `InputSize` member breaks
  *  compilation here until its suffix exists — and the authored CSS contract
  *  check fails until the matching `rr-input--size-*` selector is written. */
 const inputModifiers: Readonly<{
@@ -21,10 +21,10 @@ const inputModifiers: Readonly<{
 const inputClasses = createVariants(inputModifiers);
 
 /**
- * Base single-line text field (RRU-043). Renders an `<input>`; `size` defaults
+ * Base single-line text field. Renders an `<input>`; `size` defaults
  * to `md` in the CSS base class (component-pattern.mdx §4.1). The invalid
  * state is driven by the native `aria-invalid` attribute — no prop, no dual
- * activation path (RRU-043 decision): pass `aria-invalid` and the
+ * activation path: pass `aria-invalid` and the
  * `.rr-input[aria-invalid="true"]` rule applies the danger border. Styling
  * lives entirely in `Input.css` (`rr-*` classes over CSS custom properties,
  * ADR-003); the resting border uses `color.border.strong` because §6.2 of
