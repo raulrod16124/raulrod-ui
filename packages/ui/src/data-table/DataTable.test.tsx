@@ -1,5 +1,6 @@
 import type {
   DataTableColumn,
+  DataTableFiltering,
   DataTableProps,
   DataTableRowSelection,
   DataTableSort,
@@ -152,6 +153,17 @@ describe("DataTable SSR and type contract", () => {
     expectTypeOf<DataTableRowSelection<User, number>["selectedRowIds"]>().toEqualTypeOf<
       ReadonlySet<number> | undefined
     >();
+    // RRU-119: composed strings and announcements are typed per feature config
+    const sortButtonLabel =
+      expectTypeOf<NonNullable<DataTableSorting<User>["getSortButtonLabel"]>>();
+    sortButtonLabel.parameter(0).toEqualTypeOf<DataTableColumn<User>>();
+    sortButtonLabel.parameter(1).toEqualTypeOf<"asc" | "desc" | undefined>();
+    expectTypeOf<NonNullable<DataTableFiltering<User>["getAnnouncement"]>>()
+      .parameter(1)
+      .toEqualTypeOf<number>();
+    const allToggleLabel =
+      expectTypeOf<NonNullable<DataTableRowSelection<User, number>["getAllToggleLabel"]>>();
+    allToggleLabel.parameter(0).toEqualTypeOf<boolean>();
   });
 
   it("renders a semantic responsive table from generic column definitions", () => {
@@ -187,6 +199,25 @@ describe("DataTable SSR and type contract", () => {
     expect(markup).toContain('aria-label="Select all filtered rows"');
     expect(markup).toContain('aria-checked="mixed"');
     expect(markup).toContain('aria-label="Select Ada"');
+  });
+
+  it("serializes exactly ONE always-mounted, silent polite region (RRU-119)", () => {
+    const markup = ssr(
+      userTable({
+        filtering: { defaultValue: "" },
+        sorting: {},
+        rowSelection: { getRowLabel: getUserLabel },
+        pagination: { pageSize: 2 },
+      }),
+    );
+    // one channel per table: the composed Pagination keeps its region OFF
+    expect(markup.match(/role="status"/g)).toHaveLength(1);
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain('class="rr-visually-hidden"');
+    // silent on load: the region exists BEFORE any update (4.1.3 precondition)
+    // and announces nothing until the user acts
+    const region = markup.match(/<span[^>]*role="status"[^>]*>(.*?)<\/span>/)?.[1] ?? "not empty";
+    expect(region).toBe("");
   });
 
   it("applies loading before error, error before rows and rows before empty", () => {
@@ -297,6 +328,8 @@ describe("DataTable behavior", () => {
     expect(textRows()).toHaveLength(2);
     expect(textRows().every((row) => row.includes("Engineering"))).toBe(true);
     expect(document.querySelector(".rr-pagination")).toBeNull();
+    // the filter action announced its result through the table's own region
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("2 of 3 rows");
 
     rerender(
       userTable({
@@ -305,7 +338,9 @@ describe("DataTable behavior", () => {
       }),
     );
     expect(textRows()[0]).toContain("Zoe");
-    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 1 of 2");
+    // action-driven (RRU-119): an EXTERNAL change of controlled props/data
+    // never re-announces — the region keeps the last user action's sentence
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("2 of 3 rows");
   });
 
   it("normalizes an uncontrolled page when the data shrinks and grows again", () => {
@@ -321,10 +356,18 @@ describe("DataTable behavior", () => {
     mount(pagedTable(users));
     click(document.querySelector('[aria-label="Next page"]') as HTMLButtonElement);
     expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 2 of 2");
+    expect(textRows()).toHaveLength(1);
+    expect(textRows()[0]).toContain("Bea");
 
+    // the data change is external: the region keeps the sentence of the last
+    // action while the normalized page quietly becomes 1 again
     rerender(pagedTable(users.slice(0, 1)));
+    expect(textRows()[0]).toContain("Zoe");
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 2 of 2");
+
     rerender(pagedTable(users));
-    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 1 of 2");
+    expect(textRows()[0]).toContain("Zoe");
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 2 of 2");
   });
 
   it("keeps controlled filtering and sorting gated by props", () => {
@@ -373,7 +416,9 @@ describe("DataTable behavior", () => {
     click(document.querySelector('[aria-label="Next page"]') as HTMLButtonElement);
     expect(controlledChange).toHaveBeenLastCalledWith(2);
     expect(textRows()).toHaveLength(2);
-    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 1 of 2");
+    // the announcement follows the COMMIT (the value sent through onPageChange)
+    // — a controlled consumer that ignores the callback owns the mismatch
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("Page 2 of 2");
   });
 
   it("supports partial, row-level and select-all selection while preserving IDs", () => {
@@ -450,6 +495,114 @@ describe("DataTable behavior", () => {
     expect(document.querySelector<HTMLInputElement>('[aria-label="Select Bea"]')?.checked).toBe(
       true,
     );
+  });
+
+  it("announces every action through ONE always-mounted polite region (RRU-119)", () => {
+    mount(
+      userTable({
+        filtering: { defaultValue: "" },
+        sorting: {},
+        rowSelection: { getRowLabel: getUserLabel },
+        pagination: { pageSize: 2 },
+      }),
+    );
+    // captured ONCE: every later assertion on the same node is the proof the
+    // region never unmounts across actions (4.1.3 precondition)
+    const region = document.querySelector('[role="status"]');
+    expect(region).not.toBeNull();
+    expect(region?.getAttribute("aria-live")).toBe("polite");
+    expect(region?.textContent).toBe("");
+
+    const sortButton = document.querySelector<HTMLButtonElement>("thead button");
+    click(sortButton as HTMLButtonElement);
+    expect(region?.textContent).toBe("Sorted by Name ascending");
+    click(sortButton as HTMLButtonElement);
+    expect(region?.textContent).toBe("Sorted by Name descending");
+    click(sortButton as HTMLButtonElement);
+    expect(region?.textContent).toBe("Sorting cleared");
+
+    click(document.querySelector('[aria-label="Next page"]') as HTMLButtonElement);
+    expect(region?.textContent).toBe("Page 2 of 2");
+
+    const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+    changeInput(input as HTMLInputElement, "engineering");
+    expect(region?.textContent).toBe("2 of 3 rows");
+
+    click(document.querySelector('[aria-label="Select Ada"]') as HTMLInputElement);
+    expect(region?.textContent).toBe("1 row selected");
+
+    click(document.querySelector('[aria-label="Select all filtered rows"]') as HTMLInputElement);
+    expect(region?.textContent).toBe("2 rows selected");
+  });
+
+  it("keeps announcing while the pagination bar unmounts, and under loading/error (the aggravating case)", () => {
+    mount(
+      userTable({
+        filtering: { defaultValue: "" },
+        pagination: { pageSize: 2 },
+      }),
+    );
+    expect(document.querySelector(".rr-pagination")).not.toBeNull();
+
+    // filtering down to a single page unmounts the bar — the ONLY landmark of
+    // the paging action — while the region answers what just happened
+    const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+    changeInput(input as HTMLInputElement, "engineering");
+    expect(document.querySelector(".rr-pagination")).toBeNull();
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("2 of 3 rows");
+
+    // loading/error keep the bar unmounted; the region stays mounted and silent
+    rerender(
+      userTable({
+        filtering: { value: "engineering" },
+        pagination: { pageSize: 2 },
+        loading: true,
+        error: "Failed",
+      }),
+    );
+    expect(document.querySelector(".rr-pagination")).toBeNull();
+    expect(document.querySelector('[role="status"]')).not.toBeNull();
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("2 of 3 rows");
+  });
+
+  it("honors consumer strings for labels and announcements (localizable, RRU-119)", () => {
+    mount(
+      userTable({
+        sorting: {
+          getSortButtonLabel: (column, direction) =>
+            `Ordenar por ${column.header}${direction ? ` (${direction})` : ""}`,
+          getAnnouncement: (sort) => (sort ? `Ordenado por ${sort.key}` : "Sin orden"),
+        },
+        rowSelection: {
+          getRowLabel: getUserLabel,
+          getRowToggleLabel: (label) => `Seleccionar ${label}`,
+          getAllToggleLabel: (allSelected) => (allSelected ? "Quitar todo" : "Seleccionar todo"),
+          getAnnouncement: (selectedCount) => `${selectedCount} filas seleccionadas`,
+        },
+        pagination: {
+          pageSize: 2,
+          getLabel: (caption) => `${caption} (paginación)`,
+          getAnnouncement: (page, pageCount) => `Página ${page} de ${pageCount}`,
+        },
+      }),
+    );
+    expect(document.querySelector("thead button")?.getAttribute("aria-label")).toBe(
+      "Ordenar por Name",
+    );
+    expect(document.querySelector('[aria-label="Seleccionar Ada"]')).not.toBeNull();
+    expect(document.querySelector('[aria-label="Seleccionar todo"]')).not.toBeNull();
+    expect(document.querySelector(".rr-pagination")?.getAttribute("aria-label")).toBe(
+      "Users (paginación)",
+    );
+
+    click(document.querySelector('[aria-label="Seleccionar Ada"]') as HTMLInputElement);
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("1 filas seleccionadas");
+
+    click(document.querySelector("thead button") as HTMLButtonElement);
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("Ordenado por name");
+
+    click(document.querySelector('[aria-label="Next page"]') as HTMLButtonElement);
+    expect(document.querySelector('[role="status"]')?.textContent).toBe("Página 2 de 2");
   });
 
   it("has no axe violations with filters, sort and selection controls rendered", async () => {

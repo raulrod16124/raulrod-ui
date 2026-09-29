@@ -138,6 +138,12 @@ describe("Pagination SSR contract (landmark + a11y serialized on the server)", (
     expect(markup).toContain('class="rr-visually-hidden"');
   });
 
+  it("announcePageChange={false} does not mount the built-in region (the composer owns the channel, RRU-119)", () => {
+    const markup = page({ pageCount: 12, defaultPage: 5, announcePageChange: false });
+    expect(markup).not.toContain('role="status"');
+    expect(markup).not.toContain("aria-live");
+  });
+
   it("native keyboard only: no tabindex rewrite, no synthetic key handlers", () => {
     const markup = page({ pageCount: 12, defaultPage: 5 });
     expect(markup).not.toMatch(/tabindex/);
@@ -262,6 +268,25 @@ describe("Pagination behavior (happy-dom, user gestures)", () => {
     await userEvent.click(control("Next page"));
 
     expect(screen.getByRole("status")).toHaveTextContent("Page 6 of 12");
+  });
+
+  it("announcePageChange={false} navigates without mounting the built-in region (RRU-119)", async () => {
+    const onPageChange = vi.fn();
+    render(
+      <Pagination
+        announcePageChange={false}
+        pageCount={12}
+        defaultPage={5}
+        onPageChange={onPageChange}
+      />,
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+
+    await userEvent.click(control("Next page"));
+
+    expect(onPageChange).toHaveBeenLastCalledWith(6);
+    expect(currentPage()).toBe("6");
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("has no axe violations in the dense and windowed shapes", async () => {
