@@ -1,0 +1,117 @@
+/* Pagination — page navigation bar (RRU-064, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041):
+   - `list-style`/`margin`/`padding` resets + `flex-wrap`: keyword mechanics of
+     an HTML list reused as a control rail (1.3.1 structure) that wraps on
+     narrow screens (responsive, DoD global); `gap` IS a token
+     (`space-1` = 4px).
+   - `outline: 2px solid` + `outline-offset`: the 2px focus ring family
+     (color.md §6.3 — same constant as Button/Tabs; no width token exists).
+   - icons are sized `1em` so they inherit the item `font-size` token.
+   - `cursor` keywords (`pointer`/`not-allowed`): native affordance, no token
+     counterpart (Button precedent).
+   Source order matters (Button precedent): the `[aria-current="page"]` block
+   beats the `:hover`/`:active` blocks at equal specificity, and the
+   `:disabled` block is LAST so it wins over every hover/current state on the
+   boundary controls. No `@keyframes` in this component → there is no
+   `prefers-reduced-motion` block to add; the color/background `transition` is
+   the Button precedent (a hover affordance, not a motion animation, RRU-023
+   scale: motion.duration.fast). */
+
+.rr-pagination {
+  display: block;
+}
+
+.rr-pagination__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rr-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One pager control (Button precedent: own `<button>`, tokens from the action
+   semantics — Dialog Trigger styles itself over the same tokens instead of
+   composing Button). 32px minimum hit target (`space-8`) clears WCAG 2.5.8. */
+
+.rr-pagination__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--rr-space-8);
+  height: var(--rr-space-8);
+  padding: var(--rr-space-1) var(--rr-space-2);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-medium);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-primary);
+  background: transparent;
+  border-radius: var(--rr-radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-pagination__item:hover {
+  background: var(--rr-color-action-secondary-background);
+}
+
+.rr-pagination__item:active {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-pagination__item:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-pagination__item svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* The current page: `aria-current="page"` is the hook of the distinct style
+   (the visual and the programmatic state can never drift — the attribute is
+   the only signal), with a non-color cue (font-weight semibold) paired with
+   the primary fill per 1.4.1. Hover/active are pinned to the fill: activating
+   the current page is a guarded no-op, so the row must not suggest otherwise. */
+
+.rr-pagination__item[aria-current="page"],
+.rr-pagination__item[aria-current="page"]:hover,
+.rr-pagination__item[aria-current="page"]:active {
+  background: var(--rr-color-action-primary-background);
+  color: var(--rr-color-action-primary-text);
+  font-weight: var(--rr-font-weight-semibold);
+}
+
+/* Ellipsis: the visual gap when the window cannot cover every page. Purely
+   decorative (aria-hidden, not focusable) so screen readers hear page numbers
+   only — announcing "ellipsis" is noise without information. */
+
+.rr-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--rr-space-8);
+  height: var(--rr-space-8);
+  padding: var(--rr-space-1) var(--rr-space-2);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-sm);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  color: var(--rr-color-text-muted);
+}
+
+/* --- Disabled boundary controls (LAST so it wins at equal specificity; the
+   disabled token pair is AA-exempt per color.md §6 — WCAG 1.4.3) --- */
+
+.rr-pagination__item:disabled {
+  color: var(--rr-color-action-disabled-text);
+  background: transparent;
+  cursor: not-allowed;
+}

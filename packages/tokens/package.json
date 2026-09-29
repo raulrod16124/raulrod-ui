@@ -1,0 +1,22 @@
+{
+  "name": "@raulrod/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design tokens for RaulRod UI: primitive, semantic and component layers.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node tools/emit-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

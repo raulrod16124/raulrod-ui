@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "cacheDir": "node_modules/.cache/turbo",
+  "globalEnv": ["CI"],
+  "globalDependencies": ["vitest.preset.mts", "tsconfig.base.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
+      "outputs": ["dist/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint", "^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck", "^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
+    },
+    "test": {
+      "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
+      "outputs": ["coverage/**"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
+      "outputs": ["playwright-report/**", "test-results/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

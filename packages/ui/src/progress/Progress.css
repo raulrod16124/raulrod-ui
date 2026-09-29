@@ -1,0 +1,41 @@
+.rr-progress {
+  display: block;
+  width: 100%;
+  height: var(--rr-space-2);
+  overflow: hidden;
+  background-color: var(--rr-color-background-sunken);
+  border-radius: var(--rr-radius-full);
+}
+
+.rr-progress__indicator {
+  display: block;
+  height: 100%;
+  background-color: var(--rr-color-action-primary-background);
+  border-radius: inherit;
+  transition: width var(--rr-motion-duration-base) var(--rr-motion-easing-standard);
+}
+
+.rr-progress--indeterminate .rr-progress__indicator {
+  animation: rr-progress-indeterminate var(--rr-motion-duration-slow)
+    var(--rr-motion-easing-standard) infinite;
+}
+
+@keyframes rr-progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-progress__indicator {
+    transition: none;
+  }
+
+  .rr-progress--indeterminate .rr-progress__indicator {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

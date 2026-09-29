@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RaulRod UI · playground</title>
+    <script>
+      // RRU-024 §4: `data-theme` is written BEFORE the first paint by a blocking
+      // script, so there is no flash of the wrong theme. No attribute at all is
+      // a valid state: it means "follow the system" (`prefers-color-scheme`),
+      // which is what the emitted tokens implement (docs/theming.md §3).
+      //
+      // The theme is deliberately NOT React state: `data-theme` lives on <html>,
+      // outside the React tree, so the markup and the DOM attribute can never
+      // disagree on hydration (§5 of the same guide).
+      (function () {
+        try {
+          var stored = localStorage.getItem("rr-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (error) {
+          // localStorage unavailable (private mode, blocked cookies) → system.
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,65 @@
+/* Public stylesheet of @raulrod/ui (RRU-069).
+ *
+ * THE single entry a consumer imports to get the component styles, mirroring
+ * `@raulrod/tokens/dist/tokens.css`: one artifact, one import, no per-component
+ * knowledge. It exists because the authored stylesheets are plain CSS files
+ * next to their components and nothing else in the pipeline moves them: the
+ * components deliberately do NOT `import "./X.css"` from their TSX (the package
+ * is `sideEffects: false`, ADR-007 — a CSS import would make every component
+ * pull styles it may never use and would break the tree-shaking promise).
+ *
+ * Why the file exists NOW instead of in RRU-091: RRU-069 needs a real browser
+ * to assert the flows it owns (theme switch, focus ring, overlay stacking), and
+ * a consumer that renders unstyled components cannot demonstrate any of them.
+ * RRU-091 keeps ownership of the `exports` map and formalizes this file as
+ * `@raulrod/ui/styles.css`; the only thing missing until then is the subpath
+ * export that makes the import short.
+ *
+ * Tokens are NOT re-exported here: they are a different package
+ * (`@raulrod/tokens/dist/tokens.css`) and layering them into this file would
+ * hide a real consumer decision (docs/theming.md §1).
+ *
+ * Cascade order is deliberate, from lowest to highest precedence at equal
+ * specificity, so a consumer never fights the cascade:
+ *   1. foundations (layout + text): the substrate everything else sits on;
+ *   2. form controls: field-like controls share Input's look (Select trigger);
+ *   3. actions / feedback: standalone;
+ *   4. data display: Table and its higher-level wrappers;
+ *   5. overlays LAST: they own `--rr-z-overlay` / `--rr-z-modal` and must win
+ *      the paint order against the components they cover (Dialog.tsx z note).
+ * `src/styles.test.ts` guards that the list is exactly the authored set.
+ */
+
+@import "./visually-hidden/VisuallyHidden.css";
+@import "./stack/Stack.css";
+@import "./inline/Inline.css";
+@import "./text/Text.css";
+@import "./heading/Heading.css";
+
+@import "./form-field/FormField.css";
+@import "./input/Input.css";
+@import "./textarea/Textarea.css";
+@import "./checkbox/Checkbox.css";
+@import "./radio/Radio.css";
+@import "./switch/Switch.css";
+@import "./select/Select.css";
+
+@import "./button/Button.css";
+@import "./icon-button/IconButton.css";
+
+@import "./badge/Badge.css";
+@import "./avatar/Avatar.css";
+@import "./skeleton/Skeleton.css";
+@import "./progress/Progress.css";
+@import "./toast/Toast.css";
+
+@import "./table/Table.css";
+@import "./pagination/Pagination.css";
+@import "./data-table/DataTable.css";
+
+@import "./popover/Popover.css";
+@import "./tooltip/Tooltip.css";
+@import "./dropdown-menu/DropdownMenu.css";
+
+@import "./dialog/Dialog.css";
+@import "./tabs/Tabs.css";

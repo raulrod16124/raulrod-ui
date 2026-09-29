@@ -1,0 +1,28 @@
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableColGroup,
+  TableColumn,
+  TableFoot,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "./Table.js";
+export type {
+  TableAlign,
+  TableBodyProps,
+  TableCaptionProps,
+  TableCellProps,
+  TableColGroupProps,
+  TableColumnProps,
+  TableContextValue,
+  TableFootProps,
+  TableHeadProps,
+  TableHeaderCellProps,
+  TableProps,
+  TableRowProps,
+  TableScope,
+  TableSize,
+} from "./Table.types.js";

@@ -1,0 +1,179 @@
+/* Switch — native toggle switch (RRU-048, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041/046/047):
+   - border/outline widths (1px/2px) and outline-offset: no width token exists;
+     2px focus ring is the color.md §6.3 contract.
+   - the knob frame insets (2px per side, 4px in the calc below): a constant
+     knob-to-track border-box frame, not a design value.
+   - `appearance: none`, `position`, `transform`, `cursor` keywords: platform /
+     layout mechanics without a token counterpart (precedent `align`/`justify`,
+     RRU-031).
+   Renders a single `<input type="checkbox" role="switch">` (native-first,
+   Checkbox/Radio precedent): Space/click toggle, `:checked`, `:disabled` and
+   `aria-checked` from the checked state are NATIVE — no JS keyboard or state
+   management (WAI-ARIA switch pattern). The track IS the input and the knob
+   its `::after` pseudo (decorative). Resting track = `border.strong` fill, NOT
+   `border.default` (color.md §6.2) — the knob (background.default) keeps ≥3:1
+   on it in both themes. The on knob reads the `action.primary.text` TOKEN
+   (product decision #3 — no hardcoded #ffffff; precedent the Radio dot
+   gradient). Source order matters: the disabled block is last so it beats
+   every state/hover/invalid rule at equal specificity. Reduced motion: this
+   component wires the RRU-024 contract explicitly for its track/knob
+   transition. */
+
+.rr-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  margin: 0;
+  cursor: pointer;
+}
+
+.rr-switch-input {
+  appearance: none;
+  position: relative;
+  width: var(--rr-space-10);
+  height: var(--rr-space-5);
+  margin: 0;
+  padding: 0;
+  background: var(--rr-color-border-strong);
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-full);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-switch-input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--rr-space-5) - 4px);
+  height: calc(var(--rr-space-5) - 4px);
+  background: var(--rr-color-background-default);
+  border-radius: var(--rr-radius-full);
+  transition:
+    transform var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-switch-input:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Size axis (base = md in .rr-switch-input / ::after; explicit modifier
+   for the passed case). Knob size and travel derived from the track tokens:
+   knob = height - 4px frame; travel = width - height. --- */
+
+.rr-switch--size-sm .rr-switch-input {
+  width: var(--rr-space-8);
+  height: var(--rr-space-4);
+}
+
+.rr-switch--size-sm .rr-switch-input::after {
+  width: calc(var(--rr-space-4) - 4px);
+  height: calc(var(--rr-space-4) - 4px);
+}
+
+.rr-switch--size-sm .rr-switch-input:checked::after {
+  transform: translateX(calc(var(--rr-space-8) - var(--rr-space-4)));
+}
+
+.rr-switch--size-md .rr-switch-input {
+  width: var(--rr-space-10);
+  height: var(--rr-space-5);
+}
+
+.rr-switch--size-md .rr-switch-input::after {
+  width: calc(var(--rr-space-5) - 4px);
+  height: calc(var(--rr-space-5) - 4px);
+}
+
+.rr-switch--size-md .rr-switch-input:checked::after {
+  transform: translateX(calc(var(--rr-space-10) - var(--rr-space-5)));
+}
+
+.rr-switch--size-lg .rr-switch-input {
+  width: var(--rr-space-12);
+  height: var(--rr-space-6);
+}
+
+.rr-switch--size-lg .rr-switch-input::after {
+  width: calc(var(--rr-space-6) - 4px);
+  height: calc(var(--rr-space-6) - 4px);
+}
+
+.rr-switch--size-lg .rr-switch-input:checked::after {
+  transform: translateX(calc(var(--rr-space-12) - var(--rr-space-6)));
+}
+
+.rr-switch-label {
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+  color: var(--rr-color-text-primary);
+}
+
+/* --- Checked: primary fill + knob on (native :checked, no state classes).
+   The hover fill resolves the `.background-hover` semantic so the track
+   darkens with the theme like Button's primary. --- */
+
+.rr-switch-input:checked {
+  background-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-action-primary-background);
+}
+
+.rr-switch-input:checked:hover {
+  background-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-action-primary-background-hover);
+}
+
+.rr-switch-input:checked::after {
+  transform: translateX(calc(var(--rr-space-10) - var(--rr-space-5)));
+  background-color: var(--rr-color-action-primary-text);
+}
+
+/* --- Invalid wiring: `aria-invalid` is rerouted to the input (Switch.types),
+   so FormField (RRU-044) drives it by composition — Input/Checkbox precedent.
+   Only the border turns danger; the fill contract stays. --- */
+
+.rr-switch-input[aria-invalid="true"] {
+  border-color: var(--rr-color-border-danger);
+}
+
+/* --- Disabled: LAST so it beats every state/hover/invalid rule above (same
+   specificity, later source order). Shared disabled look (WCAG 1.4.3 exempts
+   disabled controls from contrast — color.md §6). The knob mutes to the
+   disabled text token; the row flag mutes the label and turns the row cursor,
+   like Radio (`rr-radio--disabled`, pattern §4.1). --- */
+
+.rr-switch-input:disabled {
+  background-color: var(--rr-color-action-disabled-background);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.rr-switch-input:disabled::after {
+  background-color: var(--rr-color-action-disabled-text);
+}
+
+.rr-switch--disabled {
+  cursor: not-allowed;
+}
+
+.rr-switch--disabled .rr-switch-label {
+  color: var(--rr-color-text-muted);
+}
+
+/* --- Reduced motion (RRU-024 contract): the track/knob transition is the
+   first in the DS to honor it explicitly. --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-switch-input,
+  .rr-switch-input::after {
+    transition: none;
+  }
+}

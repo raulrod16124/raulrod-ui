@@ -1,0 +1,175 @@
+/* Button — fundamental action control (RRU-041, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033):
+   - border/outline widths (1px/2px) and outline-offset: no width token
+     exists; 2px focus ring is the color.md §6.3 contract.
+   - `transparent` keyword (no color token for it) and @keyframes geometry.
+   Defaults: variant=primary comes from JS (Heading `as` precedent); size=md
+   lives in this base class (Stack.gap precedent). Source order matters: the
+   disabled block is last so it beats every variant `:hover` at equal
+   specificity. */
+
+.rr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rr-space-2);
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  font-weight: var(--rr-font-weight-medium);
+  line-height: var(--rr-font-leading-none);
+  letter-spacing: var(--rr-font-tracking-normal);
+  border: 1px solid transparent;
+  border-radius: var(--rr-radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-button:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Size axis (base = md; explicit modifier for the passed case) --- */
+
+.rr-button--size-sm {
+  padding: var(--rr-space-1) var(--rr-space-3);
+  font-size: var(--rr-font-size-sm);
+}
+
+.rr-button--size-md {
+  padding: var(--rr-space-2) var(--rr-space-4);
+  font-size: var(--rr-font-size-base);
+}
+
+.rr-button--size-lg {
+  padding: var(--rr-space-3) var(--rr-space-5);
+  font-size: var(--rr-font-size-lg);
+}
+
+/* --- Variants (component tokens for aliased fills, semantics directly
+       for outline/ghost/link — token-taxonomy.md §2 allows both) --- */
+
+.rr-button--primary {
+  background: var(--rr-button-primary-background);
+  color: var(--rr-button-primary-text);
+}
+
+.rr-button--primary:hover {
+  background: var(--rr-button-primary-background-hover);
+}
+
+.rr-button--primary:active {
+  background: var(--rr-button-primary-background-active);
+}
+
+.rr-button--secondary {
+  background: var(--rr-button-secondary-background);
+  color: var(--rr-button-secondary-text);
+  border-color: var(--rr-color-border-default);
+}
+
+.rr-button--secondary:hover {
+  background: var(--rr-button-secondary-background-hover);
+}
+
+.rr-button--destructive {
+  background: var(--rr-button-destructive-background);
+  color: var(--rr-button-destructive-text);
+}
+
+.rr-button--destructive:hover {
+  background: var(--rr-button-destructive-background-hover);
+}
+
+.rr-button--outline {
+  background: transparent;
+  color: var(--rr-color-text-primary);
+  border-color: var(--rr-color-border-strong);
+}
+
+.rr-button--outline:hover {
+  background: var(--rr-color-action-secondary-background);
+}
+
+.rr-button--outline:active {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-button--ghost {
+  background: transparent;
+  color: var(--rr-color-text-primary);
+  border-color: transparent;
+}
+
+.rr-button--ghost:hover {
+  background: var(--rr-color-action-secondary-background);
+}
+
+.rr-button--ghost:active {
+  background: var(--rr-color-action-secondary-background-hover);
+}
+
+.rr-button--link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--rr-color-action-primary-background);
+  padding: var(--rr-space-0);
+  text-decoration: underline;
+}
+
+.rr-button--link:hover {
+  color: var(--rr-color-action-primary-background-hover);
+}
+
+/* --- Disabled / aria-disabled: LAST so it wins over every `:hover`
+       above (same specificity, later source order). One shared disabled
+       look across variants (WCAG 1.4.3 exempts these from contrast —
+       color.md §6 note); primary additionally resolves its own RRU-026
+       component alias. --- */
+
+.rr-button:disabled,
+.rr-button[aria-disabled="true"] {
+  background: var(--rr-color-action-disabled-background);
+  color: var(--rr-color-action-disabled-text);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.rr-button--primary:disabled,
+.rr-button--primary[aria-disabled="true"] {
+  background: var(--rr-button-primary-background-disabled);
+}
+
+/* --- Loading spinner (decorative; label stays for the accessible name) --- */
+
+.rr-button__spinner {
+  display: inline-flex;
+  animation: rr-button-spin var(--rr-motion-duration-base) linear infinite;
+}
+
+.rr-button__spinner svg {
+  width: 1em;
+  height: 1em;
+}
+
+.rr-button__icon {
+  display: inline-flex;
+}
+
+@keyframes rr-button-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-button__spinner {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

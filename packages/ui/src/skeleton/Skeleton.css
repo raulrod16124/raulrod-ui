@@ -1,0 +1,73 @@
+/* Skeleton — loading placeholder with shimmer (RRU-062, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedent family RRU-031/033/041/054):
+   - `position`/`overflow`/`inset: 0`/`transform`/`content`: pure layout /
+     decorative mechanics without a token counterpart (precedent `align`/
+     `justify` RRU-031, `inset: 0` Dialog backdrop RRU-053).
+   - the `linear-gradient(105deg, transparent 20%, … 80%)` band: positioning
+     of the travelling highlight (a decorational geometry value, the sweep is
+     not a design color — the color IS the `background.default` token).
+   - `infinite`: the sweep must loop; cadence capped by the slowest motion
+     token (motion.duration.slow = 350ms, RRU-023). Tabs/Toast use the same
+     scale for their motion; a dedicated longer shimmer duration is deferred
+     until a real measured need appears (EPIC 10 / Table loading, RRU-065/066).
+   Decorativo por construcción: sin ARIA, sin estados interactivos (precedente
+   Badge/Avatar) — una skeleton es ruido visual mudo; el estado de carga se
+   anuncia en el contenedor que la compone (`aria-busy`, RRU-067) o en
+   `Progress` (RRU-063). No hay selectores :hover/:focus/:disabled ni border/
+   transition. Reduced motion (RRU-024 contract): se mata la animación con el
+   token behavior-reduced y la banda queda translateX(-100%) fuera de vista —
+   el bloque queda como un sunken estático (DoD #1). */
+
+.rr-skeleton {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: var(--rr-space-4);
+  overflow: hidden;
+  background-color: var(--rr-color-background-sunken);
+  border-radius: var(--rr-radius-sm);
+}
+
+/* La banda que "shimmer": un degradado que recorre el bloque. Empieza y acaba
+   fuera de vista (translateX ±100%), así el loop no parpadea al reiniciar. */
+
+.rr-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    var(--rr-color-background-default) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: rr-skeleton-shimmer var(--rr-motion-duration-slow) var(--rr-motion-easing-standard)
+    infinite;
+}
+
+@keyframes rr-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Círculo para placeholders de avatar/imagen: disco fijo en la escala de
+   Avatar sm (space-8). El tamaño por defecto del rectángulo es una línea a
+   ancho completo; el consumidor lo acota con className cuando lo necesite. */
+
+.rr-skeleton--circle {
+  width: var(--rr-space-8);
+  height: var(--rr-space-8);
+  border-radius: var(--rr-radius-full);
+}
+
+/* --- Reduced motion (DoD #1, RRU-024 contract): animation-name → none, la
+   banda se queda fuera de vista, bloque estático sin animación. --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-skeleton::after {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

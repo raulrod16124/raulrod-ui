@@ -1,0 +1,246 @@
+// Critical flow 1 — Dialog (RRU-069).
+//
+// The contract under test is what a modal dialog owes its user: it opens, takes
+// focus, holds it, blocks the page behind it, closes on Escape and gives the
+// focus back. Each of those is an accessibility promise, so each is asserted as
+// a promise (who has focus, what stays reachable) and never as a styling detail.
+import type { Page } from "@playwright/test";
+
+import { expect, test } from "@playwright/test";
+
+import { activeElement, openPlayground } from "./helpers.js";
+
+const dialog = (page: Page) => page.getByRole("dialog");
+
+// What a user can reach with Tab inside the panel. Derived from the DOM instead
+// of from a list of `data-testid`s: a control without a testid is still part of
+// the cycle, and a hardcoded list would silently under-count it and make the trap
+// look broken (or, worse, pass for the wrong reason).
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+test.describe("dialog", () => {
+  test.beforeEach(async ({ page }) => {
+    await openPlayground(page);
+  });
+
+  test("opens from the trigger, takes focus and locks the page behind it", async ({ page }) => {
+    const trigger = page.getByTestId("dialog-trigger");
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    await trigger.click();
+
+    const panel = dialog(page);
+    await expect(panel).toBeVisible();
+    await expect(panel).toHaveAttribute("aria-modal", "true");
+    await expect(panel).toHaveAttribute("aria-labelledby", /.+/);
+    await expect(page.getByRole("heading", { name: "Invite teammates" })).toBeVisible();
+
+    // Focus moves INTO the dialog, otherwise a keyboard user keeps tabbing
+    // through the page underneath while the dialog looks open.
+    const focused = await activeElement(page);
+    expect(focused?.tag).toBe("div");
+    expect(await panel.evaluate((node) => node.contains(node.ownerDocument.activeElement))).toBe(
+      true,
+    );
+
+    // The page behind must not scroll while a modal is up.
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+  });
+
+  test("the trigger's aria-controls resolves to the dialog it opens", async ({ page }) => {
+    const trigger = page.getByTestId("dialog-trigger");
+    await trigger.click();
+
+    const panel = dialog(page);
+    await expect(panel).toBeVisible();
+
+    // What a screen reader does with that button: take the id it announces and
+    // look the node up in the document. This only means something in a REAL DOM
+    // — the panel is portaled to <body>, so it also proves both ends of the
+    // relationship live in the same document. A button announcing an id that
+    // resolves nowhere is a button that cannot say what it opens, and no
+    // automated gate catches it: axe reports `aria-controls` on an element with
+    // `aria-haspopup` as "incomplete", never as a violation.
+    const announced = await trigger.evaluate((node) => {
+      const id = node.getAttribute("aria-controls");
+      return {
+        id,
+        resolved: id === null ? null : (document.getElementById(id)?.getAttribute("role") ?? null),
+      };
+    });
+
+    expect(announced.id).toBeTruthy();
+    expect(announced.resolved).toBe("dialog");
+    // Identity, not a coincidence of attributes: the announced id must BE this
+    // panel, not some other node that happens to look like a dialog.
+    expect(await panel.evaluate((node) => node.id)).toBe(announced.id);
+  });
+
+  test("traps Tab inside the dialog and wraps around", async ({ page }) => {
+    await page.getByTestId("dialog-trigger").click();
+    const panel = dialog(page);
+    await expect(panel).toBeVisible();
+
+    const focusables = panel.locator(FOCUSABLE);
+    const count = await focusables.count();
+    expect(count).toBeGreaterThan(1);
+
+    await focusables.first().focus();
+
+    // Walk one full cycle, remembering where the focus lands at every step.
+    const cycle = [await activeElement(page)];
+    for (let index = 0; index < count; index += 1) {
+      await page.keyboard.press("Tab");
+      cycle.push(await activeElement(page));
+    }
+
+    // As many Tabs as there are controls brings the focus back to where it
+    // started: the trap wraps instead of escaping to the browser UI or to the
+    // page behind the modal.
+    expect(cycle[count]).toEqual(cycle[0]);
+    // Every stop of the cycle is a DIFFERENT control of the panel: a repeated
+    // element would mean a control is skipped, and a control outside the panel
+    // would mean the focus escaped mid-cycle.
+    expect(new Set(cycle.map((stop) => JSON.stringify(stop))).size).toBe(count);
+  });
+
+  test("closes on Escape and returns the focus to the trigger", async ({ page }) => {
+    const trigger = page.getByTestId("dialog-trigger");
+    await trigger.click();
+    await expect(dialog(page)).toBeVisible();
+
+    await page.keyboard.press("Escape");
+
+    await expect(dialog(page)).toBeHidden();
+    // Losing the focus to <body> after closing is the classic overlay bug: the
+    // next Tab would restart from the top of the document.
+    expect((await activeElement(page))?.testId).toBe("dialog-trigger");
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  });
+
+  test("a nested popover's controls are part of the dialog trap (RRU-116)", async ({ page }) => {
+    await page.getByTestId("dialog-trigger").click();
+    const panel = page.getByRole("dialog").filter({ hasText: "Invite teammates" });
+    await expect(panel).toBeVisible();
+
+    await page.getByTestId("dialog-popover-trigger").click();
+    const popover = page.getByRole("dialog").filter({ hasText: "Nested popover" });
+    await expect(popover).toBeVisible();
+
+    // The nested popover is portaled to <body>: its controls are NOT inside the
+    // dialog's subtree, so a trap that only asked "what is inside the panel?"
+    // would never see them. Opening focuses its first control (APG).
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-link");
+
+    // Tab must reach the SECOND control of the nested panel, not jump to the
+    // dialog's first control: the portaled panel belongs to the trap's scope.
+    await page.keyboard.press("Tab");
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-apply");
+
+    // Every stop of a full cycle stays inside the modal context (the dialog
+    // panel or the nested popover) and the cycle wraps back to the popover — the
+    // portaled controls are in the SAME cycle as the dialog's own.
+    const cycleLength = await page.evaluate(() => {
+      const roots = [
+        document.querySelector(".rr-dialog-content"),
+        document.querySelector(".rr-popover-content"),
+      ].filter((node): node is HTMLElement => node instanceof HTMLElement);
+      // Mirrors the FOCUSABLE selector above (page.evaluate cannot see module
+      // scope — this string is kept inline so the count matches the DOM query).
+      const selector =
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(document.querySelectorAll<HTMLElement>(selector)).filter((el) =>
+        roots.some((root) => root.contains(el)),
+      ).length;
+    });
+
+    const stops: Array<Awaited<ReturnType<typeof activeElement>>> = [];
+    for (let index = 0; index < cycleLength; index += 1) {
+      await page.keyboard.press("Tab");
+      stops.push(await activeElement(page));
+    }
+    // As many Tabs as there are controls in the two panels brings the focus
+    // back to where the walk started: the trap wraps the WHOLE scope (dialog +
+    // portaled popover) as one cycle — exactly like the single-dialog cycle the
+    // other spec proves. A leak to a page control would break the count.
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-apply");
+    // The walk visited the popover's link (its controls are IN the cycle) and
+    // the dialog's own controls, never anything outside the two panels.
+    expect(stops.some((stop) => stop?.testId === "dialog-popover-link")).toBe(true);
+    expect(stops.some((stop) => stop?.testId === "dialog-select-trigger")).toBe(true);
+  });
+
+  test("closes with a footer action and with a press outside the panel", async ({ page }) => {
+    await page.getByTestId("dialog-trigger").click();
+    await expect(dialog(page)).toBeVisible();
+
+    await page.getByTestId("dialog-close").click();
+    await expect(dialog(page)).toBeHidden();
+
+    // Reopen through the controlled root, then dismiss the way a mouse user
+    // does: pressing the dimmed area outside the panel.
+    await page.getByTestId("dialog-trigger").click();
+    await expect(dialog(page)).toBeVisible();
+
+    await page.mouse.click(4, 4);
+    await expect(dialog(page)).toBeHidden();
+  });
+
+  test("opens from a menu item and survives a full close cycle", async ({ page }) => {
+    await page.getByTestId("menu-trigger").click();
+    await page.getByRole("menuitem", { name: "More" }).hover();
+    // The submenu is addressed by what is inside it: a positional locator such as
+    // `.last()` silently re-points at the root menu the moment the submenu goes
+    // away, and a test that then asserts "hidden" on the root would pass for the
+    // wrong reason.
+    const submenu = page.getByRole("menu").filter({ hasText: "Delete project…" });
+    await expect(submenu).toBeVisible();
+
+    await page.getByRole("menuitem", { name: "Delete project…" }).click();
+
+    // The whole menu tree is gone and the modal is the only layer left.
+    await expect(submenu).toBeHidden();
+    await expect(dialog(page)).toBeVisible();
+    await expect(page.getByTestId("last-action")).toHaveText("Last action: delete-requested");
+    // The menu restores the focus to its trigger when it closes; the dialog that
+    // opened in the same commit must win, or the user is left focused behind a
+    // modal.
+    expect(
+      await dialog(page).evaluate((node) => node.contains(node.ownerDocument.activeElement)),
+    ).toBe(true);
+
+    await page.getByTestId("dialog-confirm").click();
+    await expect(dialog(page)).toBeHidden();
+  });
+
+  test("a dialog whose trigger unmounted itself falls back to the page's first focusable, not the body (RRU-117)", async ({
+    page,
+  }) => {
+    const trigger = page.getByTestId("tour-trigger");
+    await trigger.click();
+
+    const tour = page.getByRole("dialog").filter({ hasText: "Keyboard tour" });
+    await expect(tour).toBeVisible();
+    // The trigger unmounted itself in the same commit it opened the dialog: it
+    // cannot be the restoration target, which is exactly what makes this the
+    // discriminating surface for the no-trigger fallback (the delete-dialog's
+    // menu trigger survives, so it never hit the bug).
+    await expect(trigger).toHaveCount(0);
+
+    // The documented RRU-117 destination: the FIRST focusable of the document,
+    // in DOM order. Derived from the DOM — a control added above it in the tree
+    // must change the expectation, so the test cannot silently outlive the app.
+    const firstFocusable = page.locator(FOCUSABLE).first();
+    await expect(firstFocusable).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(tour).toBeHidden();
+
+    const focused = await activeElement(page);
+    // The old `document.body.focus()` no-op parked the focus on the unfocusable
+    // <body> with no visible ring — the exact finding #2 of the manual review.
+    expect(focused?.tag).not.toBe("body");
+    expect(focused?.testId).toBe(await firstFocusable.getAttribute("data-testid"));
+  });
+});

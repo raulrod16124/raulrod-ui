@@ -1,0 +1,46 @@
+/* FormField — composition root for Label–Description–Control–Error (RRU-044,
+   ADR-003). Layout-only: stacks the four slots with token-based spacing; every
+   design value is a var(--rr-*) (no arbitrary values). Paragraph/div mechanics
+   exceptions documented in component-pattern.mdx §5: `display: flex` and the
+   column direction are layout keywords without a token counterpart (Stack/Inline
+   precedent, RRU-031).
+
+   Spacing: root gap is space-1 (4px); the control/error sit on their own
+   margin-top space-1 from the label/description, so 8px separate the current
+   heading line from the interactive element while label→description stays
+   tighter (4px). Colors come straight from semantic tokens:
+   - label → text.primary
+   - description → text.muted
+   - error → text.danger (light red-600 / dark red-400, pair AA en color.md §6.1)
+   Source order irrelevant: no hover/active/disabled states on the wrapper. */
+
+.rr-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-1);
+  font-family: var(--rr-font-family-sans);
+}
+
+.rr-form-field-label {
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-medium);
+  line-height: var(--rr-font-leading-tight);
+  color: var(--rr-color-text-primary);
+}
+
+.rr-form-field-description {
+  font-size: var(--rr-font-size-sm);
+  line-height: var(--rr-font-leading-normal);
+  color: var(--rr-color-text-muted);
+}
+
+.rr-form-field-control {
+  display: block;
+  margin-top: var(--rr-space-1);
+}
+
+.rr-form-field-error {
+  font-size: var(--rr-font-size-sm);
+  line-height: var(--rr-font-leading-normal);
+  color: var(--rr-color-text-danger);
+}

@@ -1,0 +1,101 @@
+/* Inline — horizontal flex layout primitive (RRU-031, ADR-003).
+   Only tokens for design values (`var(--rr-space-*)`); `align`/`justify`
+   values are CSS layout keywords and have no token counterpart. */
+
+.rr-inline {
+  display: flex;
+  flex-direction: row;
+  gap: var(--rr-space-4);
+}
+
+.rr-inline--gap-0 {
+  gap: var(--rr-space-0);
+}
+
+.rr-inline--gap-1 {
+  gap: var(--rr-space-1);
+}
+
+.rr-inline--gap-2 {
+  gap: var(--rr-space-2);
+}
+
+.rr-inline--gap-3 {
+  gap: var(--rr-space-3);
+}
+
+.rr-inline--gap-4 {
+  gap: var(--rr-space-4);
+}
+
+.rr-inline--gap-5 {
+  gap: var(--rr-space-5);
+}
+
+.rr-inline--gap-6 {
+  gap: var(--rr-space-6);
+}
+
+.rr-inline--gap-8 {
+  gap: var(--rr-space-8);
+}
+
+.rr-inline--gap-10 {
+  gap: var(--rr-space-10);
+}
+
+.rr-inline--gap-12 {
+  gap: var(--rr-space-12);
+}
+
+.rr-inline--gap-16 {
+  gap: var(--rr-space-16);
+}
+
+.rr-inline--align-start {
+  align-items: flex-start;
+}
+
+.rr-inline--align-center {
+  align-items: center;
+}
+
+.rr-inline--align-end {
+  align-items: flex-end;
+}
+
+.rr-inline--align-stretch {
+  align-items: stretch;
+}
+
+.rr-inline--align-baseline {
+  align-items: baseline;
+}
+
+.rr-inline--justify-start {
+  justify-content: flex-start;
+}
+
+.rr-inline--justify-center {
+  justify-content: center;
+}
+
+.rr-inline--justify-end {
+  justify-content: flex-end;
+}
+
+.rr-inline--justify-between {
+  justify-content: space-between;
+}
+
+.rr-inline--justify-around {
+  justify-content: space-around;
+}
+
+.rr-inline--justify-evenly {
+  justify-content: space-evenly;
+}
+
+.rr-inline--wrap {
+  flex-wrap: wrap;
+}

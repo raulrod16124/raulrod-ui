@@ -1,0 +1,135 @@
+/* Radio / RadioGroup — native radio group (RRU-047, ADR-003).
+   Only tokens for design values (var(--rr-*)). Documented mechanics
+   exceptions (component-pattern.mdx §5, precedents RRU-031/033/041/046):
+   - border/outline widths (1px/2px) and outline-offset: no width token
+     exists; 2px focus ring is the color.md §6.3 contract.
+   - `appearance: none`, `cursor` and `flex-direction` keywords: platform
+     styling / layout mechanics without a token counterpart (precedent
+     `align`/`justify`, RRU-031).
+   The option is a bare `<input type="radio">` (Checkbox/Input precedent):
+   `role="radio"` + `aria-checked`, keyboard (arrows select + rove focus, DoD
+   #1) and form participation are NATIVE, driven by the shared `name` the
+   RadioGroup context assigns. The checked dot is a `radial-gradient` reading
+   the `--rr-color-action-primary-text` TOKEN — unlike Checkbox's fixed
+   `%23ffffff` stroke (whose SVG can't read vars), a CSS gradient can, so here
+   the white marker is token-governed, not an exception. Resting boundary uses
+   `color.border.strong`, NOT `border.default` (color.md §6.2). Source order
+   matters: the disabled block is last so it beats every state/hover rule at
+   equal specificity. The group `aria-invalid` rule is a descendant selector
+   (higher specificity) so the danger border beats the resting strong border. */
+
+.rr-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rr-space-2);
+}
+
+.rr-radio-group--horizontal {
+  flex-direction: row;
+  gap: var(--rr-space-4);
+}
+
+.rr-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  margin: 0;
+  cursor: pointer;
+}
+
+.rr-radio-input {
+  appearance: none;
+  width: var(--rr-space-4);
+  height: var(--rr-space-4);
+  margin: 0;
+  padding: 0;
+  background:
+    radial-gradient(circle, var(--rr-color-action-primary-text) 0 34%, transparent 38%),
+    var(--rr-color-background-default);
+  background-origin: border-box;
+  border: 1px solid var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-full);
+  cursor: pointer;
+  transition:
+    background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+
+.rr-radio-input:hover {
+  background-color: var(--rr-color-background-surface);
+}
+
+.rr-radio-input:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- Size axis (base = md in .rr-radio-input; explicit modifier for the
+   passed case). Root-scoped like every `rr-*--*` modifier (createVariants
+   emits on the root class, component-pattern.mdx §4). --- */
+
+.rr-radio--size-sm .rr-radio-input {
+  width: var(--rr-space-3);
+  height: var(--rr-space-3);
+}
+
+.rr-radio--size-md .rr-radio-input {
+  width: var(--rr-space-4);
+  height: var(--rr-space-4);
+}
+
+.rr-radio--size-lg .rr-radio-input {
+  width: var(--rr-space-5);
+  height: var(--rr-space-5);
+}
+
+.rr-radio-label {
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+  color: var(--rr-color-text-primary);
+}
+
+/* --- Checked: primary fill + inner dot (radial-gradient over
+   `action.primary.text`). The hover fill resolves the `.background-hover`
+   semantic so the dot darkens with the theme like Button's primary. --- */
+
+.rr-radio-input:checked {
+  background-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-action-primary-background);
+}
+
+.rr-radio-input:checked:hover {
+  background-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-action-primary-background-hover);
+}
+
+/* --- Group invalid: FormField wiring (RRU-044) spreads `aria-invalid` onto
+   the group element; the descendant rule paints every option danger. Higher
+   specificity than the resting `border.strong` base. --- */
+
+.rr-radio-group[aria-invalid="true"] .rr-radio-input {
+  border-color: var(--rr-color-border-danger);
+}
+
+/* --- Disabled: LAST so it beats every state and hover rule above (same
+   specificity, later source order; the group descendant rule above is
+   unrelated). Shared disabled look (WCAG 1.4.3 exempts disabled controls
+   from contrast — color.md §6). `background-image: none` clears the inner dot
+   so a disabled checked option is a plain circle. The label mutes and the row
+   cursor turns via `rr-radio--disabled` (Boolean flag, pattern §4.1). --- */
+
+.rr-radio-input:disabled {
+  background-color: var(--rr-color-action-disabled-background);
+  background-image: none;
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.rr-radio--disabled {
+  cursor: not-allowed;
+}
+
+.rr-radio--disabled .rr-radio-label {
+  color: var(--rr-color-text-muted);
+}

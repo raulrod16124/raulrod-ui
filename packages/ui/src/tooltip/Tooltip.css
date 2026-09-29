@@ -1,0 +1,54 @@
+/* Tooltip — supplementary hover/focus hint (RRU-056, ADR-003). Only tokens
+   (var(--rr-*)). Documented mechanics exceptions (component-pattern.mdx §5,
+   conflicting family antecedent Popover RRU-054):
+   - `left/top: -9999px`: offscreen but measurable starting point. The position
+     hook (`use-popover-position.ts`) writes the REAL coordinates as inline
+     `left`/`top` before paint — runtime geometry is the one ARBITRARY-value
+     exception of ADR-003's "no arbitrary values" (documented in
+     component-pattern.mdx §5): coordinates are frame data, not design tokens.
+   - `display: inline-block` on the wrapper: mechanical layout so the anchor
+     span wraps its child predictably for measurement; not a design value.
+   Layering: `z-index: var(--rr-z-toast)` (RRU-023) — the tooltip floats at the
+   TOP of the semantic scale (0/100/200/300). Unlike Popover (overlay=100), a
+   tooltip may appear over an OPEN popover/dialog (e.g. hinting a control
+   inside a dialog body, z.modal=200); the hint must never end up painted
+   beneath the very layer it explains. Transient + non-modal by nature, the
+   toast tier is its semantic home. */
+
+.rr-tooltip-trigger {
+  display: inline-block;
+}
+
+.rr-tooltip {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: var(--rr-z-toast);
+  padding: var(--rr-space-2) var(--rr-space-3);
+  background: var(--rr-color-background-sunken);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-sm);
+  line-height: var(--rr-font-leading-normal);
+  border-radius: var(--rr-radius-md);
+  box-shadow: var(--rr-shadow-md);
+  animation: rr-tooltip-in var(--rr-motion-duration-fast) var(--rr-motion-easing-enter);
+  pointer-events: auto;
+}
+
+@keyframes rr-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-tooltip {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}

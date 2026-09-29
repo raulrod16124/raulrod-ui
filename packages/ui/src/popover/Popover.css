@@ -1,0 +1,87 @@
+/* Popover — non-modal floating overlay (RRU-054, ADR-003). Only tokens
+   (var(--rr-*)). Documented mechanics exceptions (component-pattern.mdx §5,
+   RRU-031/033/043 precedent family):
+   - `left/top: -9999px`: offscreen but measurable starting point. The position
+     hook (`use-popover-position.ts`) writes the REAL coordinates as inline
+     `left`/`top` before paint — runtime geometry is the one ARBITRARY-value
+     exception of ADR-003's "no arbitrary values" (documented in
+     component-pattern.mdx §5 and the card notes): coordinates are frame data,
+     not design tokens. The initial `-9999px` keeps the panel out of view until
+     measured and is itself a mechanical value without a token counterpart
+     (precedent sr-only clips RRU-033).
+   Layering: `z-index: var(--rr-z-overlay)` (RRU-023, resolveLayerVar) — the
+   popover floats at the overlay level, BELOW modals (`z.modal`), matching the
+   semantic scale; stacked overlays keep working through the dismissable-layer
+   registry (RRU-052). */
+
+.rr-popover-trigger {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--rr-radius-sm);
+}
+
+.rr-popover-trigger:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-popover-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.rr-popover-content {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: var(--rr-z-overlay);
+  padding: var(--rr-space-4);
+  background: var(--rr-color-background-surface);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  font-size: var(--rr-font-size-base);
+  line-height: var(--rr-font-leading-normal);
+  border-radius: var(--rr-radius-lg);
+  box-shadow: var(--rr-shadow-md);
+  animation: rr-popover-in var(--rr-motion-duration-base) var(--rr-motion-easing-enter);
+}
+
+/* The panel is an initial-focus target only when it has no focusable child
+   (first-focusable fallback, Popover.tsx): the visible indicator appears only
+   when reached through the Tab cycle (focus-visible), same reasoning as
+   Dialog. */
+.rr-popover-content:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.rr-popover-title {
+  margin: 0;
+  font-size: var(--rr-font-size-sm);
+  font-weight: var(--rr-font-weight-semibold);
+  line-height: var(--rr-font-leading-tight);
+  letter-spacing: var(--rr-font-tracking-tight);
+  color: var(--rr-color-text-primary);
+}
+
+@keyframes rr-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rr-space-1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-popover-content {
+    animation-name: var(--rr-motion-behavior-reduced);
+  }
+}
