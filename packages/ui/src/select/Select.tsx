@@ -16,6 +16,7 @@ import {
   createContext,
   forwardRef,
   isValidElement,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -30,7 +31,11 @@ import { useDismissableLayer } from "../utils/dismissable-layer.js";
 import { useFocusReturn } from "../utils/focus-return.js";
 import { mergeRefs } from "../utils/merge-refs.js";
 import { useId } from "../utils/use-id.js";
-import { focusSelectedOption, useListboxKeyboard } from "../utils/use-listbox-keyboard.js";
+import {
+  focusSelectedOption,
+  focusSelectedOrLastOption,
+  useListboxKeyboard,
+} from "../utils/use-listbox-keyboard.js";
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 import { VisuallyHidden } from "../visually-hidden/index.js";
 
@@ -85,6 +90,12 @@ export function Select({
   const controlledValue = value !== undefined;
   const selectedValue = controlledValue ? value : uncontrolledValue;
 
+  const focusLastOnOpenRef = useRef(false);
+  const getFocusLastOnOpen = useCallback((): boolean => focusLastOnOpenRef.current, []);
+  const setFocusLastOnOpen = useCallback((value: boolean): void => {
+    focusLastOnOpenRef.current = value;
+  }, []);
+
   const setOpen = (next: boolean): void => {
     if (!controlledOpen) setUncontrolledOpen(next);
     onOpenChange?.(next);
@@ -126,6 +137,8 @@ export function Select({
     hasSelection,
     selectedLabel,
     select,
+    getFocusLastOnOpen,
+    setFocusLastOnOpen,
   };
 
   return <SelectContext.Provider value={selectContext}>{children}</SelectContext.Provider>;
@@ -141,7 +154,7 @@ Select.displayName = "Select";
  *  to assistive technology (DoD), transparent to the layout via
  *  `VisuallyHidden`. */
 export const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
-  function SelectTrigger({ className, size = "md", onClick, children, ...props }, ref) {
+  function SelectTrigger({ className, size = "md", onClick, onKeyDown, children, ...props }, ref) {
     const select = useSelectContext();
     return (
       <button
@@ -158,6 +171,25 @@ export const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
         onClick={(event) => {
           select.setOpen(!select.open);
           onClick?.(event);
+        }}
+        onKeyDown={(event) => {
+          if (select.open) {
+            onKeyDown?.(event);
+            return;
+          }
+          switch (event.key) {
+            case "ArrowDown":
+            case "ArrowUp":
+              event.preventDefault();
+              event.stopPropagation();
+              event.nativeEvent.stopImmediatePropagation();
+              select.setFocusLastOnOpen(event.key === "ArrowUp");
+              select.setOpen(true);
+              break;
+            default:
+              break;
+          }
+          onKeyDown?.(event);
         }}
       >
         {children}
@@ -247,10 +279,16 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(func
   });
 
   // Initial focus (APG: the selected option, else the first enabled). The
-  // roving write (`tabIndex=0` + focus) happens once per open.
+  // roving write (`tabIndex=0` + focus) happens once per open. ArrowUp from the
+  // trigger opens downward but focuses the selected option or the LAST enabled
+  // one; ArrowDown focuses the selected option or the FIRST enabled one.
+  const { open, selectedValue, getFocusLastOnOpen, setFocusLastOnOpen } = select;
   useEffect(() => {
-    if (select.open) focusSelectedOption(panelRef.current, select.selectedValue);
-  }, [select.open, select.selectedValue]);
+    if (!open) return;
+    const focus = getFocusLastOnOpen() ? focusSelectedOrLastOption : focusSelectedOption;
+    focus(panelRef.current, selectedValue);
+    setFocusLastOnOpen(false);
+  }, [open, selectedValue, getFocusLastOnOpen, setFocusLastOnOpen]);
 
   if (!select.open) return null;
 

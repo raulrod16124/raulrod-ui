@@ -35,4 +35,9 @@ export interface PaginationProps extends HTMLAttributes<HTMLElement> {
   /** Fires when the page actually changes (never on a click of the current
    *  page). Controlled bars re-render through this callback. */
   onPageChange?: (page: number) => void;
+  /** Whether the built-in `role="status"` live region announcing "Page X of Y"
+   *  is mounted (default). A component that COMPOSES the bar and owns its own
+   *  announcement channel (DataTable, RRU-119) passes `false` — two polite
+   *  regions would queue the same sentence twice. */
+  announcePageChange?: boolean;
 }

@@ -38,6 +38,32 @@ test.describe("select (keyboard only)", () => {
     await expect(listbox(page)).toHaveAttribute("id", controls ?? "");
   });
 
+  test("opens with ArrowDown and focuses the first option", async ({ page }) => {
+    // Start from a clean page so no previous test in this worker has left a
+    // selection in the playground form.
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "RaulRod UI" })).toBeVisible();
+    await trigger(page).focus();
+
+    await page.keyboard.press("ArrowDown");
+
+    await expect(listbox(page)).toBeVisible();
+    await expect(trigger(page)).toHaveAttribute("aria-expanded", "true");
+    expect((await activeElement(page))?.text).toBe("Hobby");
+  });
+
+  test("opens with ArrowUp and focuses the last option", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "RaulRod UI" })).toBeVisible();
+    await trigger(page).focus();
+
+    await page.keyboard.press("ArrowUp");
+
+    await expect(listbox(page)).toBeVisible();
+    await expect(trigger(page)).toHaveAttribute("aria-expanded", "true");
+    expect((await activeElement(page))?.text).toBe("Enterprise");
+  });
+
   test("moves the roving focus with the arrow keys and wraps around", async ({ page }) => {
     await page.keyboard.press("Enter");
     await expect(listbox(page)).toBeVisible();

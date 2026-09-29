@@ -166,6 +166,12 @@ export function useDismissableLayer({
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Escape") return;
       if (!isTopmostLayer(id)) return;
+      // Consume the event explicitly so the topmost overlay is the only one
+      // that reacts, and so browser defaults / ancestor listeners cannot
+      // re-trigger dismissal or scroll. Coherent with useFocusTrap, which
+      // also registers its keydown listener in capture phase.
+      event.preventDefault();
+      event.stopPropagation();
       onEscapeRef.current?.();
     };
 
@@ -176,11 +182,14 @@ export function useDismissableLayer({
       onInteractOutsideRef.current?.(event);
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    // Capture phase, same as useFocusTrap, so overlay infrastructure always
+    // wins over consumer listeners and the order does not depend on mount
+    // order when multiple layers/traps are alive.
+    document.addEventListener("keydown", handleKeyDown, true);
     document.addEventListener("pointerdown", handlePointerDown, true);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       unregisterLayer(id);
     };

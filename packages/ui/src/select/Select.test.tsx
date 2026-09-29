@@ -8,7 +8,7 @@
 // implementation.
 import type { ReactElement } from "react";
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -33,10 +33,20 @@ import {
   SelectValue,
 } from "./index.js";
 
-/** The event is returned so the APG preventDefault contract stays assertable. */
+/** Dispatches a keydown on `document` (used when focus lives inside the popup
+ *  and the hook listens at document level). The event is returned so the APG
+ *  preventDefault contract stays assertable. */
 function pressKey(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
   const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
   fireEvent(document, event);
+  return event;
+}
+
+/** Dispatches a keydown directly on a node (used for the trigger's own
+ *  React onKeyDown handler). */
+function pressKeyOn(target: Element, key: string): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  fireEvent(target, event);
   return event;
 }
 
@@ -159,6 +169,64 @@ describe("Select combobox contract (DoD #2)", () => {
     await clickOn("trigger");
     await clickOn("item-madrid");
     expect(status.textContent).toBe("Madrid");
+  });
+});
+
+describe("Select trigger keyboard: opens with arrow keys (RRU-120)", () => {
+  it("ArrowDown opens the popup and focuses the selected option (or the first enabled)", async () => {
+    render(composedSelect({ defaultValue: "madrid" }));
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    const event = pressKeyOn(trigger, "ArrowDown");
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(listbox()).not.toBeNull();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const madrid = document.querySelector<HTMLElement>("[data-testid='item-madrid']")!;
+    expect(document.activeElement).toBe(madrid);
+  });
+
+  it("ArrowUp opens the popup and focuses the selected option (or the last enabled)", async () => {
+    render(composedSelect());
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    const event = pressKeyOn(trigger, "ArrowUp");
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(listbox()).not.toBeNull();
+    expect(document.activeElement).toBe(options()[3]); // paris
+  });
+
+  it("opening with arrow keys does NOT change the selection", async () => {
+    const onValueChange = vi.fn();
+    render(composedSelect({ defaultValue: "madrid", onValueChange }));
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    pressKeyOn(trigger, "ArrowDown");
+    expect(listbox()).not.toBeNull();
+    expect(onValueChange).not.toHaveBeenCalled();
+
+    pressKey("Escape");
+    act(() => trigger.focus());
+    pressKeyOn(trigger, "ArrowUp");
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("does not reopen from the trigger while the popup is already open", async () => {
+    render(composedSelect({ defaultValue: "madrid" }));
+    const trigger = triggerButton();
+    await openViaTrigger();
+    const madrid = document.querySelector<HTMLElement>("[data-testid='item-madrid']")!;
+    expect(document.activeElement).toBe(madrid);
+
+    pressKeyOn(trigger, "ArrowDown");
+
+    // The trigger does not close/reopen; the listbox keyboard hook moves the
+    // roving focus instead (madrid → paris, skipping disabled oaxaca).
+    expect(document.activeElement).toBe(options()[3]); // paris
   });
 });
 

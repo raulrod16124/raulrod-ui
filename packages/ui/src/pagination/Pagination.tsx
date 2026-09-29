@@ -35,6 +35,9 @@ import { paginationRange } from "./pagination-range.js";
  *   Select's `selectedLabel`) is ALWAYS mounted and announces "Page X of Y" on
  *   each page change — WCAG 4.1.3 for the SPA case, where the list swaps in
  *   place without navigation (precond: the region exists before the update).
+ *   `announcePageChange={false}` unmounts it for the composer that owns the
+ *   announcement channel (DataTable, RRU-119): two polite regions would queue
+ *   the same sentence twice.
  * - Boundary disabled: previous at page 1 / next at page pageCount use native
  *   `disabled` (Button precedent) — removed from the tab order, announced as
  *   dimmed, action impossible by construction.
@@ -54,7 +57,7 @@ import { paginationRange } from "./pagination-range.js";
  * delayed additive prop (see Pagination.types.ts).
  */
 export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagination(
-  { page, defaultPage, pageCount, onPageChange, className, ...props },
+  { page, defaultPage, pageCount, onPageChange, announcePageChange = true, className, ...props },
   ref,
 ) {
   const [uncontrolledPage, setUncontrolledPage] = useState<number>(defaultPage ?? 1);
@@ -121,9 +124,11 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
           </button>
         </li>
       </ul>
-      <VisuallyHidden role="status" aria-live="polite">
-        {`Page ${current} of ${pageCount}`}
-      </VisuallyHidden>
+      {announcePageChange && (
+        <VisuallyHidden role="status" aria-live="polite">
+          {`Page ${current} of ${pageCount}`}
+        </VisuallyHidden>
+      )}
     </nav>
   );
 });

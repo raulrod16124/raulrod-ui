@@ -23,10 +23,12 @@ const switchClasses = createVariants(switchModifiers);
 /**
  * Native toggle switch (RRU-048, WAI-ARIA switch pattern). Renders a `<label>`
  * row wrapping a bare `<input type="checkbox" role="switch">` (native-first,
- * Checkbox/Radio precedent) plus an aria-hidden label span with `children`.
- * `role="switch"` + `aria-checked` from the checked state (DoD #1) and
- * Space/click toggling come from the native checkbox — no JS keyboard or ARIA
- * to fake; `:checked`/`:disabled` ride the native pseudo-classes.
+ * Checkbox/Radio precedent) and a visible `<span>` label with `children`.
+ * `role="switch"` and the on/off state come from the native checkbox mapping
+ * (`checked` is exposed as `aria-checked` implicitly by the browser — no
+ * explicit `aria-checked` attribute is emitted) and Space/click toggling comes
+ * from the native checkbox — no JS keyboard or ARIA to fake; `:checked`/
+ * `:disabled` ride the native pseudo-classes.
  *
  * The track IS the input (`appearance: none`) and the knob is its `::after`
  * pseudo-element — decorative by construction, no extra a11y node. The label

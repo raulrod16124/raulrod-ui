@@ -95,6 +95,21 @@ export function focusSelectedOption(
   focusOption(options, selectedIndex >= 0 ? selectedIndex : firstEnabledIndex(options));
 }
 
+/** Focus when opening with ArrowUp: the SELECTED option when there is one (and
+ *  it is enabled), else the LAST enabled one. Mirrors {@link focusSelectedOption}
+ *  for the upward direction. */
+export function focusSelectedOrLastOption(
+  listbox: HTMLElement | null,
+  selectedValue: string | undefined,
+): void {
+  if (!listbox) return;
+  const options = getOptions(listbox);
+  const selectedIndex = options.findIndex(
+    (option) => option.value === selectedValue && !option.disabled,
+  );
+  focusOption(options, selectedIndex >= 0 ? selectedIndex : lastEnabledIndex(options));
+}
+
 export function useListboxKeyboard(options: ListboxKeyboardOptions): void {
   const { listboxRef, active } = options;
   const callbacksRef = useRef<ListboxCallbacks>({});

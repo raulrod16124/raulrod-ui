@@ -32,6 +32,13 @@ export interface DropdownMenuContextValue {
   triggerRef: RefObject<HTMLButtonElement | null>;
   /** Registers the trigger node (owned by the provider, see above). */
   setTriggerRef: (node: HTMLButtonElement | null) => void;
+  /** Mutable flag for the initial focus direction on open. `true` focuses the
+   *  LAST enabled menuitem; `false` focuses the FIRST enabled one. Set by
+   *  `ArrowUp`/`ArrowDown` on the trigger and reset by the content after
+   *  focusing. Exposed as getter/setter so the ref never lives inside the
+   *  context object (react-hooks/immutability). */
+  getFocusLastOnOpen: () => boolean;
+  setFocusLastOnOpen: (value: boolean) => void;
 }
 
 /**

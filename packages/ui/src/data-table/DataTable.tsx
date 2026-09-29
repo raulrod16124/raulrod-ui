@@ -1,4 +1,10 @@
-import type { DataTableProps, DataTableRowId, DataTableSort } from "./DataTable.types.js";
+import type {
+  DataTableColumn,
+  DataTableProps,
+  DataTableRowId,
+  DataTableSort,
+  DataTableSortDirection,
+} from "./DataTable.types.js";
 import type { ChangeEvent, ForwardedRef, ReactNode, RefAttributes } from "react";
 
 import { forwardRef, useEffect, useState } from "react";
@@ -10,6 +16,7 @@ import { Pagination } from "../pagination/index.js";
 import { Table } from "../table/index.js";
 import { cx } from "../utils/cx.js";
 import { useId as useDesignSystemId } from "../utils/use-id.js";
+import { VisuallyHidden } from "../visually-hidden/index.js";
 
 import {
   filterDataTableRows,
@@ -25,6 +32,53 @@ interface DataTableComponent {
     props: DataTableProps<T, RowId> & RefAttributes<HTMLDivElement>,
   ): ReactNode;
   displayName?: string;
+}
+
+/** Default localized-English strings (RRU-119): every sentence the component
+ *  COMPOSES is overridable per feature config, with these as the compatible
+ *  defaults. Plain strings (`label`, `placeholder`, `empty`, `caption`) were
+ *  always consumer-owned; only the composed ones needed a function. */
+
+function defaultSortButtonLabel<T>(
+  column: DataTableColumn<T>,
+  direction: DataTableSortDirection | undefined,
+): string {
+  return `Sort by ${column.header}, ${
+    direction ? `sorted ${direction === "asc" ? "ascending" : "descending"}` : "not sorted"
+  }`;
+}
+
+function defaultSortAnnouncement<T>(
+  sort: DataTableSort<T> | null,
+  column: DataTableColumn<T>,
+): string {
+  return sort
+    ? `Sorted by ${column.header} ${sort.direction === "asc" ? "ascending" : "descending"}`
+    : "Sorting cleared";
+}
+
+function defaultFilterAnnouncement(visibleCount: number, totalCount: number): string {
+  return `${visibleCount} of ${totalCount} rows`;
+}
+
+function defaultSelectionAnnouncement(selectedCount: number): string {
+  return `${selectedCount} ${selectedCount === 1 ? "row" : "rows"} selected`;
+}
+
+function defaultPageAnnouncement(page: number, pageCount: number): string {
+  return `Page ${page} of ${pageCount}`;
+}
+
+function defaultPaginationLabel(caption: string): string {
+  return `${caption} pagination`;
+}
+
+function defaultRowToggleLabel(rowLabel: string): string {
+  return `Select ${rowLabel}`;
+}
+
+function defaultAllToggleLabel(allSelected: boolean): string {
+  return allSelected ? "Deselect all filtered rows" : "Select all filtered rows";
 }
 
 function rowReactKey(rowId: DataTableRowId): string {
@@ -79,6 +133,13 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
   const [uncontrolledSelection, setUncontrolledSelection] = useState<ReadonlySet<RowId>>(
     () => new Set(rowSelection?.defaultSelectedRowIds ?? []),
   );
+  // Polite live-region sentence of the LAST user action (sort, filter, selection
+  // or page change). Action-driven by design: an external change of controlled
+  // props or data never announces — only what the user did through the table's
+  // own controls. `null` until the first action, so the region mounts SILENT
+  // (never announces the initial state on load). Reset to page one by a filter
+  // is part of the filter announcement's result, not a separate sentence.
+  const [announcement, setAnnouncement] = useState<string | null>(null);
 
   const filterValue = filtering
     ? filterControlled
@@ -117,6 +178,9 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
     const normalized = getDataTablePage(nextPage, pageCount);
     if (normalized === page) return;
     if (!pageControlled) setUncontrolledPage(normalized);
+    setAnnouncement(
+      (pagination?.getAnnouncement ?? defaultPageAnnouncement)(normalized, pageCount),
+    );
     pagination?.onPageChange?.(normalized);
   };
 
@@ -128,19 +192,29 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
     pagination.onPageChange?.(1);
   };
 
-  const commitSort = (nextSort: DataTableSort<T> | null): void => {
+  const commitSort = (nextSort: DataTableSort<T> | null, column: DataTableColumn<T>): void => {
     if (!sortControlled) setUncontrolledSort(nextSort);
+    setAnnouncement((sorting?.getAnnouncement ?? defaultSortAnnouncement)(nextSort, column));
     sorting?.onChange?.(nextSort);
   };
 
   const commitSelection = (nextSelection: ReadonlySet<RowId>): void => {
     if (!selectionControlled) setUncontrolledSelection(nextSelection);
+    setAnnouncement(
+      (rowSelection?.getAnnouncement ?? defaultSelectionAnnouncement)(nextSelection.size),
+    );
     rowSelection?.onChange?.(nextSelection);
   };
 
   const changeFilter = (event: ChangeEvent<HTMLInputElement>): void => {
     const nextValue = event.currentTarget.value;
     if (!filterControlled) setUncontrolledFilterValue(nextValue);
+    const nextVisibleCount = filtering
+      ? filterDataTableRows(data, nextValue, columns, filtering.getValue).length
+      : data.length;
+    setAnnouncement(
+      (filtering?.getAnnouncement ?? defaultFilterAnnouncement)(nextVisibleCount, data.length),
+    );
     filtering?.onChange?.(nextValue);
     resetPage();
   };
@@ -173,7 +247,9 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
               name={`${id}-selection`}
               size="sm"
               checked={selectedRowIds.has(rowId)}
-              aria-label={`Select ${rowSelection.getRowLabel(row)}`}
+              aria-label={(rowSelection.getRowToggleLabel ?? defaultRowToggleLabel)(
+                rowSelection.getRowLabel(row),
+              )}
               onChange={(event) => changeRowSelection(rowId, event.currentTarget.checked)}
             />
           </Table.Cell>
@@ -220,9 +296,9 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
                   checked={allFilteredSelected}
                   indeterminate={someFilteredSelected}
                   disabled={loading || hasError || filteredRows.length === 0}
-                  aria-label={
-                    allFilteredSelected ? "Deselect all filtered rows" : "Select all filtered rows"
-                  }
+                  aria-label={(rowSelection.getAllToggleLabel ?? defaultAllToggleLabel)(
+                    allFilteredSelected,
+                  )}
                   onChange={(event) => changeFilteredSelection(event.currentTarget.checked)}
                 />
               </Table.HeaderCell>
@@ -246,8 +322,13 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
                       variant="ghost"
                       size="sm"
                       className="rr-data-table__sort-button"
-                      aria-label={`Sort by ${column.header}, ${direction ? `sorted ${direction === "asc" ? "ascending" : "descending"}` : "not sorted"}`}
-                      onClick={() => commitSort(getNextDataTableSort(activeSort, column.key))}
+                      aria-label={(sorting?.getSortButtonLabel ?? defaultSortButtonLabel)(
+                        column,
+                        direction,
+                      )}
+                      onClick={() =>
+                        commitSort(getNextDataTableSort(activeSort, column.key), column)
+                      }
                     >
                       <span>{column.header}</span>
                       {direction && (
@@ -275,10 +356,20 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
             page={page}
             pageCount={pageCount}
             onPageChange={commitPage}
-            aria-label={pagination.label ?? `${caption} pagination`}
+            aria-label={
+              pagination.label ?? (pagination.getLabel ?? defaultPaginationLabel)(caption)
+            }
+            announcePageChange={false}
           />
         </div>
       )}
+      {/* The table's ONE announcement channel (RRU-119): always mounted at the
+          root — it survives the pagination bar unmounting (single page,
+          loading, error), which is exactly when the user needs to hear what
+          happened. The composed Pagination keeps its own region OFF. */}
+      <VisuallyHidden role="status" aria-live="polite">
+        {announcement}
+      </VisuallyHidden>
     </div>
   );
 });
