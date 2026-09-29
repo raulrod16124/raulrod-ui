@@ -52,3 +52,28 @@ export function getFocusableElements(root: ParentNode): HTMLElement[] {
   }
   return focusable;
 }
+
+/**
+ * Focusables in the tab order of the WHOLE document, restricted to the union
+ * of the given roots, in document order (the order the browser would tab).
+ * Used by the focus trap (RRU-116): a modal's scope is its own subtree PLUS
+ * the portaled panels of the overlays that opened under it (they live on
+ * `document.body`, outside the subtree) — `getFocusableElements(root)` alone
+ * would skip them. Order follows the DOM, so the trap's wrap-around runs over
+ * exactly the nodes a real Tab could reach within the modal context, and
+ * focusables behind the modal (in the page under it) are excluded because they
+ * belong to no root.
+ */
+export function getFocusableElementsInDocumentOrder(roots: readonly ParentNode[]): HTMLElement[] {
+  const doc = roots[0]?.ownerDocument;
+  const scope = doc?.body ?? (roots[0] as ParentNode | undefined);
+  if (scope === undefined) return [];
+  const candidates = scope.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+  const focusable: HTMLElement[] = [];
+  for (const element of candidates) {
+    if (isFocusableElement(element) && roots.some((root) => root.contains(element))) {
+      focusable.push(element);
+    }
+  }
+  return focusable;
+}

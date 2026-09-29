@@ -141,6 +141,16 @@ export function OverlaysSection() {
               <PopoverContent>
                 <PopoverTitle>Advanced</PopoverTitle>
                 <Text>Nested popover inside a dialog.</Text>
+                {/* The popover has REAL interactive children: a dialog trap that
+                    skipped portaled panels would drop these from the Tab cycle
+                    (RRU-116). The link + button also give the manual a11y pass
+                    a keyboard-reachable surface to audit. */}
+                <a data-testid="dialog-popover-link" href="/advanced">
+                  Read the docs
+                </a>
+                <Button data-testid="dialog-popover-apply" type="button" variant="outline">
+                  Apply
+                </Button>
               </PopoverContent>
             </Popover>
 

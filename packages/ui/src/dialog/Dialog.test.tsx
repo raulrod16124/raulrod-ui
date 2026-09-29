@@ -7,6 +7,8 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { Popover } from "../popover/index.js";
+import { Select } from "../select/index.js";
 import { auditA11y } from "../test-support/axe.js";
 
 import {
@@ -222,6 +224,134 @@ describe("Dialog ARIA wiring (DoD #2)", () => {
     const panelB = dialog();
     expect(panelB).toHaveAccessibleName("Dialog B");
     expect(document.getElementById(controlsB ?? "")).toBe(panelB);
+  });
+});
+
+describe("nested overlays inside the dialog trap (RRU-116)", () => {
+  function dialogWithNestedOverlays() {
+    return (
+      <Dialog>
+        <Dialog.Trigger data-testid="trigger">Open</Dialog.Trigger>
+        <Dialog.Content>
+          <Dialog.Title>Invite</Dialog.Title>
+          <Select>
+            <Select.Trigger aria-label="City" data-testid="city-trigger">
+              <Select.Value>Pick a city</Select.Value>
+              <Select.Icon />
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item data-testid="city-berlin" value="berlin">
+                Berlin
+              </Select.Item>
+              <Select.Item data-testid="city-oaxaca" value="oaxaca">
+                Oaxaca
+              </Select.Item>
+            </Select.Content>
+          </Select>
+          <Popover>
+            <Popover.Trigger data-testid="more-trigger">More</Popover.Trigger>
+            <Popover.Content>
+              <Popover.Title>More</Popover.Title>
+              <a data-testid="popover-first" href="/first">
+                First
+              </a>
+              <button data-testid="popover-second">Second</button>
+            </Popover.Content>
+          </Popover>
+          <button data-testid="cancel">Cancel</button>
+          <button data-testid="send">Send invites</button>
+        </Dialog.Content>
+      </Dialog>
+    );
+  }
+
+  const panelNode = () => qs(".rr-dialog-content");
+  const popoverNode = () => qs(".rr-popover-content");
+
+  /** Every keyboard stop of the modal must belong to the modal context: the
+   *  dialog panel or the portaled nested overlay's panel (RRU-116). */
+  function insideModalContext(element: Element | null): boolean {
+    if (element === null) return false;
+    return (panelNode()?.contains(element) ?? false) || (popoverNode()?.contains(element) ?? false);
+  }
+
+  async function renderWithOpenDialog() {
+    const user = userEvent.setup();
+    render(dialogWithNestedOverlays());
+    await user.click(screen.getByTestId("trigger"));
+    await user.click(screen.getByTestId("city-trigger"));
+    return user;
+  }
+
+  it("the nested portaled panel's focusables are part of the trap cycle (RRU-116)", async () => {
+    const user = userEvent.setup();
+    render(dialogWithNestedOverlays());
+    await user.click(screen.getByTestId("trigger"));
+    await user.click(screen.getByTestId("more-trigger"));
+
+    // Popover initial focus = its first focusable (APG non-modal dialog).
+    const first = screen.getByTestId("popover-first");
+    const second = screen.getByTestId("popover-second");
+    expect(document.activeElement).toBe(first);
+
+    // RRU-071 finding: with the old subtree-only trap this Tab SKIPPED the
+    // second control and jumped to the dialog's first focusable instead.
+    pressKey("Tab");
+    expect(document.activeElement).toBe(second);
+
+    // After the nested panel's last control the cycle wraps to the dialog's
+    // first control: the portaled focusables sit in the same cycle as the
+    // dialog's own.
+    pressKey("Tab");
+    expect(document.activeElement).toBe(screen.getByTestId("city-trigger"));
+
+    // Finish the full cycle back to the start, every stop inside the modal
+    // context: [city-trigger → more-trigger → cancel → send → first].
+    for (let index = 0; index < 4; index += 1) {
+      pressKey("Tab");
+      expect(insideModalContext(document.activeElement)).toBe(true);
+    }
+    expect(document.activeElement).toBe(first);
+
+    // Backwards wrap lands on the control before the panel, still in scope.
+    pressKey("Tab", { shiftKey: true });
+    expect(document.activeElement).toBe(screen.getByTestId("send"));
+    expect(insideModalContext(document.activeElement)).toBe(true);
+
+    // A11y gate stays green with the nested overlay live on top.
+    await expect(auditA11y(document.body)).resolves.toHaveNoViolations();
+  });
+
+  it("an open Select inside the dialog can never leak focus to the page (RRU-116)", async () => {
+    await renderWithOpenDialog();
+
+    // Select initial focus = first enabled option (APG roving focus). The
+    // option is tabindex=-1: NOT a real tab stop, so the trap's union has no
+    // entry for it — the hardest case for a trap (focus is inside a portaled
+    // panel but that panel exposes no tab stops of its own).
+    const berlin = screen.getByTestId("city-berlin");
+    expect(document.activeElement).toBe(berlin);
+    expect(screen.queryByRole("listbox")).not.toBeNull();
+
+    // The trap intercepts Tab at the document CAPTURE phase, before the
+    // listbox's own bubble-phase Tab-close: the listbox stays open, but the
+    // focus moves inside the modal scope — never to the page behind.
+    pressKey("Tab");
+    expect(screen.queryByRole("listbox")).not.toBeNull();
+    expect(insideModalContext(document.activeElement)).toBe(true);
+    expect(document.activeElement).not.toBe(berlin);
+
+    // Cycling Tab/Shift+Tab from any stop stays inside the modal context.
+    for (let index = 0; index < 4; index += 1) {
+      pressKey("Tab", { shiftKey: index % 2 === 1 });
+      expect(insideModalContext(document.activeElement)).toBe(true);
+    }
+
+    // Escape dismisses the nested overlay; the return lands on its trigger,
+    // which sits inside the dialog panel — the whole scope stays trapped.
+    pressKey("Escape");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(insideModalContext(document.activeElement)).toBe(true);
   });
 });
 

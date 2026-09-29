@@ -5,7 +5,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useDismissableLayer } from "./dismissable-layer.js";
+import {
+  getActiveLayerNodesInContext,
+  popModalContext,
+  pushModalContext,
+  useDismissableLayer,
+} from "./dismissable-layer.js";
 
 /** Structural stand-in for `RefObject<HTMLElement | null>` (React 19 types
  *  keep it to `{ current: T }`) so the test stays import-light. */
@@ -183,5 +188,62 @@ describe("useDismissableLayer", () => {
 
     pressEscape();
     expect(onEscape).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("modal contexts (RRU-116)", () => {
+  const testIds = (nodes: HTMLElement[]): string[] =>
+    nodes.map((node) => node.getAttribute("data-testid") ?? "");
+
+  it("a layer records the modal context that was topmost when it activated", () => {
+    const ctx = pushModalContext();
+    try {
+      render(<Layer id="under-a" active />);
+      expect(testIds(getActiveLayerNodesInContext(ctx))).toEqual(["under-a"]);
+    } finally {
+      popModalContext(ctx);
+    }
+  });
+
+  it("nested contexts stay isolated: a top layer is not part of the outer trap's scope", () => {
+    // Modal A open: a layer opened from it belongs to A.
+    const ctxA = pushModalContext();
+    let ctxB: symbol | undefined;
+    try {
+      render(<Layer id="belongs-to-a" active />);
+      // Modal B stacks on top: a layer opened now belongs to B, NOT to A —
+      // otherwise A's focus trap would capture B's focusables (stacked-modals
+      // regression RRU-116 guards against).
+      ctxB = pushModalContext();
+      render(<Layer id="belongs-to-b" active />);
+
+      expect(testIds(getActiveLayerNodesInContext(ctxA))).toEqual(["belongs-to-a"]);
+      expect(testIds(getActiveLayerNodesInContext(ctxB))).toEqual(["belongs-to-b"]);
+    } finally {
+      if (ctxB !== undefined) popModalContext(ctxB);
+      popModalContext(ctxA);
+    }
+  });
+
+  it("closing the overlay removes its node from the trap's scope", () => {
+    const ctx = pushModalContext();
+    try {
+      const { unmount } = render(<Layer id="inner" active />);
+      expect(testIds(getActiveLayerNodesInContext(ctx))).toEqual(["inner"]);
+
+      // Unmounting = the overlay closed: its panel leaves the scope, exactly as
+      // it would when the portal unmounts alongside the trap.
+      unmount();
+      expect(getActiveLayerNodesInContext(ctx)).toEqual([]);
+    } finally {
+      popModalContext(ctx);
+    }
+  });
+
+  it("a layer that opens with no modal up belongs to no trap scope", () => {
+    render(<Layer id="floating" active />);
+    const ctx = pushModalContext();
+    expect(getActiveLayerNodesInContext(ctx)).toEqual([]);
+    popModalContext(ctx);
   });
 });

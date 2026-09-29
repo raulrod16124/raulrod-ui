@@ -6,7 +6,12 @@ import type { RefObject } from "react";
 
 import { useEffect } from "react";
 
-import { getFocusableElements } from "./focusable.js";
+import {
+  getActiveLayerNodesInContext,
+  popModalContext,
+  pushModalContext,
+} from "./dismissable-layer.js";
+import { getFocusableElementsInDocumentOrder } from "./focusable.js";
 
 export interface FocusTrapOptions {
   /** The overlay container whose focus is trapped while `active`. */
@@ -16,12 +21,19 @@ export interface FocusTrapOptions {
 }
 
 /**
- * Traps keyboard focus inside `container` while `active`, cycling
- * Tab/Shift+Tab over the focusable descendants with wrap-around. Only Tab is
- * intercepted: Escape/outside interaction belong to the dismissable layer.
- * Initial focus placement is NOT this hook's job — the overlay (Dialog, …)
- * decides where focus lands on open (RRU-053). Requested in a capture-phase
- * document listener so it wins over any consumer listener.
+ * Traps keyboard focus inside the modal scope while `active`, cycling
+ * Tab/Shift+Tab over the tab-order union (document order) of the container's
+ * subtree and the portaled panels of the overlays that opened under this trap
+ * (RRU-116), with wrap-around. The scope is not just `container`: panels of
+ * nested overlays (a Select/Popover opened from inside a Dialog) mount on
+ * `document.body` via Portal, so a subtree query alone would drop them and Tab
+ * would skip them (or wrap over a wrong list). Each trap pushes its OWN modal
+ * context (`dismissable-layer`), so a nested overlay belongs to the trap that
+ * was topmost when it opened and stacked modals never bleed into one another.
+ * Only Tab is intercepted: Escape/outside interaction belong to the dismissable
+ * layer. Initial focus placement is NOT this hook's job — the overlay (Dialog,
+ * …) decides where focus lands on open (RRU-053). Requested in a
+ * capture-phase document listener so it wins over any consumer listener.
  */
 export function useFocusTrap({ container, active }: FocusTrapOptions): void {
   useEffect(() => {
@@ -29,10 +41,15 @@ export function useFocusTrap({ container, active }: FocusTrapOptions): void {
     const node = container.current;
     if (!node) return;
 
+    const context = pushModalContext();
+
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Tab") return;
 
-      const focusable = getFocusableElements(node);
+      const focusable = getFocusableElementsInDocumentOrder([
+        node,
+        ...getActiveLayerNodesInContext(context),
+      ]);
       if (focusable.length === 0) {
         // Nothing inside to receive Tab: swallow it so focus cannot leak out.
         event.preventDefault();
@@ -61,6 +78,9 @@ export function useFocusTrap({ container, active }: FocusTrapOptions): void {
     };
 
     document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      popModalContext(context);
+    };
   }, [active, container]);
 }

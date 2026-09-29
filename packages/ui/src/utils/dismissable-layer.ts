@@ -4,8 +4,11 @@
 // ACTIVE layers (ids, insertion order) is used ONLY to decide dismissal — the
 // outermost/topmost active layer is the one that may dismiss, so stacked
 // overlays (Tooltip over Dialog) close one level at a time without a global
-// state manager (ADR-004, alternative D). Never exported from the package
-// root (frontera §24); SSR-safe (effects only).
+// state manager (ADR-004, alternative D). The same registry doubles as the
+// focus trap's view of "which portaled panels belong to my modal scope"
+// (RRU-116): each trap pushes a modal context while active and every layer
+// records the context that was topmost when it opened. Never exported from the
+// package root (frontera §24); SSR-safe (effects only).
 import type { RefObject } from "react";
 
 import { useEffect, useRef } from "react";
@@ -28,11 +31,29 @@ export interface DismissableLayerOptions {
   onPointerDownOutside?: (event: Event) => void;
 }
 
-/** Active layer ids in activation order; the LAST one is the topmost layer. */
-const activeLayers = new Set<symbol>();
+/** One active overlay: its DOM node (for focus-scope queries) and the modal
+ *  context it was opened under (RRU-116). */
+interface ActiveLayer {
+  node: HTMLElement | null;
+  context: symbol | null;
+}
 
-function registerLayer(id: symbol): void {
-  activeLayers.add(id);
+/** Active layers in activation order; the LAST one is the topmost layer. */
+const activeLayers = new Map<symbol, ActiveLayer>();
+
+/**
+ * Stack of MODAL trap contexts (RRU-116). `useFocusTrap` pushes its own
+ * context id while active and pops it on deactivate; every dismissable layer
+ * activated while a context is topmost records that context, which lets a trap
+ * know which portaled overlay panels belong to ITS modal scope (and only
+ * theirs) when it computes the tabbable cycle — a nested Dialog records its
+ * own context, so stacked modals never bleed into each other's trap.
+ */
+const modalContextStack: symbol[] = [];
+
+function registerLayer(id: symbol, node: HTMLElement | null): void {
+  const context = modalContextStack[modalContextStack.length - 1] ?? null;
+  activeLayers.set(id, { node, context });
 }
 
 function unregisterLayer(id: symbol): void {
@@ -40,8 +61,31 @@ function unregisterLayer(id: symbol): void {
 }
 
 function isTopmostLayer(id: symbol): boolean {
-  const layers = [...activeLayers];
+  const layers = [...activeLayers.keys()];
   return layers[layers.length - 1] === id;
+}
+
+/** Opens a new modal context for a focus trap and returns its id. */
+export function pushModalContext(): symbol {
+  const context = Symbol("modal-context");
+  modalContextStack.push(context);
+  return context;
+}
+
+/** Closes a focus trap's modal context. */
+export function popModalContext(context: symbol): void {
+  const index = modalContextStack.lastIndexOf(context);
+  if (index !== -1) modalContextStack.splice(index, 1);
+}
+
+/** The DOM nodes of the overlay panels that opened under `context` and are
+ *  still active — the portaled siblings a trap must include in its cycle. */
+export function getActiveLayerNodesInContext(context: symbol): HTMLElement[] {
+  const nodes: HTMLElement[] = [];
+  for (const layer of activeLayers.values()) {
+    if (layer.context === context && layer.node !== null) nodes.push(layer.node);
+  }
+  return nodes;
 }
 
 /**
@@ -76,7 +120,7 @@ export function useDismissableLayer({
   useEffect(() => {
     if (!active) return;
     const id = Symbol("dismissable-layer");
-    registerLayer(id);
+    registerLayer(id, nodeRef.current);
 
     const isPointerOnOwnNode = (event: Event): boolean => {
       const target = event.target;

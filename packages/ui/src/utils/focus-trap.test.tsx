@@ -5,6 +5,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { describe, expect, it } from "vitest";
 
+import { useDismissableLayer } from "./dismissable-layer.js";
 import { useFocusTrap } from "./focus-trap.js";
 import { getFocusableElements } from "./focusable.js";
 
@@ -34,6 +35,28 @@ function EmptyTrap({ active }: { active: boolean }) {
     <div data-testid="emptytrap" ref={containerRef}>
       <span>no focusables here</span>
     </div>
+  );
+}
+
+/** The trap container with a SIBLING overlay node registered as an active
+ *  dismissable layer — the hook-level stand-in for "a Popover/Select inside a
+ *  Dialog": its panel lives OUTSIDE the trap's subtree (portaled), yet it was
+ *  opened under the trap's modal context, so its focusables belong to the
+ *  cycle (RRU-116). */
+function TrapWithNestedOverlay({ active }: { active: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap({ container: containerRef, active });
+  useDismissableLayer({ nodeRef: panelRef, active, onEscape: () => {} });
+  return (
+    <>
+      <div data-testid="trap" ref={containerRef}>
+        <button data-testid="a">A</button>
+      </div>
+      <div data-testid="panel" ref={panelRef}>
+        <button data-testid="b">B</button>
+      </div>
+    </>
   );
 }
 
@@ -97,5 +120,26 @@ describe("useFocusTrap", () => {
     expect(document.activeElement).toBe(span);
     pressTab(false);
     expect(document.activeElement).toBe(span);
+  });
+
+  it("includes focusables of a nested overlay panel opened under the trap (RRU-116)", () => {
+    render(<TrapWithNestedOverlay active />);
+    const a = node("a");
+    const b = node("b");
+
+    a.focus();
+    // Tab walks INTO the nested overlay's panel (it is part of the modal
+    // context) instead of wrapping straight back to the trap container.
+    pressTab(false);
+    expect(document.activeElement).toBe(b);
+
+    // The overlay's last focusable wraps back into the container: the cycle
+    // covers the whole modal scope, portaled nodes included.
+    pressTab(false);
+    expect(document.activeElement).toBe(a);
+
+    // And it wraps back out the other way.
+    pressTab(true);
+    expect(document.activeElement).toBe(b);
   });
 });

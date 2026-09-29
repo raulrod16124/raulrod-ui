@@ -119,6 +119,58 @@ test.describe("dialog", () => {
     await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   });
 
+  test("a nested popover's controls are part of the dialog trap (RRU-116)", async ({ page }) => {
+    await page.getByTestId("dialog-trigger").click();
+    const panel = page.getByRole("dialog").filter({ hasText: "Invite teammates" });
+    await expect(panel).toBeVisible();
+
+    await page.getByTestId("dialog-popover-trigger").click();
+    const popover = page.getByRole("dialog").filter({ hasText: "Nested popover" });
+    await expect(popover).toBeVisible();
+
+    // The nested popover is portaled to <body>: its controls are NOT inside the
+    // dialog's subtree, so a trap that only asked "what is inside the panel?"
+    // would never see them. Opening focuses its first control (APG).
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-link");
+
+    // Tab must reach the SECOND control of the nested panel, not jump to the
+    // dialog's first control: the portaled panel belongs to the trap's scope.
+    await page.keyboard.press("Tab");
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-apply");
+
+    // Every stop of a full cycle stays inside the modal context (the dialog
+    // panel or the nested popover) and the cycle wraps back to the popover — the
+    // portaled controls are in the SAME cycle as the dialog's own.
+    const cycleLength = await page.evaluate(() => {
+      const roots = [
+        document.querySelector(".rr-dialog-content"),
+        document.querySelector(".rr-popover-content"),
+      ].filter((node): node is HTMLElement => node instanceof HTMLElement);
+      // Mirrors the FOCUSABLE selector above (page.evaluate cannot see module
+      // scope — this string is kept inline so the count matches the DOM query).
+      const selector =
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(document.querySelectorAll<HTMLElement>(selector)).filter((el) =>
+        roots.some((root) => root.contains(el)),
+      ).length;
+    });
+
+    const stops: Array<Awaited<ReturnType<typeof activeElement>>> = [];
+    for (let index = 0; index < cycleLength; index += 1) {
+      await page.keyboard.press("Tab");
+      stops.push(await activeElement(page));
+    }
+    // As many Tabs as there are controls in the two panels brings the focus
+    // back to where the walk started: the trap wraps the WHOLE scope (dialog +
+    // portaled popover) as one cycle — exactly like the single-dialog cycle the
+    // other spec proves. A leak to a page control would break the count.
+    expect((await activeElement(page))?.testId).toBe("dialog-popover-apply");
+    // The walk visited the popover's link (its controls are IN the cycle) and
+    // the dialog's own controls, never anything outside the two panels.
+    expect(stops.some((stop) => stop?.testId === "dialog-popover-link")).toBe(true);
+    expect(stops.some((stop) => stop?.testId === "dialog-select-trigger")).toBe(true);
+  });
+
   test("closes with a footer action and with a press outside the panel", async ({ page }) => {
     await page.getByTestId("dialog-trigger").click();
     await expect(dialog(page)).toBeVisible();
