@@ -78,6 +78,19 @@
   animation: rr-tabs-in var(--rr-motion-duration-base) var(--rr-motion-easing-standard);
 }
 
+/* The ACTIVE panel is a tab stop (`TabsPanel` forces `tabIndex={0}`) so a
+   panel with text-only content is still reachable with Tab (APG). A tab stop
+   needs a visible indicator (WCAG 2.4.7 / 1.4.11): the ring is the §6.3 token
+   and `outline-offset: -2px` keeps it inside the panel box, the same offset
+   the trigger uses so it cannot paint over the rail. It only shows when the
+   panel is reached through the Tab cycle, never on click (`:focus-visible`).
+   The pair is authorized as non-text ≥3:1 against BOTH surfaces in both
+   themes (`contrast.ts`), so the contract gate needs no ratchet entry. */
+.rr-tabs-panel:focus-visible {
+  outline: 2px solid var(--rr-color-focus-ring);
+  outline-offset: -2px;
+}
+
 @keyframes rr-tabs-in {
   from {
     opacity: 0;

@@ -14,10 +14,10 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
  * {@link Tabs.Trigger} `role="tab"` with a roving tabindex and
  * `aria-selected` **only when a selection exists** (never following focus
  * without activation), each {@link Tabs.Panel} `role="tabpanel"` wired by
- * `aria-labelledby`/`aria-controls` and kept MOUNTED with the `hidden`
- * attribute while inactive (tab reaches the panel content directly — no
- * reparenting, no focus loss). ArrowLeft/Right wrap and skip disabled tabs,
- * Home/End jump; Tab passes through unprevented.
+ * `aria-labelledby`/`aria-controls`, kept MOUNTED with the `hidden` attribute
+ * while inactive and a `tabIndex={0}` while ACTIVE so the content is reachable
+ * with Tab (no reparenting, no focus loss). ArrowLeft/Right wrap and skip
+ * disabled tabs, Home/End jump; Tab passes through unprevented.
  */
 export interface TabsProps {
   /** The composite tree, rendered by the consumer:
@@ -75,8 +75,16 @@ export interface TabsTriggerProps extends Omit<
  * Props of {@link Tabs.Panel} slot (RRU-058): one `role="tabpanel"`. Wired to
  * its trigger through `id`/`aria-labelledby` and kept MOUNTED, hidden only
  * while inactive (`hidden` attribute — the panel content stays in the DOM for
- * `Tab` order and layout, matching APG). `id`/`title`/`data-*`/ARIA pass
- * through onto the `<div>`.
+ * `Tab` order and layout, matching APG).
+ *
+ * KEYBOARD CONSEQUENCE (RRU-118): the ACTIVE panel carries `tabIndex={0}` and is
+ * therefore a tab stop of its own, so a panel whose content has no focusable
+ * element (text only) is still reachable with `Tab` — APG's reason for the
+ * attribute. The `tabIndex` prop is **forced by the component** after the
+ * spread (same contract as the roving `tabIndex` of {@link Tabs.Trigger}): a
+ * consumer cannot remove the stop, and inactive panels emit no `tabIndex` at
+ * all (they are already out of the tab order via `hidden`).
+ * `id`/`title`/`data-*`/ARIA pass through onto the `<div>`.
  */
 export interface TabsPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** The value of the trigger this panel belongs to. */

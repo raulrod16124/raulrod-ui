@@ -248,6 +248,156 @@ describe("Tabs keyboard: automatic activation roving (WAI-ARIA)", () => {
   });
 });
 
+describe("Tabs panel as a tab stop (RRU-118, APG)", () => {
+  /** Two compositions over the same widget, plus a sentinel control AFTER it:
+   *  the sentinel is what makes "leaves the region" assertable at all.
+   *
+   *  `controls: "button"` — the active panel holds a control.
+   *  `controls: "text"` — EVERY panel is text-only, the case RRU-118 is about.
+   *
+   *  Why the text-only composition is its own fixture and not the mixed one: a
+   *  hidden panel's focusable content must be skipped by the tab order, and
+   *  happy-dom's sequential navigation does not honour the `hidden` ATTRIBUTE
+   *  on an ancestor, so the mixed case (text panel active + a control inside a
+   *  HIDDEN sibling panel) cannot be modelled faithfully here. That combination
+   *  is exactly the one the playground ships, and it is covered for real in
+   *  `apps/playground/e2e/tabs.spec.ts` (ADR-005 §4: a limit of the environment
+   *  is documented and covered elsewhere, not papered over). */
+  function tabsWithSentinel(value: string, controls: "button" | "text" = "button"): ReactElement {
+    return (
+      <Tabs defaultValue={value}>
+        <Tabs.List>
+          <Tabs.Trigger value="text" data-testid="tab-text">
+            Text
+          </Tabs.Trigger>
+          <Tabs.Trigger value="controls" data-testid="tab-controls">
+            Controls
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Panel value="text" data-testid="panel-text">
+          Only text here, nothing to focus.
+        </Tabs.Panel>
+        <Tabs.Panel value="controls" data-testid="panel-controls">
+          {controls === "button" ? (
+            <button type="button" data-testid="inner-button">
+              Inner
+            </button>
+          ) : (
+            "Also only text."
+          )}
+        </Tabs.Panel>
+        <button type="button" data-testid="after-tabs">
+          After
+        </button>
+      </Tabs>
+    );
+  }
+
+  it("the ACTIVE panel is a tab stop; inactive panels emit no tabIndex", () => {
+    render(tabsWithSentinel("text"));
+    expect(panel("panel-text").tabIndex).toBe(0);
+    // A hidden panel is already out of the tab order, so it does not even carry
+    // the attribute: no stray tab stop can survive an activation change.
+    expect(panel("panel-controls").hasAttribute("tabindex")).toBe(false);
+  });
+
+  it("the stop MOVES with the selection (a hidden panel never keeps it)", async () => {
+    render(tabsWithSentinel("text"));
+    await clickOn("tab-controls");
+    expect(panel("panel-controls").tabIndex).toBe(0);
+    expect(panel("panel-text").hasAttribute("tabindex")).toBe(false);
+  });
+
+  it("without a selection NO panel is a tab stop (nothing is visible to reach)", () => {
+    render(
+      <Tabs>
+        <Tabs.List>
+          <Tabs.Trigger value="text" data-testid="tab-text">
+            Text
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Panel value="text" data-testid="panel-text">
+          Text
+        </Tabs.Panel>
+      </Tabs>,
+    );
+    expect(panel("panel-text").hasAttribute("tabindex")).toBe(false);
+  });
+
+  it("Tab reaches a TEXT-ONLY panel and then leaves the widget in order", async () => {
+    render(tabsWithSentinel("text", "text"));
+    // Into the tablist: the roving stop sits on the selected tab.
+    act(() => trigger("tab-text").focus());
+
+    // The bug: the panel has nothing focusable inside it, so before RRU-118 the
+    // focus skipped it entirely and jumped straight out of the widget.
+    await userEvent.tab();
+    expect(document.activeElement).toBe(panel("panel-text"));
+
+    // And out again — the panel is the LAST stop of the region.
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByTestId("after-tabs"));
+  });
+
+  it("a panel WITH focusable content is also a stop, then yields to its content", async () => {
+    render(tabsWithSentinel("controls"));
+    act(() => trigger("tab-controls").focus());
+
+    // The panel takes the stop even when it holds controls: the `tabIndex` is
+    // decided in render-phase, not by inspecting the DOM, so the SAME markup and
+    // the SAME behaviour hold for every panel (documented trade-off in
+    // docs/tabs.mdx §Por qué así — the alternative needs a DOM-reading effect
+    // and goes stale on async content).
+    await userEvent.tab();
+    expect(document.activeElement).toBe(panel("panel-controls"));
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByTestId("inner-button"));
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByTestId("after-tabs"));
+  });
+
+  it("the consumer's tabIndex cannot remove the stop (forced after the spread)", () => {
+    render(
+      <Tabs defaultValue="text">
+        <Tabs.List>
+          <Tabs.Trigger value="text" data-testid="tab-text">
+            Text
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Panel value="text" data-testid="panel-text" tabIndex={-1}>
+          Text
+        </Tabs.Panel>
+      </Tabs>,
+    );
+    expect(panel("panel-text").tabIndex).toBe(0);
+  });
+
+  it("SSR: tabindex lands ONLY on the active panel (deterministic markup)", () => {
+    const markup = renderToStaticMarkup(composedTabs({ defaultValue: "activity" }));
+    // Identity, not a coincidence of counts: the panel that carries the stop is
+    // the one the SELECTED trigger controls (idref resolution is an allowed
+    // internal assertion, ADR-005 §3).
+    const activeTabTag = /<button[^>]*aria-selected="true"[^>]*>/.exec(markup)?.[0];
+    expect(activeTabTag).toBeDefined();
+    const activePanelId = /aria-controls="([^"]+)"/.exec(activeTabTag ?? "")?.[1];
+    expect(activePanelId).toBeDefined();
+    // Attribute-order agnostic: a spread prop (`data-testid`) is serialized
+    // BEFORE the forced ARIA contract, so anchoring on `<div role=` would miss.
+    const panelTags = markup.match(/<div[^>]*role="tabpanel"[^>]*>/g) ?? [];
+    const activePanelTag = panelTags.find((tag) => tag.includes(`id="${activePanelId}"`));
+    expect(activePanelTag).toContain('tabindex="0"');
+    // The hidden panels never do — the attribute is decided in render-phase, so
+    // the server ships the same tab order the client will have.
+    for (const tag of panelTags.filter(
+      (candidate) => !candidate.includes(`id="${activePanelId}"`),
+    )) {
+      expect(tag).not.toContain("tabindex");
+    }
+  });
+});
+
 describe("Tabs controlled/uncontrolled", () => {
   it("uncontrolled: defaultValue seeds; changes flow through onValueChange", async () => {
     const onValueChange = vi.fn();

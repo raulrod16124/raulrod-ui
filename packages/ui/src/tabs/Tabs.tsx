@@ -36,9 +36,10 @@ import { useId } from "../utils/use-id.js";
  * skip disabled; Home/End jump; all reusing the pure math of `utils/menu.ts`
  * (the same roving logic as the menu/listbox keyboard). Arrow/Home/End
  * `preventDefault`; Tab passes through UNprevented, so the focus leaves the
- * tablist into the active panel's content naturally (the panels are always in
- * the DOM). Focus + selection move together (activation by construction); a
- * `disabled` trigger never takes focus and never selects (WCAG).
+ * tablist into the active panel — itself a tab stop (`tabIndex={0}`) and then,
+ * from there, into its content (the panels are always in the DOM). Focus +
+ * selection move together (activation by construction); a `disabled` trigger
+ * never takes focus and never selects (WCAG).
  *
  * Horizontal only (closed decision): tabs render side-by-side; `aria-orientation`
  * stays at the tablist default.
@@ -92,8 +93,8 @@ Tabs.displayName = "Tabs";
  *  `nextItemIndex`/`prevItemIndex` wrap and skip disabled, `firstEnabledIndex`/
  *  `lastEnabledIndex` are Home/End; each move sets the value (automatic
  *  activation) AND focuses the tab. Tab is never prevented, so the active
- *  panel's content is the natural next tab stop. The consumer's onKeyDown is
- *  chained after the internal handling. */
+ *  panel (a tab stop itself, see `TabsPanel`) is the natural next stop. The
+ *  consumer's onKeyDown is chained after the internal handling. */
 export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(function TabsList(
   { className, onKeyDown, children, ...props },
   ref,
@@ -196,8 +197,14 @@ TabsTrigger.displayName = "TabsTrigger";
 /** `Tabs.Panel` slot: one `role="tabpanel"`, wired to its trigger via
  *  `aria-labelledby` and kept MOUNTED — `hidden` only while inactive, so the
  *  panel content keeps its natural Tab order and the layout does not shift
- *  (APG). The entrance animation lives on the visible state
- *  (`.rr-tabs-panel:not([hidden])`), replaying on each activation. */
+ *  (APG). The ACTIVE panel is a tab stop of its own (`tabIndex={0}`, forced
+ *  after the spread): a panel whose content has no focusable element — text
+ *  only — is otherwise unreachable with `Tab`, and the user would walk the tab
+ *  list straight past the content. Inactive panels emit no `tabIndex` (they are
+ *  already out of the cycle through `hidden`), and the consumer cannot opt the
+ *  panel out: the component owns the tab order here, the same way it owns the
+ *  roving `tabIndex` of the trigger. The entrance animation lives on the visible
+ *  state (`.rr-tabs-panel:not([hidden])`), replaying on each activation. */
 export const TabsPanel = forwardRef<HTMLDivElement, TabsPanelProps>(function TabsPanel(
   { className, value, children, ...props },
   ref,
@@ -214,6 +221,7 @@ export const TabsPanel = forwardRef<HTMLDivElement, TabsPanelProps>(function Tab
       id={entry?.panelId}
       aria-labelledby={entry?.tabId}
       hidden={!active}
+      tabIndex={active ? 0 : undefined}
       className={cx("rr-tabs-panel", className)}
     >
       {children}
