@@ -10,11 +10,11 @@
       "outputs": ["dist/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"],
+      "dependsOn": ["^lint", "^build"],
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"],
+      "dependsOn": ["^typecheck", "^build"],
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
     },
     "test": {
