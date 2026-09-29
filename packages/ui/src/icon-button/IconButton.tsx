@@ -49,6 +49,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   { label, variant = "primary", size, loading = false, disabled, className, children, ...props },
   ref,
 ) {
+  if (process.env.NODE_ENV !== "production" && !label) {
+    throw new Error(
+      "[@raulrod/ui] IconButton requires a `label` prop. The icon passed as `children` is decorative and cannot provide an accessible name.",
+    );
+  }
+
   const classes = cx(
     "rr-icon-button",
     iconButtonClasses("rr-icon-button", { variant, size }),
