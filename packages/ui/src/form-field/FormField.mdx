@@ -1,0 +1,81 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Components/FormField" />
+
+# FormField
+
+Wires label, description, control and error through generated ids and ARIA
+attributes.
+
+## Usage
+
+```tsx
+import { FormField, Input } from "@raulrod/ui";
+
+<FormField>
+  <FormField.Label>Email</FormField.Label>
+  <FormField.Description>We never share your email.</FormField.Description>
+  <FormField.Control>
+    {(field) => <Input type="email" placeholder="you@example.com" {...field} />}
+  </FormField.Control>
+  <FormField.Error>Invalid email address.</FormField.Error>
+</FormField>;
+```
+
+When the `Error` slot is present, the control automatically receives
+`aria-invalid="true"` and `aria-errormessage`.
+
+## Slots
+
+| Slot                    | Purpose                                                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `FormField`             | Provider. Generates the control id and detects slot presence.                                                  |
+| `FormField.Label`       | `<label htmlFor={id}>`.                                                                                        |
+| `FormField.Description` | Helper text, referenced by `aria-describedby`.                                                                 |
+| `FormField.Control`     | Render-prop wrapper that spreads `{ id, aria-describedby, aria-invalid, aria-errormessage }` onto the control. |
+| `FormField.Error`       | Error message. Adds `aria-invalid` and `role="alert"`.                                                         |
+
+## Props
+
+### `FormField`
+
+- `controlId?: string` — override the generated id.
+- Standard `HTMLAttributes<HTMLDivElement>` pass through.
+
+### `FormField.Label`
+
+Standard `LabelHTMLAttributes<HTMLLabelElement>`; `htmlFor` is forced.
+
+### `FormField.Description`
+
+Standard `HTMLAttributes<HTMLParagraphElement>`.
+
+### `FormField.Control`
+
+Accepts a React node or a function `(field: FormFieldControlProps) => ReactNode`.
+
+### `FormField.Error`
+
+Standard `HTMLAttributes<HTMLParagraphElement>`; renders with `role="alert"`.
+
+## Accessibility
+
+- `<label htmlFor={id}>` links the label to the control.
+- `aria-describedby` includes the description id.
+- `aria-errormessage` and `aria-invalid` are set when `FormField.Error` is
+  present.
+- The error message renders with `role="alert"` so it is announced on mount.
+
+## Trade-offs / Limitations
+
+- **Slots must be leaf siblings.** `FormField` detects slots by walking its
+  direct children. Wrapping a slot inside another component hides it from the
+  detection and leaves the field unlabeled/unannounced.
+- **One control per field.** The pattern assumes a single id → single control.
+  Groups of checkboxes or radios should use their own grouping components
+  (RadioGroup) rather than FormField.
+- **Render prop vs explicit slot.** You can pass a function as `FormField`
+  children instead of using `FormField.Control`, but this is sugar for the same
+  single-control contract.
+- **`aria-errormessage` support is not universal.** Some screen readers ignore
+  it; for that reason the error also stays in `aria-describedby`.

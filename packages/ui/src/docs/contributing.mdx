@@ -1,0 +1,103 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Contributing" />
+
+# Contributing
+
+Este es un design system personal, pero sigue un playbook estricto. Si vas a
+añadir un componente, sigue estos pasos en orden.
+
+## Antes de escribir código
+
+1. **Comprueba que la necesidad está demostrada** (regla §12/§33): no se crean
+   componentes “por si acaso”.
+2. **Revisa si ya existe un componente o slot** que resuelva el caso por
+   composición.
+3. **Lee el ADR relevante**: tokens (ADR-002), styling (ADR-003), composición
+   (ADR-004), testing (ADR-005).
+
+## Playbook de implementación
+
+### Paso 1 — Estructura de archivos
+
+Crea en `packages/ui/src/<kebab-case>/`:
+
+```text
+<Pascal>.tsx
+<Pascal>.types.ts
+<Pascal>.css
+<Pascal>.test.tsx
+<Pascal>.stories.tsx
+index.ts
+```
+
+Ver la guía **Component pattern** para excepciones documentadas.
+
+### Paso 2 — TypeScript
+
+- `strict` activo, cero `any`, `as` solo con justificación escrita.
+- Tipos públicos exportados desde `index.ts`.
+- `forwardRef` + `displayName` para elementos.
+- Variantes derivadas de tokens cuando aplique.
+
+### Paso 3 — CSS
+
+- Clases con prefijo `rr-*`.
+- Solo tokens CSS (`var(--rr-*)`); prohibido valores arbitrarios.
+- Estados `:hover`, `:active`, `:focus-visible`, `:disabled`.
+- `prefers-reduced-motion` para animaciones.
+
+### Paso 4 — Tests
+
+- Tests de comportamiento, no de implementación.
+- Probar render, interacción, estados, keyboard, callbacks y a11y.
+- `jest-axe` (`toHaveNoViolations`) en componentes interactivos.
+
+### Paso 5 — Stories
+
+- Matriz §20: Variants, Disabled, Loading, Error, Empty, Long content, Keyboard,
+  Dark, Responsive, Playground.
+- Playground con Controls.
+
+### Paso 6 — Docs
+
+- MDX con uso, contrato (props/eventos/restricciones) y trade-offs.
+- Para componentes complejos, sección **Trade-offs / Limitaciones**.
+
+### Paso 7 — Export público
+
+Añade al `index.ts` raíz de `@raulrod/ui` y verifica que el consumidor solo
+alcanza la API pública.
+
+### Paso 8 — Verificación
+
+Desde la raíz, en este orden:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test --filter="@raulrod/ui"
+pnpm build
+pnpm format:check
+```
+
+## Commits
+
+Formato: `tipo(scope): resumen`
+
+Ejemplos:
+
+```text
+feat(ui): add Calendar component
+docs(ui): add DataTable trade-offs section
+```
+
+El agente propone el texto; el usuario revisa el diff y confirma antes de
+commitear.
+
+## Cierre de tarjeta
+
+1. Marca los criterios de aceptación cumplidos.
+2. Actualiza el estado a `✅ Done` con fecha.
+3. Añade notas de sesión si hubo decisiones relevantes.
+4. Actualiza la sección **0.1** del tablero con la siguiente entrega.

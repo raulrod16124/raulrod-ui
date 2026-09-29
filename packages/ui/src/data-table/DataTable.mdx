@@ -1,0 +1,73 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as DataTableStories from "./DataTable.stories.tsx";
+
+<Meta of={DataTableStories} />
+
+<Title />
+<Description of={DataTableStories} />
+
+## Usage
+
+`DataTable` receives `data`, `columns`, `getRowId` and a required `caption`:
+
+```tsx
+import { DataTable } from "@raulrod/ui";
+
+<DataTable
+  data={users}
+  columns={[
+    { key: "name", header: "Name", sortable: true },
+    { key: "email", header: "Email" },
+    { key: "role", header: "Role", align: "end" },
+  ]}
+  getRowId={(user) => user.id}
+  caption="Registered users"
+/>;
+```
+
+Optional features are enabled through grouped props:
+
+```tsx
+<DataTable
+  data={users}
+  columns={columns}
+  getRowId={(user) => user.id}
+  caption="Users"
+  sorting={{ value: sort, onChange: setSort }}
+  filtering={{ value: query, onChange: setQuery }}
+  pagination={{ pageSize: 10, page, onPageChange: setPage }}
+  rowSelection={{
+    selectedRowIds,
+    onChange: setSelectedRowIds,
+    getRowLabel: (user) => user.name,
+  }}
+/>
+```
+
+<Canvas of={DataTableStories.Playground} />
+
+## Props
+
+<ArgTypes of={DataTableStories} />
+
+## Accessibility
+
+- Native `<table>` semantics with `<caption>`.
+- Sort buttons have accessible names and announce changes via a polite live
+  region.
+- Row selection checkboxes have per-row labels and a select-all label.
+- `loading` and `error` states are announced.
+
+## Trade-offs / Limitations
+
+- **In-memory data only.** Sorting, filtering and pagination run on the
+  provided array. There is no built-in server-side mode; for that, manage the
+  data externally and pass the already-sliced set.
+- **No virtualization.** Tables with thousands of rows are not virtualized in
+  the MVP. Virtualization will only be added once there is measured need.
+- **Generic typing.** `DataTable<T, RowId>` lets you type the row shape and the
+  id type, but it adds complexity to the public type surface.
+- **No nested rows or expandable rows.**
+- **Custom cell rendering via `render`.** The column `render` callback is
+  powerful, but it can break the table semantics if it returns non-cell content
+  (the consumer owns the returned React tree).

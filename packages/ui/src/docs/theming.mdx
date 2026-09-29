@@ -1,0 +1,86 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Theming" />
+
+# Theming
+
+El theming se resuelve completamente en CSS: no hay provider de tema en
+React, no hay contexto, no hay CSS-in-JS.
+
+## Cómo funciona
+
+`@raulrod/tokens/dist/tokens.css` declara:
+
+- Variables primitivas en `:root`.
+- Variables semánticas dentro de `[data-theme="light"]` y
+  `[data-theme="dark"]`.
+- Una variante `prefers-reduced-motion` para desactivar animaciones.
+
+```css
+:root {
+  --rr-blue-500: #3b82f6;
+  /* … */
+}
+
+[data-theme="light"] {
+  --rr-color-text-default: var(--rr-gray-900);
+  /* … */
+}
+
+[data-theme="dark"] {
+  --rr-color-text-default: var(--rr-gray-100);
+  /* … */
+}
+```
+
+## Activar un tema
+
+El consumidor pone el atributo en un ancestro, típicamente `<html>`:
+
+```html
+<html data-theme="dark">
+  …
+</html>
+```
+
+O alterna dinámicamente desde React:
+
+```tsx
+document.documentElement.dataset.theme = "dark";
+```
+
+Si no hay `data-theme`, el navegador usa `prefers-color-scheme: dark` como
+fallback. Esto evita el flash de tema incorrecto en SSR/SSG.
+
+## Sobreescribir tokens
+
+Puedes redefinir variables en cualquier ancestro con más especificidad que el
+archivo de tokens:
+
+```css
+:root {
+  --rr-color-action-primary-background: #c026d3;
+}
+```
+
+Para un scope acotado:
+
+```css
+.brand-section {
+  --rr-color-action-primary-background: #c026d3;
+}
+```
+
+## Theme switcher en Storybook
+
+La app de Storybook incluye un toolbar global para alternar entre **Light**,
+**Dark** y **System**. Todas las stories respetan esa selección gracias al
+decorator `WithTheme`.
+
+## Limitaciones
+
+- No hay helpers de React para leer el tema activo. Si tu app necesita saberlo
+  en runtime, lee `document.documentElement.dataset.theme` o
+  `matchMedia('(prefers-color-scheme: dark)')`.
+- Los tokens de componente apuntan a variables semánticas, por lo que también
+  cambian automáticamente con el tema.
