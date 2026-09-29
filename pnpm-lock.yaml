@@ -161,6 +161,12 @@ importers:
       '@raulrod/tokens':
         specifier: workspace:*
         version: link:../tokens
+      '@storybook/react':
+        specifier: ^8.6.18
+        version: 8.6.18(@storybook/test@8.6.18(storybook@8.6.18(prettier@3.9.8)))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(storybook@8.6.18(prettier@3.9.8))(typescript@7.0.2)
+      '@storybook/test':
+        specifier: ^8.6.18
+        version: 8.6.18(storybook@8.6.18(prettier@3.9.8))
       '@testing-library/jest-dom':
         specifier: ^7.0.1
         version: 7.0.1(@testing-library/dom@10.4.2)(vitest@5.0.1(@types/node@26.6.2)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)))
