@@ -53,11 +53,13 @@ import { usePopoverPosition } from "../utils/use-popover-position.js";
  * A11y by construction (DoD #2, WAI-ARIA Menu/Menu Button): the trigger is
  * `aria-haspopup="menu"` + `aria-expanded` + `aria-controls` and toggles on
  * click; the panel is `<div role="menu">` with `[role="menuitem"]` BUTTON
- * items (native-first — Enter/Space/click activate natively). Roving tabindex
- * + type-ahead + initial focus on the first enabled item, ArrowUp/Down with
- * wrap over `:disabled`, Home/End, ArrowLeft (sub level only), Tab closes the
- * tree and Escape/outside pointer-down/re-click dismiss through the topmost-
- * aware dismissable layer (§14): one level per interaction. Closing restores
+ * items. Disabled items use `aria-disabled` (APG) so they stay in the
+ * accessibility tree and are announced as unavailable, while activation is
+ * guarded so click/Enter/Space do nothing. Roving tabindex + type-ahead +
+ * initial focus on the first enabled item, ArrowUp/Down with wrap over
+ * disabled items, Home/End, ArrowLeft (sub level only), Tab closes the tree
+ * and Escape/outside pointer-down/re-click dismiss through the topmost-aware
+ * dismissable layer (§14): one level per interaction. Closing restores
  * focus to the triggering element (focus-return, nesting-correct via
  * per-instance capture).
  *
@@ -224,14 +226,19 @@ export const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuConten
 );
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
-/** `DropdownMenu.Item` slot: a real `<button role="menuitem">` (native-first).
- *  Activation — click, Enter or Space — fires `onSelect` and then closes the
- *  WHOLE tree through the root context (an item inside a submenu still closes
- *  everything); the root focus-return lands back on the menu button. Roving
- *  focus is managed by the parent panel: all items start `tabIndex={-1}` and
- *  the focused one carries `tabIndex={0}`. */
+/** `DropdownMenu.Item` slot: a real `<button role="menuitem">`. Disabled
+ *  items emit `aria-disabled` (APG) instead of the native `disabled`
+ *  attribute, so they remain in the accessibility tree while being
+ *  non-actionable. Activation — click, Enter or Space — fires `onSelect` and
+ *  then closes the WHOLE tree only when the item is enabled; the root
+ *  focus-return lands back on the menu button. Roving focus is managed by the
+ *  parent panel: all items start `tabIndex={-1}` and the focused one carries
+ *  `tabIndex={0}`. */
 export const DropdownMenuItem = forwardRef<HTMLButtonElement, DropdownMenuItemProps>(
-  function DropdownMenuItem({ className, onSelect, startIcon, endIcon, children, ...props }, ref) {
+  function DropdownMenuItem(
+    { className, disabled, onSelect, startIcon, endIcon, children, ...props },
+    ref,
+  ) {
     const dropdown = useDropdownMenuContext();
     return (
       <button
@@ -240,8 +247,14 @@ export const DropdownMenuItem = forwardRef<HTMLButtonElement, DropdownMenuItemPr
         type="button"
         role="menuitem"
         tabIndex={-1}
-        className={cx("rr-dropdown-item", className)}
+        aria-disabled={disabled || undefined}
+        className={cx("rr-dropdown-item", disabled && "rr-dropdown-item--disabled", className)}
         onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
           onSelect?.(event);
           dropdown.setOpen(false);
         }}
@@ -319,10 +332,12 @@ DropdownMenuSub.displayName = "DropdownMenuSub";
  *  parent panel's keyboard hook deliberately leaves it alone) or pointer-enter
  *  opens the sub-menu; the sub-content's focus effect then lands on its first
  *  enabled item. Defaults `endIcon` to the `ChevronRight` affordance so the
- *  expanded-submenu cue exists without consumer effort. */
+ *  expanded-submenu cue exists without consumer effort. A disabled sub-trigger
+ *  emits `aria-disabled` and ignores both opening gestures, matching the APG
+ *  expectation that disabled menuitems are discoverable but non-actionable. */
 export const DropdownMenuSubTrigger = forwardRef<HTMLButtonElement, DropdownMenuSubTriggerProps>(
   function DropdownMenuSubTrigger(
-    { className, onKeyDown, startIcon, endIcon, children, ...props },
+    { className, disabled, onKeyDown, startIcon, endIcon, children, ...props },
     ref,
   ) {
     const sub = useDropdownMenuSubContext();
@@ -338,16 +353,17 @@ export const DropdownMenuSubTrigger = forwardRef<HTMLButtonElement, DropdownMenu
         aria-haspopup="menu"
         aria-expanded={sub.open}
         aria-controls={sub.contentId}
-        className={cx("rr-dropdown-item", className)}
+        aria-disabled={disabled || undefined}
+        className={cx("rr-dropdown-item", disabled && "rr-dropdown-item--disabled", className)}
         onKeyDown={(event) => {
-          if (event.key === "ArrowRight") {
+          if (event.key === "ArrowRight" && !disabled) {
             event.preventDefault();
             sub.setOpen(true);
           }
           onKeyDown?.(event);
         }}
         onPointerEnter={() => {
-          sub.setOpen(true);
+          if (!disabled) sub.setOpen(true);
         }}
       >
         {startIcon !== undefined && (

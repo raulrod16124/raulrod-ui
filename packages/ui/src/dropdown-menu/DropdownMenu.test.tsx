@@ -490,6 +490,68 @@ describe("DropdownMenu submenu (RRU-055)", () => {
   });
 });
 
+describe("DropdownMenu disabled items use aria-disabled (RRU-121)", () => {
+  it("renders disabled items with aria-disabled instead of the native disabled attribute", () => {
+    render(composedMenu());
+    openViaTrigger();
+
+    expect(item("share")).toHaveAttribute("aria-disabled", "true");
+    expect(item("share")).not.toHaveAttribute("disabled");
+  });
+
+  it("does not activate or close the menu when clicking a disabled item", () => {
+    const onSelect = vi.fn();
+    const onOpenChange = vi.fn();
+    render(
+      <DropdownMenu onOpenChange={onOpenChange}>
+        <DropdownMenu.Trigger data-testid="trigger">Options</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item data-testid="enabled">Enabled</DropdownMenu.Item>
+          <DropdownMenu.Item data-testid="disabled" disabled onSelect={onSelect}>
+            Disabled
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+    openViaTrigger();
+
+    act(() => item("disabled").click());
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(menuPanel()).not.toBeNull();
+  });
+
+  it("does not open a disabled sub-trigger with ArrowRight or pointer-enter", () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenu.Trigger data-testid="trigger">Options</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item data-testid="edit">Edit</DropdownMenu.Item>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger data-testid="more" disabled>
+              More
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent data-testid="sub">
+              <DropdownMenu.Item>Duplicate</DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+    openViaTrigger();
+
+    expect(item("more")).toHaveAttribute("aria-disabled", "true");
+    expect(item("more")).not.toHaveAttribute("disabled");
+
+    keydownOn(item("more"), "ArrowRight");
+    expect(maybeItem("sub")).toBeNull();
+
+    pointerOverOn(item("more"));
+    expect(maybeItem("sub")).toBeNull();
+  });
+});
+
 describe("DropdownMenu controlled/uncontrolled + composition", () => {
   it("controlled: onOpenChange fires and the root keeps the gate", async () => {
     const onOpenChange = vi.fn();

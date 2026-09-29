@@ -82,9 +82,14 @@
 
 /* Disabled: LAST so it beats `:hover` at equal specificity (Button precedent),
    and the look is shared across all items (WCAG 1.4.3 exempts these from
-   contrast — color.md §6 note). */
+   contrast — color.md §6 note). We support both the native pseudo-class and
+   the `aria-disabled` attribute (APG) because the component now emits the
+   latter for menuitems while still tolerating the former if a consumer passes
+   it directly. */
 
-.rr-dropdown-item:disabled {
+.rr-dropdown-item:disabled,
+.rr-dropdown-item[aria-disabled="true"],
+.rr-dropdown-item--disabled {
   color: var(--rr-color-action-disabled-text);
   background: none;
   cursor: not-allowed;
