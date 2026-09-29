@@ -18,11 +18,12 @@ export type SwitchSize = "sm" | "md" | "lg";
  * `children` in `<VisuallyHidden>` for an invisible but announced label)
  * wrapping a bare `<input type="checkbox" role="switch">`.
  *
- * `role="switch"` + `aria-checked` from the checked state and Space/click
- * toggling are NATIVE to the checkbox (check-pattern + WAI-ARIA switch
- * pattern): no JS keyboard or ARIA wiring. `checked`/`defaultChecked`/
- * `onChange`/`name`/`value`/`disabled`/`required` are the native pass-through
- * so controlled and uncontrolled usage both work.
+ * `role="switch"` and the on/off state are NATIVE to the checkbox: the browser
+ * maps `checked` to `aria-checked` implicitly, so the component does not emit
+ * an explicit `aria-checked` attribute. Space/click toggling is also native
+ * (check-pattern + WAI-ARIA switch pattern): no JS keyboard or ARIA wiring.
+ * `checked`/`defaultChecked`/`onChange`/`name`/`value`/`disabled`/`required`
+ * are the native pass-through so controlled and uncontrolled usage both work.
  *
  * Form wiring is routed to the REAL labeled control: `id`,
  * `aria-describedby`, `aria-errormessage` and `aria-invalid` land on the
