@@ -2,7 +2,7 @@
 // pointer interaction dismiss only the TOPMOST active layer. Runs in happy-dom
 // with real DOM events. Behavior over implementation.
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -133,6 +133,41 @@ describe("useDismissableLayer", () => {
     pointerDownOutside();
     expect(onOutsideTop).toHaveBeenCalledTimes(1);
     expect(onOutsideBottom).not.toHaveBeenCalled();
+  });
+
+  it("one Escape closes exactly one level of a stacked overlay", () => {
+    const onEscapeTop = vi.fn();
+    const onEscapeBottom = vi.fn();
+
+    function StackedLayers() {
+      const [topOpen, setTopOpen] = useState(true);
+      return (
+        <div>
+          <Layer id="bottom" active onEscape={onEscapeBottom} />
+          {topOpen && (
+            <Layer
+              id="top"
+              active
+              onEscape={() => {
+                setTopOpen(false);
+                onEscapeTop();
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    render(<StackedLayers />);
+
+    // A single Escape dismisses only the topmost active layer.
+    pressEscape();
+    expect(onEscapeTop).toHaveBeenCalledTimes(1);
+    expect(onEscapeBottom).not.toHaveBeenCalled();
+
+    // After the top layer closes, the next Escape reaches the remaining layer.
+    pressEscape();
+    expect(onEscapeBottom).toHaveBeenCalledTimes(1);
   });
 
   it("with stacked layers, a pointer inside the topmost layer dismisses nothing", () => {
