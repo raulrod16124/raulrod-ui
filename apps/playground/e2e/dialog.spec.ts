@@ -213,4 +213,34 @@ test.describe("dialog", () => {
     await page.getByTestId("dialog-confirm").click();
     await expect(dialog(page)).toBeHidden();
   });
+
+  test("a dialog whose trigger unmounted itself falls back to the page's first focusable, not the body (RRU-117)", async ({
+    page,
+  }) => {
+    const trigger = page.getByTestId("tour-trigger");
+    await trigger.click();
+
+    const tour = page.getByRole("dialog").filter({ hasText: "Keyboard tour" });
+    await expect(tour).toBeVisible();
+    // The trigger unmounted itself in the same commit it opened the dialog: it
+    // cannot be the restoration target, which is exactly what makes this the
+    // discriminating surface for the no-trigger fallback (the delete-dialog's
+    // menu trigger survives, so it never hit the bug).
+    await expect(trigger).toHaveCount(0);
+
+    // The documented RRU-117 destination: the FIRST focusable of the document,
+    // in DOM order. Derived from the DOM — a control added above it in the tree
+    // must change the expectation, so the test cannot silently outlive the app.
+    const firstFocusable = page.locator(FOCUSABLE).first();
+    await expect(firstFocusable).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(tour).toBeHidden();
+
+    const focused = await activeElement(page);
+    // The old `document.body.focus()` no-op parked the focus on the unfocusable
+    // <body> with no visible ring — the exact finding #2 of the manual review.
+    expect(focused?.tag).not.toBe("body");
+    expect(focused?.testId).toBe(await firstFocusable.getAttribute("data-testid"));
+  });
 });

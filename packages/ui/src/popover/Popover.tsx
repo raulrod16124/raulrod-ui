@@ -129,7 +129,7 @@ export const PopoverContent = forwardRef<HTMLDivElement, PopoverContentProps>(
     const popover = usePopoverContext();
     const panelRef = useRef<HTMLDivElement>(null);
 
-    useFocusReturn({ active: popover.open });
+    useFocusReturn({ active: popover.open, fallbackRef: popover.triggerRef });
     useDismissableLayer({
       nodeRef: panelRef,
       extraInsideRefs: [popover.triggerRef],

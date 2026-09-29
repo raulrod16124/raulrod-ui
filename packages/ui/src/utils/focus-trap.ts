@@ -7,7 +7,7 @@ import type { RefObject } from "react";
 import { useEffect } from "react";
 
 import {
-  getActiveLayerNodesInContext,
+  getTopmostModalScopeNodes,
   popModalContext,
   pushModalContext,
 } from "./dismissable-layer.js";
@@ -41,15 +41,12 @@ export function useFocusTrap({ container, active }: FocusTrapOptions): void {
     const node = container.current;
     if (!node) return;
 
-    const context = pushModalContext();
+    const context = pushModalContext(node);
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Tab") return;
 
-      const focusable = getFocusableElementsInDocumentOrder([
-        node,
-        ...getActiveLayerNodesInContext(context),
-      ]);
+      const focusable = getFocusableElementsInDocumentOrder(getTopmostModalScopeNodes());
       if (focusable.length === 0) {
         // Nothing inside to receive Tab: swallow it so focus cannot leak out.
         event.preventDefault();

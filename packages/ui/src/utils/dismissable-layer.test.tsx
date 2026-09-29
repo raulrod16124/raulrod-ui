@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   getActiveLayerNodesInContext,
+  getTopmostModalScopeNodes,
   popModalContext,
   pushModalContext,
   useDismissableLayer,
@@ -195,8 +196,21 @@ describe("modal contexts (RRU-116)", () => {
   const testIds = (nodes: HTMLElement[]): string[] =>
     nodes.map((node) => node.getAttribute("data-testid") ?? "");
 
+  /** `pushModalContext` needs the trapped container node (RRU-117): a real,
+   *  connected element the modal owns. Rendered here so the scope rebuild the
+   *  registry does has something to query against. */
+  const renderModalContainer = (testId: string): HTMLElement => {
+    render(
+      <div data-testid={testId}>
+        <button>inside</button>
+      </div>,
+    );
+    return screen.getByTestId(testId) as HTMLElement;
+  };
+
   it("a layer records the modal context that was topmost when it activated", () => {
-    const ctx = pushModalContext();
+    const modal = renderModalContainer("modal-a");
+    const ctx = pushModalContext(modal);
     try {
       render(<Layer id="under-a" active />);
       expect(testIds(getActiveLayerNodesInContext(ctx))).toEqual(["under-a"]);
@@ -207,14 +221,16 @@ describe("modal contexts (RRU-116)", () => {
 
   it("nested contexts stay isolated: a top layer is not part of the outer trap's scope", () => {
     // Modal A open: a layer opened from it belongs to A.
-    const ctxA = pushModalContext();
+    const modalA = renderModalContainer("modal-a");
+    const ctxA = pushModalContext(modalA);
     let ctxB: symbol | undefined;
     try {
       render(<Layer id="belongs-to-a" active />);
       // Modal B stacks on top: a layer opened now belongs to B, NOT to A —
       // otherwise A's focus trap would capture B's focusables (stacked-modals
       // regression RRU-116 guards against).
-      ctxB = pushModalContext();
+      const modalB = renderModalContainer("modal-b");
+      ctxB = pushModalContext(modalB);
       render(<Layer id="belongs-to-b" active />);
 
       expect(testIds(getActiveLayerNodesInContext(ctxA))).toEqual(["belongs-to-a"]);
@@ -226,15 +242,18 @@ describe("modal contexts (RRU-116)", () => {
   });
 
   it("closing the overlay removes its node from the trap's scope", () => {
-    const ctx = pushModalContext();
+    const modal = renderModalContainer("modal-a");
+    const ctx = pushModalContext(modal);
     try {
       const { unmount } = render(<Layer id="inner" active />);
       expect(testIds(getActiveLayerNodesInContext(ctx))).toEqual(["inner"]);
+      expect(testIds(getTopmostModalScopeNodes())).toContain("inner");
 
       // Unmounting = the overlay closed: its panel leaves the scope, exactly as
       // it would when the portal unmounts alongside the trap.
       unmount();
       expect(getActiveLayerNodesInContext(ctx)).toEqual([]);
+      expect(testIds(getTopmostModalScopeNodes())).toEqual(["modal-a"]);
     } finally {
       popModalContext(ctx);
     }
@@ -242,8 +261,65 @@ describe("modal contexts (RRU-116)", () => {
 
   it("a layer that opens with no modal up belongs to no trap scope", () => {
     render(<Layer id="floating" active />);
-    const ctx = pushModalContext();
+    const modal = renderModalContainer("modal-a");
+    const ctx = pushModalContext(modal);
     expect(getActiveLayerNodesInContext(ctx)).toEqual([]);
     popModalContext(ctx);
+  });
+});
+
+describe("topmost modal scope (RRU-117)", () => {
+  const ids = (nodes: HTMLElement[]): string[] =>
+    nodes.map((node) => node.getAttribute("data-testid") ?? "");
+
+  it("the topmost scope is the trap's container plus the layers that opened under it", () => {
+    const modal = (testId: string): HTMLElement => {
+      render(<div data-testid={testId} />);
+      return screen.getByTestId(testId) as HTMLElement;
+    };
+    const ctx = pushModalContext(modal("trap"));
+    try {
+      render(<Layer id="inner" active />);
+      const scope = ids(getTopmostModalScopeNodes());
+      expect(scope).toEqual(["trap", "inner"]);
+    } finally {
+      popModalContext(ctx);
+    }
+  });
+
+  it("only the TOPMOST context's nodes form the scope; stacked modals stay isolated", () => {
+    const modal = (testId: string): HTMLElement => {
+      render(<div data-testid={testId} />);
+      return screen.getByTestId(testId) as HTMLElement;
+    };
+    const ctxA = pushModalContext(modal("dialog-a"));
+    try {
+      render(<Layer id="opened-under-a" active />);
+      const ctxB = pushModalContext(modal("dialog-b"));
+      try {
+        render(<Layer id="opened-under-b" active />);
+        expect(ids(getTopmostModalScopeNodes())).toEqual(["dialog-b", "opened-under-b"]);
+      } finally {
+        popModalContext(ctxB);
+      }
+    } finally {
+      popModalContext(ctxA);
+    }
+  });
+
+  it("is empty when no trap is active, and a detached container counts as absent", () => {
+    expect(getTopmostModalScopeNodes()).toEqual([]);
+
+    // A modal that is CLOSING has a detached/absent container: it must not be
+    // treated as a scope, or focus restoration would "land inside" a modal that
+    // is already gone (RRU-117 ordering: the closing trap pops its context).
+    const detached = document.createElement("div");
+    detached.setAttribute("data-testid", "detached-modal");
+    const ctx = pushModalContext(detached);
+    try {
+      expect(getTopmostModalScopeNodes()).toEqual([]);
+    } finally {
+      popModalContext(ctx);
+    }
   });
 });

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, RefObject } from "react";
 
 /**
  * Internal context payload of {@link Dialog} (RRU-053), consumed by the slots.
@@ -20,6 +20,15 @@ export interface DialogContextValue {
    *  `aria-controls` (RRU-115: both ends of the relationship are owned by the
    *  root, so the reference always resolves to a real node while open). */
   contentId: string;
+  /** The `<Dialog.Trigger>` node, owned by the root. The Trigger registers its
+   *  button through `setTriggerRef` (precedent: Popover/Select/DropdownMenu);
+   *  `.Content` reads it as the focus-return fallback (RRU-117): even when a
+   *  dialog is opened without a user gesture on its own trigger, closing it
+   *  still lands the focus back on the button that represents it. */
+  triggerRef: RefObject<HTMLButtonElement | null>;
+  /** Registers/unregisters the trigger's DOM node (ref callbacks, never an
+   *  object mutation during render — react-hooks/immutability). */
+  setTriggerRef: (node: HTMLButtonElement | null) => void;
   /** `<Dialog.Title>` id, referenced by `aria-labelledby` (present only when the slot is). */
   labelId?: string;
   /** `<Dialog.Description>` id, referenced by `aria-describedby` (present only when the slot is). */

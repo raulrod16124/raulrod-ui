@@ -4,6 +4,7 @@
 // overlay primitives in RRU-052. Behavior over implementation.
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -352,6 +353,139 @@ describe("nested overlays inside the dialog trap (RRU-116)", () => {
     pressKey("Escape");
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(insideModalContext(document.activeElement)).toBe(true);
+  });
+});
+
+describe("focus restoration fallback for a triggerless dialog (RRU-117)", () => {
+  /** Controlled dialog with NO `Dialog.Trigger`; opened purely by the `open`
+   *  prop — the direct reproduction of the manual-review finding #2 (a dialog
+   *  opened by code, not by a user gesture on its own trigger). */
+  function TriggerlessDialog({ open, onOpenChange }: { open: boolean; onOpenChange: () => void }) {
+    return (
+      <div>
+        <button data-testid="page-first">Page focus start</button>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <Dialog.Content>
+            <Dialog.Title>Keyboard tour</Dialog.Title>
+            <button data-testid="next">Next</button>
+          </Dialog.Content>
+        </Dialog>
+      </div>
+    );
+  }
+
+  it("Escape closes it and the focus lands on the page's first focusable, never the body (DoD #2)", () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(<TriggerlessDialog open onOpenChange={onOpenChange} />);
+
+    expect(screen.queryByRole("dialog")).not.toBeNull();
+    // Programmatic open parks the focus on the panel (RRU-053 initial focus),
+    // NOT on the body — the no-op fallback only ever appears on CLOSE.
+    expect(document.activeElement).not.toBe(document.body);
+
+    // The documented closing path: Escape reaches the dismissable layer.
+    pressKey("Escape");
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+
+    rerender(<TriggerlessDialog open={false} onOpenChange={onOpenChange} />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // With the old `document.body.focus()` fallback this was a no-op and the
+    // focus stayed on the body with no visible ring (RRU-117 bug).
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(screen.getByTestId("page-first"));
+  });
+
+  it("a trigger that unmounts while the dialog is open no longer hijacks the return", () => {
+    function App({
+      withTrigger,
+      open,
+      onOpenChange,
+    }: {
+      withTrigger: boolean;
+      open: boolean;
+      onOpenChange: () => void;
+    }) {
+      return (
+        <div>
+          <button data-testid="page-first">Page focus start</button>
+          <Dialog open={open} onOpenChange={onOpenChange}>
+            {withTrigger ? (
+              <Dialog.Trigger data-testid="trigger">Delete project</Dialog.Trigger>
+            ) : null}
+            <Dialog.Content>
+              <Dialog.Title>Reporting</Dialog.Title>
+              <button data-testid="cancel">Cancel</button>
+            </Dialog.Content>
+          </Dialog>
+        </div>
+      );
+    }
+
+    const onOpenChange = vi.fn();
+    const { rerender } = render(<App withTrigger open onOpenChange={onOpenChange} />);
+
+    // The trigger registered itself; open state is on the panel.
+    const trigger = screen.getByTestId("trigger");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    // The trigger is removed from the tree while the dialog stays open: its
+    // ref callback fires with null, so the fallbackRef must be abandoned.
+    rerender(<App withTrigger={false} open onOpenChange={onOpenChange} />);
+    expect(screen.queryByTestId("trigger")).toBeNull();
+
+    rerender(<App withTrigger={false} open={false} onOpenChange={onOpenChange} />);
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(screen.getByTestId("page-first"));
+  });
+
+  it("a triggerless overlay over a LIVE dialog lands back in the modal scope, never behind it", async () => {
+    // A hint-style popover with no trigger of its own, opened by a page-level
+    // action while the dialog stays open. Its captured element (the page button
+    // the "hint" was requested from) is OUTSIDE the live modal scope: restoring
+    // to it would land the focus behind the modal, so the fallback must pick a
+    // destination from the enclosing scope instead (RRU-117 scope rule).
+    function DialogWithTriggerlessPopover() {
+      const [popoverOpen, setPopoverOpen] = useState(false);
+      return (
+        <div>
+          <button data-testid="page-reveal" onClick={() => setPopoverOpen(true)}>
+            Reveal hint popover
+          </button>
+          <Dialog open>
+            <Dialog.Content>
+              <Dialog.Title>Settings</Dialog.Title>
+              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <Popover.Content>
+                  <button data-testid="popover-save">Save</button>
+                </Popover.Content>
+              </Popover>
+              <button data-testid="cancel">Cancel</button>
+            </Dialog.Content>
+          </Dialog>
+        </div>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<DialogWithTriggerlessPopover />);
+    expect(screen.getByRole("dialog")).not.toBeNull();
+
+    // Opening the triggerless popover focuses whatever the user interacted
+    // with — the page button behind the modal.
+    await user.click(screen.getByTestId("page-reveal"));
+    expect(screen.queryByTestId("popover-save")).not.toBeNull();
+
+    // Escape closes the popover (topmost layer) but NOT the dialog.
+    pressKey("Escape");
+    expect(screen.queryByTestId("popover-save")).toBeNull();
+    expect(screen.getByRole("dialog")).not.toBeNull();
+
+    // The restoration may NOT go to the page button behind the modal: the
+    // scope rule rejects it and the destination lands inside the dialog.
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).not.toBe(screen.getByTestId("page-reveal"));
+    const panel = document.querySelector(".rr-dialog-content");
+    expect(panel?.contains(document.activeElement)).toBe(true);
   });
 });
 

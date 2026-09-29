@@ -57,6 +57,8 @@ const CITIES = [
 export function OverlaysSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourDone, setTourDone] = useState(false);
   const [city, setCity] = useState("");
   const [lastAction, setLastAction] = useState("none");
 
@@ -196,6 +198,56 @@ export function OverlaysSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* The discriminating surface for RRU-117. The "start" button unmounts
+          ITSELF on click and opens this dialog in the same commit, so the
+          dialog has NO trigger left to restore to: the capture of the open
+          event can only be a node that is already gone. The delete-dialog above
+          does NOT reproduce the bug — React runs passive-effect destroys before
+          creates, so the menu's restoration runs before this dialog's capture
+          and hands it a live node to remember. This one-shot surface is the one
+          the E2E and the manual a11y review use to prove the fallback rule
+          (focus returns to the first focusable of the document, never the
+          no-op `<body>.focus()`). */}
+      {!tourDone ? (
+        <Button
+          data-testid="tour-trigger"
+          onClick={() => {
+            setTourDone(true);
+            setTourOpen(true);
+          }}
+          type="button"
+          variant="outline"
+        >
+          Start keyboard tour
+        </Button>
+      ) : null}
+
+      {tourOpen ? (
+        <Dialog open={tourOpen} onOpenChange={setTourOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Keyboard tour</DialogTitle>
+              <DialogDescription>
+                This dialog has no trigger: the button that opened it unmounted itself on click, so
+                closing it cannot focus a trigger that no longer exists. The fallback (RRU-117) puts
+                the focus on the first focusable of the page instead — in this app, the theme
+                switcher in the header.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                data-testid="tour-close"
+                onClick={() => setTourOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <Inline className="pg-row" wrap>
         <IconButton label="Delete project" variant="destructive">

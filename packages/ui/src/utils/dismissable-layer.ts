@@ -51,6 +51,12 @@ const activeLayers = new Map<symbol, ActiveLayer>();
  */
 const modalContextStack: symbol[] = [];
 
+/** The trapped container each open context belongs to (RRU-117). The trap hands
+ *  its node over when it pushes the context, so anything that needs the modal
+ *  SCOPE (the trap itself, focus restoration) can rebuild it without the trap
+ *  having to expose anything. */
+const modalContainers = new Map<symbol, HTMLElement>();
+
 function registerLayer(id: symbol, node: HTMLElement | null): void {
   const context = modalContextStack[modalContextStack.length - 1] ?? null;
   activeLayers.set(id, { node, context });
@@ -65,10 +71,13 @@ function isTopmostLayer(id: symbol): boolean {
   return layers[layers.length - 1] === id;
 }
 
-/** Opens a new modal context for a focus trap and returns its id. */
-export function pushModalContext(): symbol {
+/** Opens a new modal context for a focus trap and returns its id. `container`
+ *  is the node the trap keeps focus inside of, kept here so the modal scope can
+ *  be rebuilt by any consumer of this registry (RRU-117). */
+export function pushModalContext(container: HTMLElement): symbol {
   const context = Symbol("modal-context");
   modalContextStack.push(context);
+  modalContainers.set(context, container);
   return context;
 }
 
@@ -76,6 +85,7 @@ export function pushModalContext(): symbol {
 export function popModalContext(context: symbol): void {
   const index = modalContextStack.lastIndexOf(context);
   if (index !== -1) modalContextStack.splice(index, 1);
+  modalContainers.delete(context);
 }
 
 /** The DOM nodes of the overlay panels that opened under `context` and are
@@ -86,6 +96,27 @@ export function getActiveLayerNodesInContext(context: symbol): HTMLElement[] {
     if (layer.context === context && layer.node !== null) nodes.push(layer.node);
   }
   return nodes;
+}
+
+/**
+ * The focus scope of the TOPMOST open modal trap: its container plus the
+ * portaled panels of the layers that opened under it, in the same
+ * tabbable-order union the trap itself uses (RRU-116). Empty when no trap is
+ * active, and a context whose container is already detached is treated as
+ * absent — that happens exactly when the modal that owned it is closing, and a
+ * detached node is not a scope anything can be focused into.
+ *
+ * Consumers: the focus trap (its Tab cycle) and `useFocusReturn` (RRU-117 — the
+ * focus restored on close must not land behind a modal that is still open).
+ * This is what makes "focus never leaves the modal scope" an invariant of the
+ * infrastructure instead of a coincidence per overlay.
+ */
+export function getTopmostModalScopeNodes(): HTMLElement[] {
+  const top = modalContextStack[modalContextStack.length - 1];
+  if (top === undefined) return [];
+  const container = modalContainers.get(top);
+  if (container === undefined || !container.isConnected) return [];
+  return [container, ...getActiveLayerNodesInContext(top)].filter((node) => node.isConnected);
 }
 
 /**

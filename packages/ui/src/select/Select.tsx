@@ -224,7 +224,7 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(func
   const select = useSelectContext();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useFocusReturn({ active: select.open });
+  useFocusReturn({ active: select.open, fallbackRef: select.triggerRef });
   useDismissableLayer({
     nodeRef: panelRef,
     extraInsideRefs: [select.triggerRef],

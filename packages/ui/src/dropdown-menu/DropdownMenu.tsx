@@ -134,7 +134,7 @@ export const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuConten
     const dropdown = useDropdownMenuContext();
     const panelRef = useRef<HTMLDivElement>(null);
 
-    useFocusReturn({ active: dropdown.open });
+    useFocusReturn({ active: dropdown.open, fallbackRef: dropdown.triggerRef });
     useDismissableLayer({
       nodeRef: panelRef,
       extraInsideRefs: [dropdown.triggerRef],
@@ -329,7 +329,7 @@ export const DropdownMenuSubContent = forwardRef<HTMLDivElement, DropdownMenuSub
     const dropdown = useDropdownMenuContext();
     const panelRef = useRef<HTMLDivElement>(null);
 
-    useFocusReturn({ active: sub.open });
+    useFocusReturn({ active: sub.open, fallbackRef: sub.triggerRef });
     useDismissableLayer({
       nodeRef: panelRef,
       extraInsideRefs: [sub.triggerRef],

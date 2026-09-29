@@ -66,10 +66,23 @@ export function Dialog({ open, defaultOpen = false, onOpenChange, children }: Di
   const labelId = hasTitle ? `${contentId}-title` : undefined;
   const descriptionId = hasDescription ? `${contentId}-description` : undefined;
 
+  // The trigger is a slot the consumer mounts as a sibling; its node belongs
+  // to the root. The Trigger registers through `setTriggerRef` (precedent:
+  // Popover/Select/DropdownMenu) and `.Content` reads it as the focus-return
+  // fallback (RRU-117), so even a dialog opened without a gesture on its own
+  // trigger restores the focus to the button that represents it. Refs are
+  // client-only → SSR-safe.
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const setTriggerRef = (node: HTMLButtonElement | null): void => {
+    triggerRef.current = node;
+  };
+
   const dialog: DialogContextValue = {
     open: isOpen,
     setOpen,
     contentId,
+    triggerRef,
+    setTriggerRef,
     ...(labelId !== undefined && { labelId }),
     ...(descriptionId !== undefined && { descriptionId }),
   };
@@ -87,7 +100,9 @@ export const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(
     return (
       <button
         {...props}
-        ref={ref}
+        ref={mergeRefs((node) => {
+          dialog.setTriggerRef(node);
+        }, ref)}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={dialog.open}
@@ -125,7 +140,7 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
   const panelRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap({ container: overlayRef, active: dialog.open });
-  useFocusReturn({ active: dialog.open });
+  useFocusReturn({ active: dialog.open, fallbackRef: dialog.triggerRef });
   useScrollLock({ active: dialog.open });
   useDismissableLayer({
     nodeRef: panelRef,
