@@ -72,6 +72,14 @@ export interface SelectContextValue {
   hasSelection: boolean;
   selectedLabel?: string;
   select: (value: string) => void;
+  /** Mutable flag for the initial focus direction on open. `true` focuses the
+   *  selected option (or the LAST enabled one); `false` focuses the selected
+   *  option (or the FIRST enabled one). Set by `ArrowUp`/`ArrowDown` on the
+   *  trigger and reset by the content after focusing. Exposed as getter/setter
+   *  so the ref never lives inside the context object (react-hooks/immutability).
+   */
+  getFocusLastOnOpen: () => boolean;
+  setFocusLastOnOpen: (value: boolean) => void;
 }
 
 /**

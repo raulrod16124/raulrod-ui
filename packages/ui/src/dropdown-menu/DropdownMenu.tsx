@@ -10,7 +10,15 @@ import type {
   DropdownMenuTriggerProps,
 } from "./DropdownMenu.types.js";
 
-import { createContext, forwardRef, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { ChevronRight } from "@raulrod/icons";
 
@@ -20,7 +28,11 @@ import { useDismissableLayer } from "../utils/dismissable-layer.js";
 import { useFocusReturn } from "../utils/focus-return.js";
 import { mergeRefs } from "../utils/merge-refs.js";
 import { useId } from "../utils/use-id.js";
-import { focusFirstMenuItem, useMenuKeyboard } from "../utils/use-menu-keyboard.js";
+import {
+  focusFirstMenuItem,
+  focusLastMenuItem,
+  useMenuKeyboard,
+} from "../utils/use-menu-keyboard.js";
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 
 /**
@@ -79,12 +91,20 @@ export function DropdownMenu({
     triggerRef.current = node;
   };
 
+  const focusLastOnOpenRef = useRef(false);
+  const getFocusLastOnOpen = useCallback((): boolean => focusLastOnOpenRef.current, []);
+  const setFocusLastOnOpen = useCallback((value: boolean): void => {
+    focusLastOnOpenRef.current = value;
+  }, []);
+
   const dropdown: DropdownMenuContextValue = {
     open: isOpen,
     setOpen,
     contentId,
     triggerRef,
     setTriggerRef,
+    getFocusLastOnOpen,
+    setFocusLastOnOpen,
   };
 
   return <DropdownMenuContext.Provider value={dropdown}>{children}</DropdownMenuContext.Provider>;
@@ -97,7 +117,7 @@ DropdownMenu.displayName = "DropdownMenu";
  *  the context as the anchor (`triggerRef`) and is counted INSIDE the
  *  dismissable layer, so a re-click closes instead of double-firing. */
 export const DropdownMenuTrigger = forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
-  function DropdownMenuTrigger({ className, onClick, children, ...props }, ref) {
+  function DropdownMenuTrigger({ className, onClick, onKeyDown, children, ...props }, ref) {
     const dropdown = useDropdownMenuContext();
     return (
       <button
@@ -113,6 +133,25 @@ export const DropdownMenuTrigger = forwardRef<HTMLButtonElement, DropdownMenuTri
         onClick={(event) => {
           dropdown.setOpen(!dropdown.open);
           onClick?.(event);
+        }}
+        onKeyDown={(event) => {
+          if (dropdown.open) {
+            onKeyDown?.(event);
+            return;
+          }
+          switch (event.key) {
+            case "ArrowDown":
+            case "ArrowUp":
+              event.preventDefault();
+              event.stopPropagation();
+              event.nativeEvent.stopImmediatePropagation();
+              dropdown.setFocusLastOnOpen(event.key === "ArrowUp");
+              dropdown.setOpen(true);
+              break;
+            default:
+              break;
+          }
+          onKeyDown?.(event);
         }}
       >
         {children}
@@ -156,10 +195,15 @@ export const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuConten
 
     // Initial focus (APG: first enabled item). `useMenuKeyboard` roving writes
     // `tabIndex=0` on it during the same commit via keydown, but the FIRST
-    // focus must be moved programmatically once.
+    // focus must be moved programmatically once. ArrowUp from the trigger opens
+    // and focuses the LAST enabled item instead.
+    const { open, getFocusLastOnOpen, setFocusLastOnOpen } = dropdown;
     useEffect(() => {
-      if (dropdown.open) focusFirstMenuItem(panelRef.current);
-    }, [dropdown.open]);
+      if (!open) return;
+      const focus = getFocusLastOnOpen() ? focusLastMenuItem : focusFirstMenuItem;
+      focus(panelRef.current);
+      setFocusLastOnOpen(false);
+    }, [open, getFocusLastOnOpen, setFocusLastOnOpen]);
 
     if (!dropdown.open) return null;
 
@@ -249,12 +293,20 @@ export function DropdownMenuSub({ children }: DropdownMenuSubProps) {
     triggerRef.current = node;
   };
 
+  const focusLastOnOpenRef = useRef(false);
+  const getFocusLastOnOpen = useCallback((): boolean => focusLastOnOpenRef.current, []);
+  const setFocusLastOnOpen = useCallback((value: boolean): void => {
+    focusLastOnOpenRef.current = value;
+  }, []);
+
   const sub: DropdownMenuContextValue = {
     open,
     setOpen,
     contentId,
     triggerRef,
     setTriggerRef,
+    getFocusLastOnOpen,
+    setFocusLastOnOpen,
   };
 
   return <DropdownMenuSubContext.Provider value={sub}>{children}</DropdownMenuSubContext.Provider>;

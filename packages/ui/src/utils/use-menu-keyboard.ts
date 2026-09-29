@@ -83,6 +83,13 @@ export function focusFirstMenuItem(menu: HTMLElement | null): void {
   focusMenuItem(getMenuItems(menu), firstEnabledIndex(getMenuItems(menu)));
 }
 
+/** Focus when opening with ArrowUp: the LAST enabled item (APG). */
+export function focusLastMenuItem(menu: HTMLElement | null): void {
+  if (!menu) return;
+  const items = getMenuItems(menu);
+  focusMenuItem(items, lastEnabledIndex(items));
+}
+
 export function useMenuKeyboard(options: MenuKeyboardOptions): void {
   const { menuRef, active } = options;
   const callbacksRef = useRef<MenuKeyboardCallbacks>({});

@@ -35,14 +35,19 @@ import {
  *  `document.activeElement` (containment check) so a document-level dispatch
  *  behaves like a real keypress when focus sits inside the panel. Escape is
  *  handled by the dismissable layer (document listener, no containment). */
-function pressKey(key: string, init: KeyboardEventInit = {}): void {
-  fireEvent.keyDown(document, { key, ...init });
+function pressKey(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+  fireEvent(document, event);
+  return event;
 }
 
-/** React-handler keys (SubTrigger's own onKeyDown) must be dispatched ON the
- *  node so they bubble through the (portaled) React delegation target. */
-function keydownOn(target: Element, key: string): void {
-  fireEvent.keyDown(target, { key });
+/** React-handler keys (SubTrigger's own onKeyDown or the trigger's onKeyDown)
+ *  must be dispatched ON the node so they bubble through the (portaled) React
+ *  delegation target. The event is returned so preventDefault stays assertable. */
+function keydownOn(target: Element, key: string): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  fireEvent(target, event);
+  return event;
 }
 
 function pointerDownOn(target: Element): void {
@@ -145,6 +150,61 @@ afterEach(() => {
   HTMLButtonElement.prototype.getBoundingClientRect = realButtonRect;
   if (realInnerWidth) Object.defineProperty(window, "innerWidth", realInnerWidth);
   if (realInnerHeight) Object.defineProperty(window, "innerHeight", realInnerHeight);
+});
+
+describe("DropdownMenu trigger keyboard: opens with arrow keys (RRU-120)", () => {
+  it("ArrowDown opens the menu and focuses the first enabled item", () => {
+    render(composedMenu());
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    const event = keydownOn(trigger, "ArrowDown");
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(menuPanel()).not.toBeNull();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(document.activeElement).toBe(item("edit"));
+  });
+
+  it("ArrowUp opens the menu and focuses the last enabled item", () => {
+    render(composedMenu());
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    const event = keydownOn(trigger, "ArrowUp");
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(menuPanel()).not.toBeNull();
+    expect(document.activeElement).toBe(item("settings"));
+  });
+
+  it("opening with arrow keys skips disabled items", () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenu.Trigger data-testid="trigger">Options</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item data-testid="alpha" disabled>
+            Alpha
+          </DropdownMenu.Item>
+          <DropdownMenu.Item data-testid="beta">Beta</DropdownMenu.Item>
+          <DropdownMenu.Item data-testid="gamma" disabled>
+            Gamma
+          </DropdownMenu.Item>
+          <DropdownMenu.Item data-testid="delta">Delta</DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+    const trigger = triggerButton();
+    act(() => trigger.focus());
+
+    keydownOn(trigger, "ArrowDown");
+    expect(document.activeElement).toBe(item("beta"));
+
+    keydownOn(document.activeElement!, "Escape");
+    act(() => trigger.focus());
+    keydownOn(trigger, "ArrowUp");
+    expect(document.activeElement).toBe(item("delta"));
+  });
 });
 
 describe("DropdownMenu trigger + open/close flow (DoD #2)", () => {
