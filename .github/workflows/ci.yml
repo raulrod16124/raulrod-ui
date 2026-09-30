@@ -116,3 +116,40 @@ jobs:
           name: playwright-report-${{ github.run_attempt }}
           path: apps/playground/playwright-report/
           retention-days: 7
+
+  # Bundle-size regression gate. Runs in parallel with the quality gate because
+  # it performs its own tree-shake build; a failure here must not mask lint /
+  # typecheck / test failures, and vice versa.
+  size-limit:
+    name: Bundle size
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle size check
+        run: pnpm size-limit
