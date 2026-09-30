@@ -1,6 +1,6 @@
 {
   "name": "@raulrod/icons",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Icon set for RaulRod UI: re-export of lucide-react (ADR-007).",
   "type": "module",
   "sideEffects": false,
