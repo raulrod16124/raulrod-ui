@@ -20,6 +20,7 @@ module.exports = [
     ignores: [
       "**/node_modules/**",
       "**/dist/**",
+      "**/dist-tree-shake/**",
       "**/.turbo/**",
       "coverage/**",
       "**/storybook-static/**",
