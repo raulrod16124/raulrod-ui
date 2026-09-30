@@ -1,15 +1,23 @@
 {
   "name": "@raulrod/icons",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Icon set for RaulRod UI: re-export of lucide-react (ADR-007).",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -20,5 +28,8 @@
   },
   "dependencies": {
     "lucide-react": "^1.47.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0"
   }
 }

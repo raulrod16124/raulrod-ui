@@ -1,9 +1,8 @@
 import type { Preview } from "@storybook/react";
 
-/* eslint-disable no-restricted-imports -- RRU-091: subpath exports replace these two paths. */
-import "@raulrod/tokens/dist/tokens.css";
-import "@raulrod/ui/dist/styles.css";
-/* eslint-enable no-restricted-imports */
+// Public subpath exports for the design-system stylesheets (RRU-091).
+import "@raulrod/tokens/styles.css";
+import "@raulrod/ui/styles.css";
 
 import { WithTheme } from "./with-theme.js";
 

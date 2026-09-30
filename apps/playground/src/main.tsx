@@ -17,15 +17,12 @@
 //     the stylesheet.
 import { createRoot } from "react-dom/client";
 
-// Two stylesheets, one from each package, both by PATH: the `exports` map that
-// would make them `@raulrod/<pkg>/styles.css` is RRU-091's work, and until then
-// this is the documented way to consume them (docs/theming.md §1). The lint
-// exception is on the import and not in the rule, so the exception is visible
-// exactly where a reader needs the reason.
-/* eslint-disable no-restricted-imports -- RRU-091: subpath exports replace these two paths. */
-import "@raulrod/tokens/dist/tokens.css";
-import "@raulrod/ui/dist/styles.css";
-/* eslint-enable no-restricted-imports */
+// Two stylesheets, one from each package, both through the public subpath
+// exports formalized in RRU-091 (`@raulrod/<pkg>/styles.css`). The consumer
+// controls load order: system CSS first, then app CSS, so overrides win the
+// cascade without fighting specificity.
+import "@raulrod/tokens/styles.css";
+import "@raulrod/ui/styles.css";
 
 import { App } from "./app.js";
 

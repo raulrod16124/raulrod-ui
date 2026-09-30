@@ -1,14 +1,27 @@
 {
   "name": "@raulrod/tokens",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Design tokens for RaulRod UI: primitive, semantic and component layers.",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "types": "./dist/styles.css.d.ts",
+      "default": "./dist/tokens.css"
+    }
+  },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node tools/emit-css.mjs",
     "typecheck": "tsc --noEmit",

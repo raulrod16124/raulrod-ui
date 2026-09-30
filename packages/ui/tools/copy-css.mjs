@@ -4,9 +4,9 @@
 // Why a build step: the components never import their own stylesheet (`tsc`
 // erases nothing — it simply has no opinion about non-TS inputs, and a CSS
 // `import` in the TSX would break the `sideEffects: false` tree-shaking promise
-// of ADR-007). Until RRU-091 formalizes the `exports` map, the artifact is
-// consumed by path, exactly like `@raulrod/tokens/dist/tokens.css`
-// (docs/theming.md §1).
+// of ADR-007). RRU-091 exposes this artifact as `@raulrod/ui/styles.css`;
+// the relative layout inside `dist/` must still mirror `src/` so the barrel's
+// `@import` specifiers resolve from the subpath entry point.
 //
 // The whole `src/**/*.css` tree is mirrored instead of only the barrel, because
 // the barrel's own `@import "./button/Button.css"` specifiers are RELATIVE:
@@ -21,7 +21,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = join(root, "src");
 const distDir = join(root, "dist");
 
-/** Recursively copies the `.css` files of `from` into `to`, mirroring the tree. */
+/**
+ * Recursively copies the style artifacts of `from` into `to`, mirroring the
+ * tree. Copies `.css` files and `.css.d.ts` ambient declaration files (the
+ * latter give TypeScript consumers types for the public subpath exports like
+ * `@raulrod/ui/styles.css` without extra config).
+ */
 async function copyStyleTree(from, to) {
   const entries = await readdir(from, { withFileTypes: true });
   let copied = 0;
@@ -33,7 +38,7 @@ async function copyStyleTree(from, to) {
     if (entry.isDirectory()) {
       await mkdir(target, { recursive: true });
       copied += await copyStyleTree(source, target);
-    } else if (entry.name.endsWith(".css")) {
+    } else if (entry.name.endsWith(".css") || entry.name.endsWith(".css.d.ts")) {
       await mkdir(dirname(target), { recursive: true });
       await copyFile(source, target);
       copied += 1;

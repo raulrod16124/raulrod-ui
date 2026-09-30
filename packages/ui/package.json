@@ -1,14 +1,27 @@
 {
   "name": "@raulrod/ui",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "React components for RaulRod UI (public entry point).",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "types": "./dist/styles.css.d.ts",
+      "default": "./dist/styles.css"
+    }
+  },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node tools/copy-css.mjs",
     "typecheck": "tsc --noEmit",
@@ -16,10 +29,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@raulrod/icons": "workspace:*"
+    "@raulrod/icons": "workspace:*",
+    "@raulrod/tokens": "workspace:*"
   },
   "devDependencies": {
-    "@raulrod/tokens": "workspace:*",
     "@storybook/react": "^8.6.18",
     "@storybook/test": "^8.6.18",
     "@testing-library/jest-dom": "^7.0.1",
@@ -35,5 +48,9 @@
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
   }
 }

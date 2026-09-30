@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Selective import JS (Button + ChevronDown)",
+    "path": "apps/playground/dist-tree-shake/assets/*.js",
+    "limit": "75 kB",
+    "gzip": true
+  },
+  {
+    "name": "Selective import CSS",
+    "path": "apps/playground/dist-tree-shake/assets/*.css",
+    "limit": "6 kB",
+    "gzip": true
+  }
+]
