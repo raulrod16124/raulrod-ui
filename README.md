@@ -1,12 +1,22 @@
-# RaulRod UI
+<p align="center">
+  <img src=".github/assets/logo.png" alt="RaulRod UI logo" width="160" />
+</p>
 
-[![npm](https://img.shields.io/npm/v/@raulrod/ui)](https://www.npmjs.com/package/@raulrod/ui)
-[![CI](https://github.com/raulrod16124/raulrod-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/raulrod16124/raulrod-ui/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<h1 align="center">RaulRod UI</h1>
 
-Design System of accessible, composable and tokenized React components.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@raulrod/ui"><img src="https://img.shields.io/npm/v/@raulrod/ui" alt="npm version" /></a>
+  <a href="https://github.com/raulrod16124/raulrod-ui/actions"><img src="https://github.com/raulrod16124/raulrod-ui/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+</p>
 
-RaulRod UI provides a stable public API, design tokens, light/dark theming and accessibility built into the components, so each consumer project starts from the same solid base instead of copying and pasting UI code.
+<p align="center">
+  Design System of accessible, composable and tokenized React components.
+</p>
+
+<p align="center">
+  RaulRod UI provides a stable public API, design tokens, light/dark theming and accessibility built into the components, so each consumer project starts from the same solid base instead of copying and pasting UI code.
+</p>
 
 ## Installation
 

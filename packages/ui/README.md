@@ -1,6 +1,10 @@
-# @raulrod/ui
+<p align="center">
+  <img src="https://raw.githubusercontent.com/raulrod16124/raulrod-ui/main/.github/assets/logo.png" alt="RaulRod UI logo" width="160" />
+</p>
 
-React component library for RaulRod UI.
+<h1 align="center">@raulrod/ui</h1>
+
+<p align="center">React component library for RaulRod UI.</p>
 
 ## Installation
 
