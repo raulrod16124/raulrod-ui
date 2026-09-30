@@ -28,7 +28,7 @@ function useMounted(): boolean {
 }
 
 /**
- * SSR-safe portal primitive (RRU-034): renders `children` into
+ * SSR-safe portal primitive: renders `children` into
  * `document.body` by default (or a `container`-provided DOM node) once the
  * component has mounted on the client (see {@link useMounted} for the
  * hydration strategy). This is the radix-by-default strategy for primitives
@@ -37,7 +37,7 @@ function useMounted(): boolean {
  * subtree afterwards.
  *
  * No element of its own is rendered, so there is no ref or `as`/polymorphic
- * prop (MVP rule, RRU-031): focus/a11y management belongs to the consumer's
+ * prop (MVP rule): focus/a11y management belongs to the consumer's
  * content inside the portal target.
  */
 export function Portal({ children, container }: PortalProps) {

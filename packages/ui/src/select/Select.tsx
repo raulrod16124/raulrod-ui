@@ -40,15 +40,14 @@ import { usePopoverPosition } from "../utils/use-popover-position.js";
 import { VisuallyHidden } from "../visually-hidden/index.js";
 
 /**
- * Select (RRU-057): read-only combobox (field look) built on the shared overlay
- * primitives (RRU-052), the positioner (RRU-054), the listbox keyboard
- * (RRU-057) and the composite API (guide §14/§15, ADR-004). The root is a PURE
+ * Select: read-only combobox (field look) built on the shared overlay
+ * primitives, the positioner, the listbox keyboard
+ * and the composite API (guide §14/§15, ADR-004). The root is a PURE
  * provider — no DOM of its own (same documented exception as
  * Popover/DropdownMenu): `Select.Trigger` is the field `<button>` and
  * `Select.Content` portals the `role="listbox"` panel to `document.body`.
  *
- * API (RRU-057): `value`/`defaultValue`/`onValueChange` (RadioGroup precedent,
- * RRU-047) + `open`/`defaultOpen`/`onOpenChange` (Popover precedent). Search is
+ * API: `value`/`defaultValue`/`onValueChange` (RadioGroup precedent) + `open`/`defaultOpen`/`onOpenChange` (Popover precedent). Search is
  * deferred (closed decision): type-ahead only.
  *
  * A11y by construction (DoD #2, WAI-ARIA read-only Combobox / Listbox-Select):
@@ -69,7 +68,7 @@ import { VisuallyHidden } from "../visually-hidden/index.js";
  * Non-modal by design (like Popover): no focus trap, no `aria-modal`, no scroll
  * lock.
  *
- * MVP limitation (documented, RRU-057): no hidden `input`/native `name` — the
+ * MVP limitation: no hidden `input`/native `name` — the
  * value never participates in a form submission.
  */
 

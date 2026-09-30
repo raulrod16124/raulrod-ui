@@ -18,7 +18,7 @@ const sizeByLevel: Record<HeadingLevel, TypeScale> = {
 };
 
 /**
- * Headline primitive (RRU-032) rendering `h1`–`h6` with a correct hierarchy by
+ * Headline primitive rendering `h1`–`h6` with a correct hierarchy by
  * default: the visual size derives from the rendered tag (`as`, default `h2`).
  * Styled entirely from `font.*` and `color.text.*` tokens (`Heading.css`),
  * never arbitrary values (docs/typography.md §1, ADR-003).

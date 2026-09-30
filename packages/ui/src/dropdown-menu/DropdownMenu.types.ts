@@ -2,12 +2,12 @@ import type { PopoverPlacement } from "../utils/popover.js";
 import type { ButtonHTMLAttributes, HTMLAttributes, MouseEvent, ReactNode, RefObject } from "react";
 
 /** Public `placement` re-export under a DropdownMenu-coherent name (single
- *  source stays `PopoverPlacement` in `utils/popover.ts`, RRU-054). */
+ *  source stays `PopoverPlacement` in `utils/popover.ts`). */
 export type DropdownMenuPlacement = PopoverPlacement;
 
 /**
  * Internal context payload shared by BOTH providers of the DropdownMenu
- * composite (RRU-055): `DropdownMenuContext` (the root) and
+ * composite: `DropdownMenuContext` (the root) and
  * `DropdownMenuSubContext` (one per `<DropdownMenu.Sub>`). Same shape on
  * purpose — every level floats a `role="menu"` panel off its own trigger, so
  * the root slots and the sub slots consume an identical contract; what differs
@@ -42,7 +42,7 @@ export interface DropdownMenuContextValue {
 }
 
 /**
- * Props of {@link DropdownMenu} (RRU-055), the composition root. Pure provider —
+ * Props of {@link DropdownMenu}, the composition root. Pure provider —
  * it renders no DOM of its own (ADR-004): the consumer composes
  * `DropdownMenu.Trigger`, `DropdownMenu.Content` and the item/sub slots as
  * siblings and the root wires open state, ids, ARIA and the anchor between
@@ -80,7 +80,7 @@ export interface DropdownMenuTriggerProps extends Omit<
 /** Props of the `<DropdownMenu.Content>` slot: the `<div role="menu">` rendered
  *  through a portal while open, floated next to the trigger by the internal
  *  position hook (flip/overflow aware, DoD #1). Its children are the item/sub
- *  slots; roving focus + type-ahead are handled internally (RRU-055 DoD #2). */
+ *  slots; roving focus + type-ahead are handled internally (DoD #2). */
 export interface DropdownMenuContentProps extends HTMLAttributes<HTMLDivElement> {
   /** Side + alignment of the menu relative to the trigger (default
    *  `"bottom-start"`). Mirrors to the opposite side and clamps to the viewport
@@ -92,7 +92,7 @@ export interface DropdownMenuContentProps extends HTMLAttributes<HTMLDivElement>
  *  (native-first, precedent Button/Radio/Switch) whose activation — click,
  *  Enter or Space — selects: it fires `onSelect` and then CLOSES the whole
  *  tree (root). `startIcon`/`endIcon` are rendered decoratively
- *  (`aria-hidden`) around the label, naming following Button (RRU-041). */
+ *  (`aria-hidden`) around the label, naming following Button. */
 export interface DropdownMenuItemProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "type"
@@ -108,7 +108,7 @@ export interface DropdownMenuItemProps extends Omit<
 /** Props of the `<DropdownMenu.Separator>` slot: `<div role="separator">`. */
 export interface DropdownMenuSeparatorProps extends HTMLAttributes<HTMLDivElement> {}
 
-/** Props of {@link DropdownMenuSub} (RRU-055): the sub-menu provider, a pure
+/** Props of {@link DropdownMenuSub}: the sub-menu provider, a pure
  *  state holder — same provider-root exception as the DropdownMenu root (no
  *  DOM of its own). Holds the submenu's open state, content id and trigger
  *  ref; the consumer composes `SubTrigger` + `SubContent` inside it. */

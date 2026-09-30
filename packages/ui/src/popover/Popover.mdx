@@ -1,0 +1,49 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as PopoverStories from "./Popover.stories.tsx";
+
+<Meta of={PopoverStories} />
+
+<Title />
+<Description of={PopoverStories} />
+
+## Usage
+
+`Popover` is the non-modal sibling of `Dialog`: a floating panel anchored to a
+trigger.
+
+```tsx
+import { Popover } from "@raulrod/ui";
+
+<Popover>
+  <Popover.Trigger>Open popover</Popover.Trigger>
+  <Popover.Content>
+    <Popover.Title>Popover title</Popover.Title>
+    <p>Any content can go here.</p>
+  </Popover.Content>
+</Popover>;
+```
+
+<Canvas of={PopoverStories.Playground} />
+
+## Props
+
+<ArgTypes of={PopoverStories} />
+
+## Accessibility
+
+- `role="dialog"` on the content.
+- `aria-labelledby` points to `Popover.Title` when present.
+- `aria-expanded`, `aria-haspopup` and `aria-controls` on the trigger.
+
+## Trade-offs / Limitations
+
+- **Non-modal.** No focus trap, no scroll lock, no `aria-modal`. Use `Dialog`
+  when you need modal behavior.
+- **No built-in close button.** The consumer is responsible for adding one if
+  the design requires it.
+- **Title is optional at compile time**, but a popover without `Popover.Title`
+  may fail accessible-name checks.
+- **Positioning is computed at runtime.** The panel is portaled and positioned
+  with `usePopoverPosition`; it flips and clamps to stay inside the viewport.
+- **Trigger is a plain button by default.** Wrap it in `Button`/`IconButton` for
+  styled variants.

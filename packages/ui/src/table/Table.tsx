@@ -21,7 +21,7 @@ import { Skeleton } from "../skeleton/index.js";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): `size` (density — the CSS base IS
+/** Exhaustive axis maps: `size` (density — the CSS base IS
  *  the `md` default, so the modifier is only emitted when the prop is
  *  provided, Stack.gap/Avatar precedent) and `align` (layout keywords — no
  *  tokens, Stack/Inline precedent). Adding a union member breaks compilation
@@ -50,7 +50,7 @@ const tableSizeClasses = createVariants(tableSizeModifiers);
 const tableAlignmentClasses = createVariants(tableAlignmentModifiers);
 
 /**
- * Table (RRU-065): a native, SEMANTIC data table — the accessible table model
+ * Table: a native, SEMANTIC data table — the accessible table model
  * (WCAG 1.3.1) instead of a grid-of-divs. The root renders a `<div
  * class="rr-table">` WRAPPER that owns the border, radius and horizontal
  * scroll (`overflow-x: auto`, the DataTable responsive contract) around a real
@@ -63,8 +63,8 @@ const tableAlignmentClasses = createVariants(tableAlignmentModifiers);
  * `<caption>` slot for the accessible name (WCAG 1.3.1), the empty state as a
  * real full-width row (text.muted over the default background, authorized
  * pair) and `aria-busy` on the `<table>` while loading. The loading body
- * replaces the consumer's rows with Skeleton rows (RRU-062) — the skeletons
- * are decorative; the table container announces with `aria-busy` (RRU-067).
+ * replaces the consumer's rows with Skeleton rows — the skeletons
+ * are decorative; the table container announces with `aria-busy`.
  *
  * API: SIMPLE axis props on the root (`size`, `sticky`, `loading`,
  * `loadingRows`) + the COMPOSITE column/header/body/foot slots (guide §15,

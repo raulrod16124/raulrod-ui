@@ -56,7 +56,7 @@ export function getFocusableElements(root: ParentNode): HTMLElement[] {
 /**
  * Focusables in the tab order of the WHOLE document, restricted to the union
  * of the given roots, in document order (the order the browser would tab).
- * Used by the focus trap (RRU-116): a modal's scope is its own subtree PLUS
+ * Used by the focus trap: a modal's scope is its own subtree PLUS
  * the portaled panels of the overlays that opened under it (they live on
  * `document.body`, outside the subtree) — `getFocusableElements(root)` alone
  * would skip them. Order follows the DOM, so the trap's wrap-around runs over

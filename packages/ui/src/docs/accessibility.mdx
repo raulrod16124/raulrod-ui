@@ -1,0 +1,66 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Accessibility" />
+
+# Accessibility
+
+La accesibilidad es un contrato técnico, no un post-proceso. Cada componente
+público debe cumplir su DoD a11y antes de considerarse terminado.
+
+## Principios
+
+1. **HTML semántico primero.** Preferimos elementos nativos (`<button>`,
+   `<input>`, `<dialog>`, `<table>`) sobre roles ARIA reconstruidos.
+2. **Keyboard por defecto.** Los componentes interactivos deben funcionar con
+   teclado sin configuración extra.
+3. **Focus visible.** Usamos `:focus-visible` y un anillo de focus con contraste
+   suficiente (`--rr-color-focus-ring`).
+4. **Nombres accesibles.** Todo control interactivo tiene un nombre: texto
+   visible, `aria-label` (IconButton), o wiring con `<label>` (FormField).
+5. **Estados anunciados.** `aria-invalid`, `aria-busy`, `aria-live`,
+   `aria-describedby` y similares se manejan internamente.
+
+## Qué verifica el repo
+
+| Gate                                 | Qué cubre                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| `pnpm test --filter=@raulrod/tokens` | Contraste AA de pares de color autorizados.                                  |
+| `pnpm test --filter=@raulrod/ui`     | Tests de comportamiento + `jest-axe` en componentes interactivos.            |
+| `pnpm lint`                          | `jsx-a11y` como gate temprano en apps y componentes.                         |
+| Revisión manual por teclado          | Focus trap en Dialog, roving focus en Select/DropdownMenu/Tabs, Escape, etc. |
+
+## Patrones comunes
+
+### Dialog
+
+- `role="dialog"`, `aria-modal="true"`, foco inicial en el panel.
+- `aria-labelledby` apunta al título; `aria-describedby` a la descripción si
+  existe.
+- `Escape` cierra; focus vuelve al trigger.
+
+### Select / DropdownMenu / Tabs
+
+- Roving tabindex con flechas.
+- Opciones/tabs deshabilitados se saltan.
+- Select usa `role="combobox"` + `role="listbox"` + `role="option"`.
+
+### FormField
+
+- `FormField.Label` genera `<label htmlFor={id}>`.
+- `FormField.Description` y `FormField.Error` se anuncian vía
+  `aria-describedby` / `aria-errormessage`.
+- La presencia del slot `Error` activa `aria-invalid`.
+
+### Toast
+
+- Los toasts de tipo `info`/`success` usan `role="status"` (polite).
+- Los de `warning`/`destructive` usan `role="alert"` (assertive).
+- `title` es obligatorio para que el lector tenga algo que anunciar.
+
+## Cómo colaborar sin romper a11y
+
+- No uses `div onClick` para controles interactivos.
+- No ocultes el foco con `outline: none` sin reemplazo.
+- No cambies `aria-*` de forma que invalide el nombre o el estado del
+  componente.
+- Si añades una animación, respeta `prefers-reduced-motion`.

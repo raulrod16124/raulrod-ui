@@ -28,8 +28,8 @@ import { useId } from "../utils/use-id.js";
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 
 /**
- * Popover (RRU-054): non-modal floating overlay built on the shared overlay
- * primitives (RRU-052) and the composite API (guide §14/§15, ADR-004). The
+ * Popover: non-modal floating overlay built on the shared overlay
+ * primitives and the composite API (guide §14/§15, ADR-004). The
  * root is a PURE provider — no DOM of its own (documented exception to the
  * ref-rendering convention, same as Dialog): `Popover.Trigger` is the floating
  * anchor button and `Popover.Content` portals to `document.body`, positions

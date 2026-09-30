@@ -15,9 +15,9 @@ import { cx } from "../utils/cx.js";
 import { useId } from "../utils/use-id.js";
 
 /**
- * FormField (RRU-044): composition root that associates Label–Description–
+ * FormField: composition root that associates Label–Description–
  * Control–Error and wires the ids/ARIA automatically (guide §13). The root is
- * a pure provider: it generates the control id with `useId` (RRU-030), derives
+ * a pure provider: it generates the control id with `useId`, derives
  * the description/error ids from it, and computes the ARIA payload by walking
  * its children tree for the slot element types — so the exact same markup
  * renders server-side and client-side (no effects, SSR-safe), and conditional
@@ -30,9 +30,9 @@ import { useId } from "../utils/use-id.js";
  * from that slot's presence too (single source of truth — no redundant
  * `error`/`invalid` prop).
  *
- * API rationale: compound (component-pattern.mdx §6, ADR-004 pendiente,
- * RRU-051) because it is a 4-element structure; simple while expressive — the
- * root stores no duplication, the consumer keeps full layout control.
+ * API rationale: compound (component-pattern.mdx §6, ADR-004) because it is a
+ * 4-element structure; simple while expressive — the root stores no duplication,
+ * the consumer keeps full layout control.
  */
 export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(function FormField(
   { controlId, className, children, ...props },
@@ -66,7 +66,7 @@ export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(function For
 FormField.displayName = "FormField";
 
 /**
- * Public hook of {@link FormField} (RRU-044): returns the
+ * Public hook of {@link FormField}: returns the
  * {@link FormFieldControlProps} payload to spread onto a custom control that
  * cannot be drawn through `<FormField.Control>`'s render-prop. Must be called
  * inside the provider (i.e. inside a component rendered under `<FormField>`).

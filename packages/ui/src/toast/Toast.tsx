@@ -73,7 +73,7 @@ const DEFAULT_DURATION = 5000;
 const VIEWPORT_LABEL = "Notifications";
 
 /**
- * Toast (RRU-059) — access to the notification system. Must be rendered inside
+ * Toast — access to the notification system. Must be rendered inside
  * a {@link ToastProvider} (throws otherwise, fail-loud with a helpful message).
  */
 export function useToast(): ToastContextValue {
@@ -86,7 +86,7 @@ export function useToast(): ToastContextValue {
 
 // Internal resize guard: the viewport is never mounted on the server.
 /**
- * ToastProvider (RRU-059) — the notification root. Renders `children` and
+ * ToastProvider — the notification root. Renders `children` and
  * portals the toast viewport. Pure provider: no DOM of its own → no
  * `forwardRef` (documented exception, same family as Dialog/Popover/Select).
  * All toast state lives here; consumers only ever touch it through

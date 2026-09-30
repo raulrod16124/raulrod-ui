@@ -4,12 +4,12 @@ import type { HTMLAttributes } from "react";
 
 /**
  * Props of {@link Inline}: a horizontal (`row`) flex container for laying out
- * children inline with token-typed spacing (RRU-031). Extends the native
+ * children inline with token-typed spacing. Extends the native
  * `div` attributes, so `className`, `style`, ARIA and events pass through
  * untouched; the component merges `className` with its own `rr-inline`
  * classes via `cx`.
  *
- * No `as`/polymorphic prop in the MVP (closed decision, RRU-031): wrap the
+ * No `as`/polymorphic prop in the MVP (closed decision): wrap the
  * Inline in the semantic element you need (`<nav>`, `<ul>`, …).
  */
 export interface InlineProps extends HTMLAttributes<HTMLDivElement> {

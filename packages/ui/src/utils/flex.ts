@@ -63,10 +63,10 @@ const flexModifiers: Readonly<{
   justify: justifyModifiers,
 };
 
-/** Layout modifier props shared by Stack and Inline (RRU-031 API surface).
+/** Layout modifier props shared by Stack and Inline (API surface).
  *  The three token-typed axes are derived from the maps (`VariantProps<typeof
  *  flexModifiers>`); `wrap` is a boolean flag handled as an explicit `cx`
- *  condition, outside the variant helper (RRU-040 convention). */
+ *  condition, outside the variant helper (convention). */
 export type FlexModifiers = VariantProps<typeof flexModifiers> & { wrap?: boolean };
 
 const flexVariantClasses = createVariants(flexModifiers);

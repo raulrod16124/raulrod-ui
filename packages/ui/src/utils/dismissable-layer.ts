@@ -32,7 +32,7 @@ export interface DismissableLayerOptions {
 }
 
 /** One active overlay: its DOM node (for focus-scope queries) and the modal
- *  context it was opened under (RRU-116). */
+ *  context it was opened under. */
 interface ActiveLayer {
   node: HTMLElement | null;
   context: symbol | null;
@@ -42,7 +42,7 @@ interface ActiveLayer {
 const activeLayers = new Map<symbol, ActiveLayer>();
 
 /**
- * Stack of MODAL trap contexts (RRU-116). `useFocusTrap` pushes its own
+ * Stack of MODAL trap contexts. `useFocusTrap` pushes its own
  * context id while active and pops it on deactivate; every dismissable layer
  * activated while a context is topmost records that context, which lets a trap
  * know which portaled overlay panels belong to ITS modal scope (and only
@@ -51,7 +51,7 @@ const activeLayers = new Map<symbol, ActiveLayer>();
  */
 const modalContextStack: symbol[] = [];
 
-/** The trapped container each open context belongs to (RRU-117). The trap hands
+/** The trapped container each open context belongs to. The trap hands
  *  its node over when it pushes the context, so anything that needs the modal
  *  SCOPE (the trap itself, focus restoration) can rebuild it without the trap
  *  having to expose anything. */
@@ -73,7 +73,7 @@ function isTopmostLayer(id: symbol): boolean {
 
 /** Opens a new modal context for a focus trap and returns its id. `container`
  *  is the node the trap keeps focus inside of, kept here so the modal scope can
- *  be rebuilt by any consumer of this registry (RRU-117). */
+ *  be rebuilt by any consumer of this registry. */
 export function pushModalContext(container: HTMLElement): symbol {
   const context = Symbol("modal-context");
   modalContextStack.push(context);
@@ -101,13 +101,13 @@ export function getActiveLayerNodesInContext(context: symbol): HTMLElement[] {
 /**
  * The focus scope of the TOPMOST open modal trap: its container plus the
  * portaled panels of the layers that opened under it, in the same
- * tabbable-order union the trap itself uses (RRU-116). Empty when no trap is
+ * tabbable-order union the trap itself uses. Empty when no trap is
  * active, and a context whose container is already detached is treated as
  * absent — that happens exactly when the modal that owned it is closing, and a
  * detached node is not a scope anything can be focused into.
  *
- * Consumers: the focus trap (its Tab cycle) and `useFocusReturn` (RRU-117 — the
- * focus restored on close must not land behind a modal that is still open).
+ * Consumers: the focus trap (its Tab cycle) and `useFocusReturn` — the
+ * focus restored on close must not land behind a modal that is still open.
  * This is what makes "focus never leaves the modal scope" an invariant of the
  * infrastructure instead of a coincidence per overlay.
  */

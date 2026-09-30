@@ -1,0 +1,57 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as DropdownMenuStories from "./DropdownMenu.stories.tsx";
+
+<Meta of={DropdownMenuStories} />
+
+<Title />
+<Description of={DropdownMenuStories} />
+
+## Usage
+
+`DropdownMenu` follows the same compound pattern as `Dialog` and `Popover`:
+
+```tsx
+import { DropdownMenu } from "@raulrod/ui";
+
+<DropdownMenu>
+  <DropdownMenu.Trigger>Actions</DropdownMenu.Trigger>
+  <DropdownMenu.Content>
+    <DropdownMenu.Item onSelect={() => console.log("copy")}>Copy</DropdownMenu.Item>
+    <DropdownMenu.Item onSelect={() => console.log("paste")}>Paste</DropdownMenu.Item>
+    <DropdownMenu.Separator />
+    <DropdownMenu.Sub>
+      <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
+      <DropdownMenu.SubContent>
+        <DropdownMenu.Item>Export</DropdownMenu.Item>
+      </DropdownMenu.SubContent>
+    </DropdownMenu.Sub>
+  </DropdownMenu.Content>
+</DropdownMenu>;
+```
+
+<Canvas of={DropdownMenuStories.Playground} />
+
+## Props
+
+<ArgTypes of={DropdownMenuStories} />
+
+## Accessibility
+
+- `role="menu"`, `role="menuitem"`, `aria-haspopup`, `aria-expanded` and
+  `aria-controls` are wired automatically.
+- Roving focus with Arrow keys; Enter/Space activates an item and closes the
+  whole tree.
+- Submenus open with ArrowRight or pointer enter.
+
+## Trade-offs / Limitations
+
+- **Non-modal by design.** There is no focus trap, scroll lock or `aria-modal`.
+  Tab leaves the menu; Escape or outside click closes it.
+- **Neutral trigger styling.** `DropdownMenu.Trigger` renders a plain button by
+  default. For the toolbar look, wrap it in `Button` or `IconButton`.
+- **Type-ahead is basic.** Full search/filter is out of MVP scope; only
+  single-character type-ahead is supported.
+- **Submenus are always uncontrolled.** Only the root menu supports the
+  controlled `open`/`onOpenChange` contract.
+- **Slot presence matters.** Items must be direct children of `Content` (or
+  `SubContent`) for the keyboard hook to discover them.

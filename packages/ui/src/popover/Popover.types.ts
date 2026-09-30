@@ -5,7 +5,7 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 export type { PopoverPlacement } from "../utils/popover.js";
 
 /**
- * Internal context payload of {@link Popover} (RRU-054), consumed by the
+ * Internal context payload of {@link Popover}, consumed by the
  * slots. The root is the ONLY provider; slots read `open`/`setOpen` for the
  * controlled/uncontrolled contract and the generated ids for the ARIA
  * relationships. The anchor REF stays OWNED by the root (a ref held through
@@ -37,13 +37,13 @@ export interface PopoverContextValue {
 }
 
 /**
- * Props of {@link Popover} (RRU-054), the composition root. Pure provider — it
+ * Props of {@link Popover}, the composition root. Pure provider — it
  * renders no DOM of its own (ADR-004): the consumer composes
  * `Popover.Trigger` + `Popover.Content` (optionally `Popover.Title`) as
  * siblings and the root wires open state, ids, ARIA and the anchor between
  * them.
  *
- * Non-modal by design (unlike Dialog, RRU-053): no focus trap, no
+ * Non-modal by design (unlike Dialog): no focus trap, no
  * `aria-modal`, no scroll lock — Tab freely leaves the panel; Escape, outside
  * pointer-down and re-clicking the trigger close it.
  *

@@ -16,7 +16,15 @@ const importOrder = {
 };
 
 module.exports = [
-  { ignores: ["**/node_modules/**", "**/dist/**", "**/.turbo/**", "coverage/**"] },
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.turbo/**",
+      "coverage/**",
+      "**/storybook-static/**",
+    ],
+  },
 
   {
     files: ["**/*.{js,mjs,cjs}"],

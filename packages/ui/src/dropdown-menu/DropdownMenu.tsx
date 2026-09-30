@@ -36,8 +36,8 @@ import {
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 
 /**
- * DropdownMenu (RRU-055): menu button built on the shared overlay primitives
- * (RRU-052), the positioner (RRU-054) and the composite API (guide §14/§15,
+ * DropdownMenu: menu button built on the shared overlay primitives,
+ * the positioner and the composite API (guide §14/§15,
  * ADR-004). The root is a PURE provider — no DOM of its own (same documented
  * exception as Popover/Dialog): `DropdownMenu.Trigger` is the menu button,
  * `DropdownMenu.Content` portals the `role="menu"` panel to `document.body`

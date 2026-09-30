@@ -2,8 +2,29 @@
   "name": "@raulrod/storybook",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Storybook app for RaulRod UI: catalog, docs and props playground (RRU-080).",
   "scripts": {
-    "lint": "eslint . --no-error-on-unmatched-pattern"
+    "dev": "storybook dev -p 6006",
+    "build": "storybook build",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@raulrod/tokens": "workspace:*",
+    "@raulrod/ui": "workspace:*",
+    "@storybook/addon-essentials": "^8.6.18",
+    "@storybook/addon-interactions": "^8.6.18",
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
+    "@storybook/test": "^8.6.18",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "storybook": "^8.6.18",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.3"
   }
 }

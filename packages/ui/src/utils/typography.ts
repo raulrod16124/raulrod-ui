@@ -56,7 +56,7 @@ const typoModifiers: Readonly<{
   color: colorModifiers,
 };
 
-/** Typography modifier props shared by Text and Heading (RRU-032 API surface),
+/** Typography modifier props shared by Text and Heading (API surface),
  *  derived from the maps (`VariantProps<typeof typoModifiers>`). */
 export type TypographyModifiers = VariantProps<typeof typoModifiers>;
 

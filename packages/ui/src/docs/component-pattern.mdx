@@ -1,0 +1,128 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Component pattern" />
+
+# Component pattern
+
+> Fuente de verdad del patrón común de componentes de `@raulrod/ui`.
+
+Este patrón es **obligatorio** para todos los componentes; cualquier desviación
+requiere justificación documentada.
+
+## 1. Estructura de archivos (obligatoria)
+
+Cada componente público vive en `packages/ui/src/<kebab-case>/`:
+
+```text
+packages/ui/src/<kebab-case>/
+├── <Pascal>.tsx          # implementación (forwardRef + cx merge)
+├── <Pascal>.types.ts     # tipos públicos (props, variants, unions)
+├── <Pascal>.css          # estilos `rr-*` con tokens
+├── <Pascal>.test.tsx     # tests de comportamiento
+├── <Pascal>.stories.tsx  # stories relevantes
+└── index.ts              # export público del componente
+```
+
+### 1.1 Excepciones documentadas
+
+- **`Portal`:** primitiva JS pura — sin `.css` (0 tokens) y sin `forwardRef`
+  (no renderiza elemento propio; los refs van en los hijos del consumidor).
+- **Raíz provider sin DOM (Dialog, Popover, DropdownMenu, Select, Tabs,
+  ToastProvider):** el root es un proveedor puro de contexto que no renderiza
+  elemento — sin `forwardRef` pero CON `.css` (sus slots llevan los refs y el
+  CSS).
+- **Booleanos de estado** (`wrap` en Stack/Inline, `focusable` en
+  VisuallyHidden): no son ejes de variante; se resuelven con `cx` condicional
+  explícito.
+
+## 2. Contrato de props: `ref` y `className`
+
+- Todo componente que renderiza un elemento es un **`forwardRef`** con el
+  elemento correcto y define `displayName`.
+- Los props nativos se extienden desde el elemento adecuado.
+- Merge de `className` con `cx`, **siempre como último argumento**:
+
+  ```tsx
+  <div
+    {...props}
+    ref={ref}
+    className={cx("rr-button", buttonClasses("rr-button", { variant, size }), className)}
+  />
+  ```
+
+  - `{...props}` va **primero**; `ref`/`className` después → el contrato interno
+    gana, el consumidor añade sin pisar.
+  - `className` del consumidor se **apila** (nunca reemplaza).
+  - `style`, ARIA, eventos y `data-*` pasan por spread sin tocar. **El
+    componente nunca escribe inline styles**: el estilo vive en `.css` con
+    tokens o, en overrides, por variables `--rr-*`.
+
+## 3. Convención de variantes
+
+### 3.1 Nombres
+
+- Ejes uniformes `variant` y `size` (y `color`, `tone`, etc. cuando apliquen).
+  **Prohibidos** `kind` / `dimension` u otros inventos por componente.
+- Sin prop explosions: no una prop por variante ni combinaciones booleanas de
+  variantes.
+
+### 3.2 Tipos
+
+- Las uniones se **derivan** de tokens cuando existe una (`Spacing`,
+  `TypeScale`, `ColorText`).
+- El props type se deriva de los **maps** con `VariantProps<M>`
+  (`utils/variants.ts`): cero literales duplicados a mano.
+- Los maps son `Record<Unión, sufijo>` **exhaustivos y anotados**. Añadir un
+  miembro a la unión rompe la compilación aquí hasta que exista el mapa — y el
+  contrato CSS del spec de componente falla hasta que se escriba el modificador
+  `rr-*--*`. Fail loud, nunca fallback a un default silencioso.
+
+## 4. Mecánica (`variants.ts`)
+
+`createVariants(maps)` devuelve un builder `(root, props) => string` que une los
+modificadores `rr-<root>--<sufijo>` en el orden de inserción del mapa:
+
+```ts
+const buttonMaps = {
+  variant: { primary: "primary", secondary: "secondary" } as Record<ButtonVariant, string>,
+  size: { sm: "size-sm", md: "size-md", lg: "size-lg" } as Record<ButtonSize, string>,
+};
+export type ButtonModifiers = VariantProps<typeof buttonMaps>;
+const buttonClasses = createVariants(buttonMaps);
+// className={cx("rr-button", buttonClasses("rr-button", { variant, size }), className)}
+```
+
+### 4.1 Lo que el helper NO hace (por decisión)
+
+- **Sin compound variants** (`variant="primary" && size="lg"` → estilo extra):
+  es la puerta a las prop explosions que el patrón prohíbe.
+- **Sin defaults en JS**: los valores por defecto viven en la clase base del
+  `.css` (`rr-button` declara el tamaño por defecto) — precedente `Stack.gap`.
+- **Sin features cva** (config objects, variant shorthands): dos call sites hoy
+  no lo justifican (abstracción por necesidad real).
+
+## 5. CSS
+
+- Clases `rr-<componente>` base + modificadores `rr-<componente>--<eje>-<valor>`.
+- **Solo tokens** (`var(--rr-*)`); prohibido valores arbitrarios. Excepciones
+  documentadas: geometría/mecánica a11y (sr-only de VisuallyHidden), keywords de
+  layout sin token (`align`/`justify`) y coordenadas en línea del Popover.
+- Estados `:hover`, `:active`, `:focus-visible`, `:disabled`; condicionales con
+  `data-*` si hace falta. `prefers-reduced-motion` cubierto en toda animación.
+
+## 6. Composición > props
+
+Cuando una estructura crece, se valora una API composable
+(`<Dialog><Dialog.Content>…`) antes que decenas de props. API simple mientras
+sea suficientemente expresiva; no convertir la composición en dogma.
+
+## 7. Trade-offs
+
+- **Prefijo de modificador en el mapa** (`{ sm: "size-sm" }`) en vez de solo
+  `{ sm: "" }`: duplica el nombre en el mapa pero mantiene el modificador CSS y
+  el clase resultante buscables y explícitos; coste bajo.
+- **Unión local vs token**: los ejes de variante que no son tokens (p. ej.
+  `variant` de Button) no se derivan de `component.ts` porque allí no hay keys
+  para secondary/outline/ghost/link; derivar la variante de los component
+  tokens forzaría crear tokens especulativos, contra la regla de no anticipar
+  necesidades.

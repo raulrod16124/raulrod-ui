@@ -31,8 +31,8 @@ import { useScrollLock } from "../utils/scroll-lock.js";
 import { useId } from "../utils/use-id.js";
 
 /**
- * Dialog (RRU-053): modal overlay built on the shared overlay primitives
- * (RRU-052) and the composite API (guide §15, ADR-004). The root is a PURE
+ * Dialog: modal overlay built on the shared overlay primitives
+ * and the composite API (guide §15, ADR-004). The root is a PURE
  * provider — it renders no DOM of its own (documented exception to the
  * ref-rendering convention: there is no element to attach a ref to, so it is
  * not a `forwardRef`); `Dialog.Content` is the element that opens, portals to
@@ -43,7 +43,7 @@ import { useId } from "../utils/use-id.js";
  * the Title/Description slots and derives `aria-labelledby`/`aria-describedby`
  * from their PRESENCE — never an empty reference. The trigger gets
  * `aria-haspopup="dialog"` + `aria-expanded` + `aria-controls` pointing at the
- * content id, and the panel STAMPS that same id (RRU-115: an `aria-controls`
+ * content id, and the panel STAMPS that same id: an `aria-controls`
  * whose target does not exist is an idref the consumer cannot resolve — same
  * wiring Popover/Select/DropdownMenu already had). When open, focus lands on the
  * panel (`tabIndex={-1}`, ARIA APG modal-dialog) and is trapped; Escape, backdrop
@@ -126,8 +126,8 @@ DialogTrigger.displayName = "DialogTrigger";
  *  dismissal (Escape + outside/backdrop pointer-down, both topmost-aware). The
  *  internal `panelRef` (the dismissable node, excluding the backdrop) is merged
  *  with the consumer's forwarded ref on the dialog element. The panel's `id` is
- *  the `contentId` of the root, forced AFTER the spread (RRU-115) so the
- *  consumer cannot leave the trigger's `aria-controls` pointing at a node that
+ * the `contentId` of the root, forced AFTER the spread so the
+ * consumer cannot leave the trigger's `aria-controls` pointing at a node that
  *  does not exist; a consumer-supplied `id` is therefore ignored. `tabIndex={-1}`
  *  makes the panel the initial-focus target (ARIA APG). Renders `null`
  *  (and runs the hooks inactive) while closed → SSR-safe, same first markup. */

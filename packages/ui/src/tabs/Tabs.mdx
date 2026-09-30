@@ -1,0 +1,51 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as TabsStories from "./Tabs.stories.tsx";
+
+<Meta of={TabsStories} />
+
+<Title />
+<Description of={TabsStories} />
+
+## Usage
+
+`Tabs` follows the WAI-ARIA Tabs pattern with automatic activation:
+
+```tsx
+import { Tabs } from "@raulrod/ui";
+
+<Tabs defaultValue="account">
+  <Tabs.List>
+    <Tabs.Trigger value="account">Account</Tabs.Trigger>
+    <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
+  </Tabs.List>
+  <Tabs.Panel value="account">Account content</Tabs.Panel>
+  <Tabs.Panel value="settings">Settings content</Tabs.Panel>
+</Tabs>;
+```
+
+<Canvas of={TabsStories.Playground} />
+
+## Props
+
+<ArgTypes of={TabsStories} />
+
+## Accessibility
+
+- `role="tablist"`, `role="tab"`, `role="tabpanel"`.
+- Roving focus with ArrowLeft/Right; Home/End jump to the first/last enabled
+  tab.
+- `aria-selected` only on the active tab.
+- `aria-labelledby`/`aria-controls` wire each panel to its tab.
+
+## Trade-offs / Limitations
+
+- **Automatic activation.** Focusing a tab with arrow keys activates it
+  immediately. Manual activation (Space/Enter to confirm) is not supported in
+  the MVP.
+- **Panels stay mounted.** Inactive panels are hidden with the `hidden`
+  attribute, not unmounted. This preserves `Tab` order and layout but keeps the
+  content in the React tree.
+- **No built-in URL routing.** The active tab is internal state; syncing it
+  with the URL is the consumer's responsibility.
+- **Each trigger needs a unique `value`.** There is no default tab if values are
+  missing or all disabled.

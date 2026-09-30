@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes } from "react";
 
 /**
- * Size axis of {@link Checkbox} (RRU-046). `md` is the default and lives in
+ * Size axis of {@link Checkbox}. `md` is the default and lives in
  * the `.rr-checkbox` CSS base class (Stack.gap precedent,
  * component-pattern.mdx §4.1). Boxes are token-based on the space scale:
  * sm = 12px (`space-3`), md = 16px (`space-4`), lg = 20px (`space-5`) — same
@@ -11,7 +11,7 @@ import type { InputHTMLAttributes } from "react";
 export type CheckboxSize = "sm" | "md" | "lg";
 
 /**
- * Props of {@link Checkbox} (RRU-046): a native tri-state toggle. Always
+ * Props of {@link Checkbox}: a native tri-state toggle. Always
  * renders `<input type="checkbox">` (single render, no polymorphism — the
  * semantics are native, precedent Input/Textarea). `type` is omitted because
  * it is never something else; the native `size` attribute (width-in-characters,

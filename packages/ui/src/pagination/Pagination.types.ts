@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
 /**
- * Props of {@link Pagination} (RRU-064): a `nav` landmark named "Pagination"
+ * Props of {@link Pagination}: a `nav` landmark named "Pagination"
  * whose controls each move the user to a page of the same list. SIMPLE props
  * API (ADR-004 router): the bar derives every control from `page`/`pageCount`
  * — there are no inter-node ARIA idrefs nor shared state to wire, so
@@ -37,7 +37,7 @@ export interface PaginationProps extends HTMLAttributes<HTMLElement> {
   onPageChange?: (page: number) => void;
   /** Whether the built-in `role="status"` live region announcing "Page X of Y"
    *  is mounted (default). A component that COMPOSES the bar and owns its own
-   *  announcement channel (DataTable, RRU-119) passes `false` — two polite
+   *  announcement channel (DataTable) passes `false` — two polite
    *  regions would queue the same sentence twice. */
   announcePageChange?: boolean;
 }

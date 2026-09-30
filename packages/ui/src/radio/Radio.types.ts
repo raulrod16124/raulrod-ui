@@ -1,7 +1,7 @@
 import type { LabelHTMLAttributes } from "react";
 
 /**
- * Size axis of {@link Radio} (RRU-047). `md` is the default and lives in the
+ * Size axis of {@link Radio}. `md` is the default and lives in the
  * `.rr-radio-input` CSS base class (Stack.gap precedent,
  * component-pattern.mdx §4.1). Dots are token-based on the space scale:
  * sm = 12px (`space-3`), md = 16px (`space-4`), lg = 20px (`space-5`) — the
@@ -12,7 +12,7 @@ import type { LabelHTMLAttributes } from "react";
 export type RadioSize = "sm" | "md" | "lg";
 
 /**
- * Props of {@link Radio} (RRU-047), a single native radio option. Renders a
+ * Props of {@link Radio}, a single native radio option. Renders a
  * `<label>` row (the visible `children` become the accessible label through the
  * native implicit association — DoD "labels asociados") wrapping a bare
  * `<input type="radio">`, an aria-hidden indicator and the label text.
@@ -43,7 +43,7 @@ export interface RadioProps extends Omit<
 }
 
 /**
- * Internal context payload of {@link RadioGroup} (RRU-047): the single source
+ * Internal context payload of {@link RadioGroup}: the single source
  * of name/value wiring every {@link Radio} consumes. `name` is either the
  * consumer-provided name or a `useId`-generated one — all radios of the group
  * share it so the native same-name arrow-key navigation / roving focus (DoD

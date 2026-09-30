@@ -1,7 +1,7 @@
 import type { RadioSize } from "./Radio.types.js";
 import type { HTMLAttributes } from "react";
 
-/** Layout axis of {@link RadioGroup} (RRU-047): options are stacked by default
+/** Layout axis of {@link RadioGroup}: options are stacked by default
  *  (`vertical`) or laid out in a row (`horizontal`). The default lives in the
  *  JS (precedent Button `variant` / Heading `level`), so the
  *  `rr-radio-group--vertical` modifier is always emitted — same pattern as the
@@ -9,7 +9,7 @@ import type { HTMLAttributes } from "react";
 export type RadioGroupOrientation = "vertical" | "horizontal";
 
 /**
- * Props of {@link RadioGroup} (RRU-047), the composition root of a radio
+ * Props of {@link RadioGroup}, the composition root of a radio
  * group. Renders `<div role="radiogroup">` (WAI-ARIA radio-group pattern) and
  * distributes the group's wiring to every descendant {@link Radio} through a
  * context: a shared `name` (generated via `useId` unless provided), the

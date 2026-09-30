@@ -1,0 +1,55 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as SelectStories from "./Select.stories.tsx";
+
+<Meta of={SelectStories} />
+
+<Title />
+<Description of={SelectStories} />
+
+## Usage
+
+`Select` is a read-only combobox with a floating listbox:
+
+```tsx
+import { Select } from "@raulrod/ui";
+
+<Select defaultValue="apple">
+  <Select.Trigger>
+    <Select.Value placeholder="Pick a fruit" />
+    <Select.Icon />
+  </Select.Trigger>
+  <Select.Content>
+    <Select.Item value="apple">Apple</Select.Item>
+    <Select.Item value="banana">Banana</Select.Item>
+    <Select.Item value="orange" disabled>
+      Orange
+    </Select.Item>
+  </Select.Content>
+</Select>;
+```
+
+<Canvas of={SelectStories.Playground} />
+
+## Props
+
+<ArgTypes of={SelectStories} />
+
+## Accessibility
+
+- Trigger renders `role="combobox"` with `aria-haspopup="listbox"`,
+  `aria-expanded` and `aria-controls`.
+- Listbox uses roving tabindex, `aria-selected` only on the selected option,
+  and `aria-disabled` for disabled items.
+- Selection changes are announced through a polite live region.
+
+## Trade-offs / Limitations
+
+- **Read-only only.** There is no text input for filtering; only type-ahead.
+  For searchable selects, use a real `Input` + custom logic or wait for a future
+  `Combobox` component.
+- **No native form participation.** The component does not render a hidden
+  `<input name="...">`; it is output-friendly, not form-submission-friendly.
+- **Controlled/uncontrolled on both value and open state.** You can control the
+  selection, the open state, both, or neither.
+- **Slots must be direct children.** The keyboard hook reads the DOM at
+  keydown time; wrapping items in arbitrary components breaks discovery.

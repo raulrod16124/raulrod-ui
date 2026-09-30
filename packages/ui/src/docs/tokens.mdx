@@ -1,0 +1,88 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Tokens" />
+
+# Tokens
+
+`@raulrod/tokens` organiza los valores de diseño en tres capas:
+
+```text
+primitive → semantic → component
+```
+
+Cada capa consume la anterior. Los componentes **nunca** leen primitivos
+directamente (salvo excepciones documentadas); leen semánticos o tokens de
+componente.
+
+## 1. Primitive layer
+
+Valores concretos con nombre de escala:
+
+```ts
+"blue-500": "#3b82f6",
+"space-4": "16px",
+"radius-md": "8px",
+```
+
+Los primitivos son la paleta, la escala de espaciado, la escala tipográfica,
+radius, sombras, motion, z-index y breakpoints.
+
+## 2. Semantic layer
+
+Intentos de diseño que se resuelven a diferentes primitivos según el tema:
+
+```ts
+"color.text.default": { light: "#0e1216", dark: "#f4f6f8" },
+"color.border.default": { light: "#d1d5db", dark: "#3d4754" },
+"shadow.sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+```
+
+Los semánticos son los que consumen los componentes para expresar intención:
+_este texto es `text.default`, este borde es `border.strong`, este fondo es
+`background.surface`._
+
+## 3. Component layer
+
+Alias de componente para casos donde un mismo semántico no es suficiente o
+donde se quiere un nombre propio:
+
+```ts
+"button.primary.background": "var(--rr-color-action-primary-background)",
+```
+
+Solo se crean cuando un componente real lo necesita; no se añaden por
+anticipación.
+
+## Cómo consumir tokens en CSS
+
+Toda la capa semántica y los componentes se emiten como variables CSS en
+`@raulrod/tokens/dist/tokens.css`:
+
+```css
+.my-consumer-card {
+  background: var(--rr-color-background-surface);
+  padding: var(--rr-space-4);
+  border-radius: var(--rr-radius-md);
+}
+```
+
+## Cómo consumir tokens en TypeScript
+
+El paquete expone las uniones derivadas para tipar props:
+
+```ts
+import type { Spacing, ColorText, TypeScale } from "@raulrod/tokens";
+
+interface MyComponentProps {
+  gap?: Spacing;
+  color?: ColorText;
+  size?: TypeScale;
+}
+```
+
+## Gobernanza
+
+- Los componentes NO usan valores arbitrarios.
+- Los componentes NO usan primitivos directamente (p. ej. nunca `#3b82f6`).
+- Todo par de color texto/fondo autorizado pasa el gate de contraste AA
+  (`pnpm test --filter=@raulrod/tokens`).

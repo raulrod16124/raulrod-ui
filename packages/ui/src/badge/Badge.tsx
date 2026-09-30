@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { cx } from "../utils/cx.js";
 import { createVariants } from "../utils/variants.js";
 
-/** Exhaustive axis maps (RRU-040 pattern): adding a `BadgeVariant` member
+/** Exhaustive axis maps: adding a `BadgeVariant` member
  *  breaks compilation here until its suffix exists — and the authored CSS
  *  contract check fails until the matching `rr-badge--*` selector is written. */
 const badgeModifiers: Readonly<{
@@ -23,7 +23,7 @@ const badgeModifiers: Readonly<{
 const badgeClasses = createVariants(badgeModifiers);
 
 /**
- * Status indicator (RRU-049). Renders a static inline `<span>` (semantic text,
+ * Status indicator. Renders a static inline `<span>` (semantic text,
  * non-interactive: no focus, no keyboard, no ARIA — the content IS the label)
  * with a semantic status background + text read from the alert tint tokens
  * (color.md §5.3/§6.1). `variant` defaults to `neutral` (reuses

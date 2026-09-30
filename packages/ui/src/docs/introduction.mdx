@@ -1,0 +1,49 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Introduction" />
+
+# RaulRod UI
+
+`@raulrod/ui` is a small, strict-TypeScript React component library built around
+design tokens, semantic CSS variables, and explicit contracts.
+
+It is intended for personal projects and for demonstrating how a real design
+system is organized: tokens → components → documentation → package → consumer
+app.
+
+## What you get
+
+- **Design tokens** in `@raulrod/tokens` (primitive + semantic + component
+  layers).
+- **CSS-only styling** via custom properties (`--rr-*`), no CSS-in-JS runtime.
+- **Accessible primitives** and compound components (Dialog, Select, Tabs, …).
+- **Tree-shakeable icons** through `@raulrod/icons` (re-export of
+  `lucide-react`).
+
+## Quick start
+
+Install the packages and load the CSS once at the root of your app:
+
+```tsx
+import "@raulrod/tokens/dist/tokens.css";
+import "@raulrod/ui/dist/styles.css";
+
+import { Button } from "@raulrod/ui";
+
+export default function App() {
+  return <Button>Get started</Button>;
+}
+```
+
+## Where to go next
+
+- **Setup** — get a component on screen in 30 seconds.
+- **Component Pattern** — the file and API conventions every component follows.
+- **Tokens** — how the three token layers work and how to consume them.
+- **Theming** — light/dark mode, `data-theme`, and overriding tokens.
+- **Accessibility** — the a11y contract baked into the components.
+- **Contributing** — how to add a new component without breaking the playbook.
+
+Each public component also has a **Docs** page generated from its stories and
+its TypeScript props, plus hand-written trade-off sections for the more complex
+compound components.

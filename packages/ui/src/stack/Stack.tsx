@@ -7,7 +7,7 @@ import { flexClasses } from "../utils/flex.js";
 
 /**
  * Vertical (`flex-direction: column`) layout primitive with token-typed
- * `gap` (RRU-031). Renders a plain `div`; wrap it in the semantic element
+ * `gap`. Renders a plain `div`; wrap it in the semantic element
  * your content needs. Styling lives entirely in `Stack.css` (`rr-*` classes
  * over CSS custom properties, ADR-003).
  */

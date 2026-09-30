@@ -1,0 +1,64 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Setup (Español)" />
+
+# Setup en 30 segundos
+
+> Versión en inglés disponible en la barra lateral en **Guides > Setup**.
+
+## 1. Instalación
+
+```bash
+pnpm add @raulrod/ui @raulrod/tokens @raulrod/icons
+```
+
+## 2. Cargar los estilos una vez
+
+Añade estas dos importaciones en la raíz de tu app:
+
+```tsx
+// main.tsx o App.tsx
+import "@raulrod/tokens/dist/tokens.css";
+import "@raulrod/ui/dist/styles.css";
+```
+
+## 3. Usar un componente
+
+```tsx
+import { Button } from "@raulrod/ui";
+
+export default function App() {
+  return <Button>Empezar</Button>;
+}
+```
+
+## 4. Providers opcionales
+
+La mayoría de componentes funcionan sin provider. Envuelve tu app con
+`ToastProvider` solo si usas toasts:
+
+```tsx
+import { ToastProvider } from "@raulrod/ui";
+
+<ToastProvider>
+  <App />
+</ToastProvider>;
+```
+
+## 5. Cambiar de tema
+
+Añade `data-theme` a `<html>`:
+
+```html
+<html data-theme="dark"></html>
+```
+
+O no lo configures para que siga el `prefers-color-scheme` del usuario.
+
+## Siguientes pasos
+
+- **Component pattern** — convenciones de archivos y API de cada componente.
+- **Tokens** — cómo funcionan las tres capas de tokens y cómo consumirlos.
+- **Theming** — modo claro/oscuro, `data-theme` y sobrescritura de tokens.
+- **Accessibility** — el contrato de accesibilidad de los componentes.
+- **Contributing** — cómo añadir un componente sin romper el playbook.

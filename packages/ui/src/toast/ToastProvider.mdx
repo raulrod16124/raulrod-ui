@@ -1,0 +1,67 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as ToastProviderStories from "./ToastProvider.stories.tsx";
+
+<Meta of={ToastProviderStories} />
+
+<Title />
+<Description of={ToastProviderStories} />
+
+## Usage
+
+Wrap your app with `ToastProvider` and call `useToast` from any child
+component:
+
+```tsx
+import { Button, ToastProvider, useToast } from "@raulrod/ui";
+
+function NotifyButton() {
+  const { toast } = useToast();
+  return (
+    <Button
+      onClick={() =>
+        toast({
+          title: "Changes saved",
+          tone: "success",
+        })
+      }
+    >
+      Save
+    </Button>
+  );
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <NotifyButton />
+    </ToastProvider>
+  );
+}
+```
+
+<Canvas of={ToastProviderStories.Playground} />
+
+## Props
+
+<ArgTypes of={ToastProviderStories} />
+
+## Accessibility
+
+- Tone drives the role: `info`/`success` → `role="status"` (polite);
+  `warning`/`destructive` → `role="alert"` (assertive).
+- `title` is required so the screen reader has content to announce.
+- Toasts are rendered through a portal into a viewport region.
+
+## Trade-offs / Limitations
+
+- **Imperative API.** Toasts are pushed via `toast()`, not declared as JSX. This
+  matches real-world async feedback (fetch responses, mutations) but is less
+  “React-idiomatic” than a declarative queue.
+- **No rich content animations.** Entrance/exit motion is present, but complex
+  reordering or progress-toast patterns are out of MVP scope.
+- **Tone drives duration defaults.** Status tones auto-dismiss using the
+  provider `duration`; alert tones default to persistent. A per-toast `duration`
+  always wins.
+- **Provider must be mounted once.** Calling `useToast` outside the provider
+  throws at runtime; the TypeScript contract cannot enforce this at compile
+  time.

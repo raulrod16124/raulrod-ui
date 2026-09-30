@@ -103,6 +103,15 @@ describe("IconButton accessible name", () => {
 
     expect(container.querySelector("button")).toHaveAttribute("aria-label", "Save");
   });
+
+  it("throws a helpful error in development if label is missing", () => {
+    expect(() => {
+      // @ts-expect-error — testing the runtime guard that catches JS/ignored-TS usage
+      render(<IconButton />);
+    }).toThrow(
+      "[@raulrod/ui] IconButton requires a `label` prop. The icon passed as `children` is decorative and cannot provide an accessible name.",
+    );
+  });
 });
 
 describe("IconButton disabled and loading states", () => {

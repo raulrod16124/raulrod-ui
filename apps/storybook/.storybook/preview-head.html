@@ -1,0 +1,16 @@
+<script>
+  // RRU-081: avoid a theme flash on reload by reading Storybook's global from the
+  // URL and applying it before the first paint. "system" leaves the attribute
+  // absent so prefers-color-scheme can decide.
+  (function () {
+    try {
+      var match = window.location.search.match(/globals=theme:([^;]+)/);
+      var theme = match ? decodeURIComponent(match[1]) : null;
+      if (theme === "light" || theme === "dark") {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+    } catch (err) {
+      // Intentionally no-op: the Storybook decorator will apply the theme.
+    }
+  })();
+</script>

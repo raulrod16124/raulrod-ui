@@ -1,0 +1,64 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Setup" />
+
+# Setup in 30 seconds
+
+> Spanish version available in the sidebar under **Guides > Setup (Español)**.
+
+## 1. Install
+
+```bash
+pnpm add @raulrod/ui @raulrod/tokens @raulrod/icons
+```
+
+## 2. Load the styles once
+
+Add these two imports at the root of your app:
+
+```tsx
+// main.tsx or App.tsx
+import "@raulrod/tokens/dist/tokens.css";
+import "@raulrod/ui/dist/styles.css";
+```
+
+## 3. Use a component
+
+```tsx
+import { Button } from "@raulrod/ui";
+
+export default function App() {
+  return <Button>Get started</Button>;
+}
+```
+
+## 4. Optional providers
+
+Most components work without any provider. Wrap your app with `ToastProvider`
+only if you use toasts:
+
+```tsx
+import { ToastProvider } from "@raulrod/ui";
+
+<ToastProvider>
+  <App />
+</ToastProvider>;
+```
+
+## 5. Switch theme
+
+Set `data-theme` on `<html>`:
+
+```html
+<html data-theme="dark"></html>
+```
+
+Or leave it unset to follow the user's `prefers-color-scheme`.
+
+## Next steps
+
+- **Component pattern** — file and API conventions every component follows.
+- **Tokens** — how the three token layers work and how to consume them.
+- **Theming** — light/dark mode, `data-theme`, and overriding tokens.
+- **Accessibility** — the a11y contract baked into the components.
+- **Contributing** — how to add a new component without breaking the playbook.

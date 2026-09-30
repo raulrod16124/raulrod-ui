@@ -9,6 +9,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:playground": "node tools/dev-playground.mjs",
+    "dev:storybook": "turbo run dev --filter=@raulrod/storybook",
     "lint": "turbo run lint && pnpm lint:root",
     "lint:root": "eslint tools",
     "typecheck": "turbo run typecheck",

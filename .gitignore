@@ -135,6 +135,10 @@ dist
 playwright-report
 test-results
 
+# Storybook
+storybook-static
+*storybook.log
+
 # yarn v3
 .pnp.*
 .yarn/*
