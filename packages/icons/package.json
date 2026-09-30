@@ -7,6 +7,12 @@
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -20,5 +26,8 @@
   },
   "dependencies": {
     "lucide-react": "^1.47.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0"
   }
 }

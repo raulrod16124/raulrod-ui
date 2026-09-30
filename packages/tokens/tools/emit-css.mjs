@@ -7,17 +7,24 @@
 // there is no untested JavaScript inside the build pipeline — the reason the
 // previous `scripts/emit-css.mjs` was gitignored and the reason a clean checkout
 // could not build this package at all.
-import { writeFileSync } from "node:fs";
+import { copyFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CssEmissionError, emitCss } from "../dist/css/emit-css.js";
 import { component, primitives, semantic } from "../dist/index.js";
 
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
 try {
   const { css, counts } = emitCss({ primitives, semantic, component });
-  const outFile = join(dirname(fileURLToPath(import.meta.url)), "..", "dist", "tokens.css");
+  const outFile = join(root, "dist", "tokens.css");
   writeFileSync(outFile, css);
+
+  // TypeScript consumers need an ambient declaration for the public subpath
+  // `@raulrod/tokens/styles.css`; `tsc` does not emit input `.d.ts` files.
+  copyFileSync(join(root, "src", "styles.css.d.ts"), join(root, "dist", "styles.css.d.ts"));
+
   console.log(
     `Emitted dist/tokens.css: ${counts.primitives} primitives | ` +
       `${counts.semantics} semantics (${counts.themedColors} themed colors) | ` +

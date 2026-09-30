@@ -1,19 +1,16 @@
 /* Public stylesheet of @raulrod/ui (RRU-069).
  *
  * THE single entry a consumer imports to get the component styles, mirroring
- * `@raulrod/tokens/dist/tokens.css`: one artifact, one import, no per-component
+ * `@raulrod/tokens/styles.css`: one artifact, one import, no per-component
  * knowledge. It exists because the authored stylesheets are plain CSS files
  * next to their components and nothing else in the pipeline moves them: the
  * components deliberately do NOT `import "./X.css"` from their TSX (the package
  * is `sideEffects: false`, ADR-007 — a CSS import would make every component
  * pull styles it may never use and would break the tree-shaking promise).
  *
- * Why the file exists NOW instead of in RRU-091: RRU-069 needs a real browser
- * to assert the flows it owns (theme switch, focus ring, overlay stacking), and
- * a consumer that renders unstyled components cannot demonstrate any of them.
- * RRU-091 keeps ownership of the `exports` map and formalizes this file as
- * `@raulrod/ui/styles.css`; the only thing missing until then is the subpath
- * export that makes the import short.
+ * RRU-091 formalized this file as the public subpath `@raulrod/ui/styles.css`.
+ * The CSS is still loaded by the consumer, not by the components, so the
+ * package remains tree-shakeable and the consumer controls cascade order.
  *
  * Tokens are NOT re-exported here: they are a different package
  * (`@raulrod/tokens/dist/tokens.css`) and layering them into this file would

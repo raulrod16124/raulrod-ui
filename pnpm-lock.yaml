@@ -138,6 +138,9 @@ importers:
       lucide-react:
         specifier: ^1.47.0
         version: 1.47.0(react@19.3.0)
+      react:
+        specifier: '>=18.2.0'
+        version: 19.3.0
     devDependencies:
       typescript:
         specifier: ^7.0.2
@@ -157,10 +160,10 @@ importers:
       '@raulrod/icons':
         specifier: workspace:*
         version: link:../icons
-    devDependencies:
       '@raulrod/tokens':
         specifier: workspace:*
         version: link:../tokens
+    devDependencies:
       '@storybook/react':
         specifier: ^8.6.18
         version: 8.6.18(@storybook/test@8.6.18(storybook@8.6.18(prettier@3.9.8)))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(storybook@8.6.18(prettier@3.9.8))(typescript@7.0.2)

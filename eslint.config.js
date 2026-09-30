@@ -93,11 +93,9 @@ module.exports = [
   // is the cheapest possible enforcement (declarative, runs in `pnpm lint` and
   // therefore in CI) and it fails on the import, not on a review.
   //
-  // The stylesheets are the one documented exception and they live in the app
-  // that needs them (`main.tsx`), not in an allowlist entry here: the `exports`
-  // map does not exist until RRU-091, so `@raulrod/<pkg>/styles.css` cannot
-  // resolve yet and the artifacts are consumed by path (docs/theming.md §1).
-  // RRU-091 turns both into subpath exports and the disables disappear with them.
+  // RRU-091 formalized the public subpath exports for the stylesheets
+  // (`@raulrod/ui/styles.css` and `@raulrod/tokens/styles.css`). Any other deep
+  // path under `@raulrod/*` is an internal and must not be imported from apps.
   {
     files: ["apps/**/*.{ts,tsx,mts,cts}"],
     rules: {
@@ -106,7 +104,14 @@ module.exports = [
         {
           patterns: [
             {
-              group: ["@raulrod/**", "!@raulrod/ui", "!@raulrod/tokens", "!@raulrod/icons"],
+              group: [
+                "@raulrod/**",
+                "!@raulrod/ui",
+                "!@raulrod/ui/styles.css",
+                "!@raulrod/tokens",
+                "!@raulrod/tokens/styles.css",
+                "!@raulrod/icons",
+              ],
               message:
                 "Apps must import the packages through their public entrypoints (@raulrod/ui, @raulrod/tokens, @raulrod/icons). Deep paths are the `exports` frontier that RRU-091 formalizes and RRU-103 will enforce.",
             },
