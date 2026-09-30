@@ -1,7 +1,6 @@
 {
   "name": "@raulrod/tokens",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Design tokens for RaulRod UI: primitive, semantic and component layers.",
   "type": "module",
   "sideEffects": false,
