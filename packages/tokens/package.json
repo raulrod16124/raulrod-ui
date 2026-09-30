@@ -19,6 +19,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node tools/emit-css.mjs",
     "typecheck": "tsc --noEmit",
