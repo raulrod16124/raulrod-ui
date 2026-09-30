@@ -18,7 +18,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build --force && changeset publish",
-    "size-limit": "pnpm --filter=@raulrod/playground build:tree-shake && size-limit",
+    "size-limit": "pnpm build && pnpm --filter=@raulrod/playground build:tree-shake && size-limit",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
