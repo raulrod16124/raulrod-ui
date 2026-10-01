@@ -18,7 +18,9 @@
 //     `.d.ts`, and its standalone resolution. One direct import covers all three.
 //
 // It also renders the two README mirrors (`quick-start.tsx`, `usage-example.tsx`)
-// so the published snippets are exercised at runtime, not only compiled.
+// so the published snippets are exercised at runtime, not only compiled, and the
+// install report (`install-report.ts`), which is this card's DoD #1 written where
+// a reviewer opening the app can read it instead of only in a CI log.
 //
 // E2E CONSTRAINT (same rule RRU-071 hit): the Playwright specs locate overlays
 // WITHOUT scope (`getByRole("dialog")`, `getByRole("listbox")`), so this section
@@ -28,8 +30,9 @@
 import type { Spacing } from "@raulrod/tokens";
 
 import { Compass } from "@raulrod/icons";
-import { Heading, Inline, Stack, Text } from "@raulrod/ui";
+import { Badge, Heading, Inline, Stack, Text } from "@raulrod/ui";
 
+import { INSTALLED_PACKAGES } from "./install-report.js";
 import QuickStart from "./quick-start.js";
 import { ConfirmDialog } from "./usage-example.js";
 
@@ -40,6 +43,34 @@ const SECTION_GAP: Spacing = "space-4";
 export function ConsumerContract() {
   return (
     <Stack gap={SECTION_GAP}>
+      <Heading as="h3">Installed packages</Heading>
+      <Text>
+        What this app installs, and the exact specifiers it imports. Each one is declared in the{" "}
+        <code>exports</code> map of its package and imported by a source file of this app —{" "}
+        <code>consumer-contract.test.ts</code> fails if this list stops matching either.
+      </Text>
+      <Stack gap="space-3">
+        {INSTALLED_PACKAGES.map((pkg) => (
+          <Stack gap="space-1" key={pkg.name}>
+            <Inline align="baseline" gap="space-2" wrap>
+              <Text weight="font.weight.semibold">{pkg.name}</Text>
+              {pkg.entrypoints
+                // The package name IS its `.` entrypoint — `@raulrod/ui` and
+                // `@raulrod/ui` are one specifier written twice, and the
+                // semibold line above already states it. Badging both read as a
+                // typo during the manual review of this page.
+                .filter((specifier) => specifier !== pkg.name)
+                .map((specifier) => (
+                  <Badge key={specifier} variant="info">
+                    {specifier}
+                  </Badge>
+                ))}
+            </Inline>
+            <Text color="color.text.muted">{pkg.role}</Text>
+          </Stack>
+        ))}
+      </Stack>
+
       <Heading as="h3">Published snippets</Heading>
       <Text>
         The two snippets below are the README ones, mirrored verbatim and gated against it by{" "}
@@ -50,11 +81,13 @@ export function ConsumerContract() {
         <ConfirmDialog />
       </Inline>
 
-      <Heading as="h3">Direct package imports</Heading>
+      <Heading as="h3">Why those direct imports</Heading>
       <Inline align="center" gap="space-2">
         <Compass aria-hidden="true" />
         <Text>
-          Icon from <code>@raulrod/icons</code>, spacing typed with <code>@raulrod/tokens</code>.
+          Icon from <code>@raulrod/icons</code>, spacing typed with <code>@raulrod/tokens</code> —
+          both as packages in their own right, not only through the re-exports of{" "}
+          <code>@raulrod/ui</code>.
         </Text>
       </Inline>
     </Stack>

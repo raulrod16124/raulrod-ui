@@ -152,6 +152,11 @@ The detailed report is written to `docs/performance.md` (local, not versioned).
 
 This repository uses pnpm workspaces and Turborepo. Internal build guides and the work-board live in the `docs/` folder.
 
+`apps/playground` is a consumer application that installs the three packages the way an external
+project would, and it is where the installation itself is tested.
+[`apps/playground/README.md`](apps/playground/README.md) lists what it validates and which gate
+proves it; run it with `pnpm dev:playground`.
+
 ## License
 
 [MIT](LICENSE)
