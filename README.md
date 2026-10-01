@@ -45,12 +45,8 @@ export default function App() {
 
 ## Theming
 
-Load the tokens before the component styles and set the theme on `<html>`:
-
-```tsx
-import "@raulrod/tokens/styles.css";
-import "@raulrod/ui/styles.css";
-```
+Load the tokens **before** the component stylesheet (see the Quick start above) and set the
+theme on `<html>`:
 
 ```html
 <html data-theme="dark">
@@ -58,32 +54,40 @@ import "@raulrod/ui/styles.css";
 </html>
 ```
 
-Available themes: `light` and `dark`.
+Available themes: `light` and `dark`. Leaving the attribute off follows the OS
+(`prefers-color-scheme`).
 
 ## Usage example
 
 ```tsx
-import { Dialog, Button, ChevronDown } from "@raulrod/ui";
+import {
+  Button,
+  ChevronDown,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@raulrod/ui";
 import "@raulrod/tokens/styles.css";
 import "@raulrod/ui/styles.css";
 
 export function ConfirmDialog() {
   return (
     <Dialog>
-      <Dialog.Trigger asChild>
-        <Button type="button">
-          Open <ChevronDown aria-hidden="true" />
-        </Button>
-      </Dialog.Trigger>
-      <Dialog.Content>
-        <Dialog.Header>
-          <Dialog.Title>Are you sure?</Dialog.Title>
-        </Dialog.Header>
-        <Dialog.Footer>
+      <DialogTrigger>
+        Remove account <ChevronDown aria-hidden="true" />
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Are you sure?</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
           <Button type="button">Cancel</Button>
           <Button type="button">Confirm</Button>
-        </Dialog.Footer>
-      </Dialog.Content>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
