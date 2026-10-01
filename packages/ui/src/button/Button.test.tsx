@@ -152,9 +152,64 @@ describe("Button disabled and loading states", () => {
     const button = screen.getByRole("button", { name: "Save" });
 
     await userEvent.click(button);
-    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard("{enter}");
 
     expect(onClick).toHaveBeenCalledTimes(2);
+  });
+});
+
+// The `rel` default (RRU-102). Observable behavior, not markup trivia: what the
+// consumer sees is what the OPENED document gets — a `window.opener` handle back
+// to this page (reverse tabnabbing) and this page's URL in its `Referer`
+// header. A `target` is the trigger, `rel` is the protection, and forgetting the
+// second one while using the first is the bug this closes.
+describe("Button link rel default", () => {
+  it.each(["_blank", "_parent", "_top", "docs"])(
+    'defaults rel to "noopener noreferrer" for target="%s"',
+    (target) => {
+      render(
+        <Button href="https://example.com" target={target}>
+          Ext
+        </Button>,
+      );
+
+      expect(screen.getByRole("link", { name: "Ext" })).toHaveAttribute(
+        "rel",
+        "noopener noreferrer",
+      );
+    },
+  );
+
+  it("emits no rel without a target (same browsing context, nothing to protect)", () => {
+    expect(renderToStaticMarkup(<Button href="/docs">Docs</Button>)).not.toContain("rel=");
+    expect(
+      renderToStaticMarkup(
+        <Button href="/docs" target="_self">
+          Docs
+        </Button>,
+      ),
+    ).not.toContain("rel=");
+  });
+
+  it("lets an explicit rel win, including the empty value", () => {
+    expect(
+      renderToStaticMarkup(
+        <Button href="https://example.com" target="_blank" rel="external">
+          Ext
+        </Button>,
+      ),
+    ).toContain('rel="external"');
+    expect(
+      renderToStaticMarkup(
+        <Button href="https://example.com" target="_blank" rel="">
+          Ext
+        </Button>,
+      ),
+    ).toContain('rel=""');
+  });
+
+  it("never touches rel on the button render, where there is no navigation", () => {
+    expect(renderToStaticMarkup(<Button>Save</Button>)).not.toContain("rel=");
   });
 });
 

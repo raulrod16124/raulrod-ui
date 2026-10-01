@@ -141,6 +141,7 @@ The detailed report is written to `docs/performance.md` (local, not versioned).
 ## Documentation
 
 - **Storybook** — deployed <a href="https://raulrod16124.github.io/raulrod-ui">here</a>
+- **Security policy** — [`SECURITY.md`](SECURITY.md): how to report a vulnerability, what CI gates, and the URL/content contract.
 - **Architecture Decision Records** — `docs/decisions/`.
 
 ## Development

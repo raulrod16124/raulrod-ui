@@ -43,12 +43,27 @@ export interface ButtonProps extends HTMLAttributes<HTMLElement> {
   /** Disables the control. On the `<a>` render there is no native `disabled`
    *  attribute, so it translates to `aria-disabled` + navigation guard. */
   disabled?: boolean;
-  /** Presence of `href` switches the render from `<button>` to `<a>` (DoD #2):
-   *  without `href` it is never a link. */
+  /**
+   * Presence of `href` switches the render from `<button>` to `<a>` (DoD #2):
+   * without `href` it is never a link.
+   *
+   * Forwarded to the `<a>` verbatim: the library does NOT sanitize or rewrite
+   * consumer URLs (SECURITY.md §Content and URLs — it would break `data:`, `blob:`
+   * and relative URLs and buy a false sense of safety). Validate untrusted
+   * input where it enters your application.
+   */
   href?: string;
   /** Anchor-only: `target` attribute (ignored by the `<button>` render). */
   target?: string;
-  /** Anchor-only: `rel` attribute (ignored by the `<button>` render). */
+  /**
+   * Anchor-only: `rel` attribute (ignored by the `<button>` render).
+   *
+   * Defaults to `"noopener noreferrer"` when `target` opens another browsing
+   * context (anything but `_self`) and this prop is omitted — RRU-102. The
+   * opened document would otherwise keep a `window.opener` handle to this page
+   * and read its URL from the `Referer` header. Passing `rel` overrides the
+   * default, `rel=""` included.
+   */
   rel?: string;
   /** `<button>` type; defaults to the native `submit` when omitted. */
   type?: "submit" | "reset" | "button";

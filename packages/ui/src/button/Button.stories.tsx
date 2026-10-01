@@ -100,8 +100,11 @@ export const WithIcons: Story = {
 export const AsAnchor: Story = {
   render: () => (
     <StoryInline gap="space-4">
-      <Button href="https://example.com" target="_blank" rel="noopener noreferrer">
-        External link
+      <Button href="https://example.com" target="_blank">
+        External link (rel defaults)
+      </Button>
+      <Button href="https://example.com" target="_blank" rel="external">
+        External link (rel overridden)
       </Button>
       <Button href="https://example.com" disabled>
         Disabled link
