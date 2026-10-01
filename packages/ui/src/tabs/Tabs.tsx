@@ -52,7 +52,7 @@ export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps
   const controlledValue = value !== undefined;
   const selectedValue = controlledValue ? value : uncontrolledValue;
 
-  // Render-phase, side-effect free tab model (Select `collectItems` precedent)
+  // Render-phase, side-effect free tab model (Select `findItemLabel` precedent)
   // → the ids/roving wiring never depend on the DOM and the markup is
   // identical on server and client.
   const tabs = collectTabs(children);
