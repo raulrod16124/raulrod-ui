@@ -36,7 +36,16 @@ async function copyStyleTree(from, to) {
     const target = join(to, entry.name);
 
     if (entry.isDirectory()) {
-      await mkdir(target, { recursive: true });
+      // A directory is created only when it actually holds a style artifact.
+      // `mkdir` here unconditionally left an EMPTY `dist/` directory behind for
+      // every folder in `src/` that has no stylesheet — including
+      // `storybook-support/`, which `tsconfig.build.json` deliberately keeps out
+      // of the build. The empty directory is not in the published tarball, but
+      // it makes `dist/` disagree with the shipped set, which is the kind of
+      // discrepancy a consumer debugging a missing file will lose an hour to
+      // (RRU-103).
+      // No `mkdir` needed here: copying a file below this point already creates
+      // `target` via `mkdir(dirname(target))`.
       copied += await copyStyleTree(source, target);
     } else if (entry.name.endsWith(".css") || entry.name.endsWith(".css.d.ts")) {
       await mkdir(dirname(target), { recursive: true });

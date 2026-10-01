@@ -1,3 +1,6 @@
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+
 const js = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const reactHooks = require("eslint-plugin-react-hooks");
@@ -26,6 +29,62 @@ const stringCodeExecution =
 
 const domWrite =
   "Writing to the DOM as a string bypasses the virtual DOM and React's escaping in a single step. Build nodes with the DOM APIs (createElement/textContent/append) or render them; React owns the DOM inside its own tree.";
+
+// RRU-103: the public API frontier of the consumer apps, DERIVED from the
+// packages' own `exports` maps instead of being written out by hand.
+//
+// This list used to be five literals in this file, and it was the same fact
+// stated twice: once as the `exports` map that actually decides what a consumer
+// can resolve, and once as a hand-maintained allowlist that decides what an app
+// is allowed to type. Those two drift silently and in opposite directions — a
+// new public subpath would be unreachable from an app until someone remembered
+// to edit this file, and a deleted subpath would keep being allowed long after
+// it stopped resolving. `exports` is the source of truth (guía §24), so it is
+// the only thing read here.
+//
+// Read through `readFileSync` rather than `require`, and relative rather than
+// by package name, because the `exports` maps do not expose `./package.json`:
+// resolving `@raulrod/ui/package.json` is itself an import of a subpath the
+// frontier denies.
+const PUBLISHED_PACKAGES = ["packages/ui", "packages/tokens", "packages/icons"];
+
+function publicEntrypoints() {
+  const entrypoints = [];
+
+  for (const packageDir of PUBLISHED_PACKAGES) {
+    const manifestPath = join(__dirname, packageDir, "package.json");
+    let manifest;
+
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    } catch (cause) {
+      throw new Error(
+        `eslint.config.js cannot derive the public API frontier: ${manifestPath} is unreadable. The app import rule below is built from it, so it cannot be allowed to degrade into "nothing is public".`,
+        { cause },
+      );
+    }
+
+    const subpaths = manifest.exports ? Object.keys(manifest.exports) : [];
+
+    // Fail loud, not open: a package whose `exports` went missing must break the
+    // lint run with an explanation, never turn every legitimate app import into a
+    // violation and never quietly allow the whole namespace.
+    if (subpaths.length === 0) {
+      throw new Error(
+        `eslint.config.js cannot derive the public API frontier: ${manifest.name} has no \`exports\` map (${manifestPath}). Either declare it or drop the package from PUBLISHED_PACKAGES.`,
+      );
+    }
+
+    for (const subpath of subpaths) {
+      // "." is the root entrypoint; "./styles.css" is a subpath. Nothing else is
+      // reachable, and neither form can be resolved by name from inside a
+      // workspace link, so the plain string is the only identifier apps use.
+      entrypoints.push(subpath === "." ? manifest.name : `${manifest.name}/${subpath.slice(2)}`);
+    }
+  }
+
+  return entrypoints.sort();
+}
 
 module.exports = [
   {
@@ -100,7 +159,7 @@ module.exports = [
     },
   },
 
-  // Public API boundary for the consumer apps (RRU-069, precursor of RRU-103).
+  // Public API boundary for the consumer apps (RRU-069, enforced by RRU-103).
   //
   // The apps are how the packages are validated: they must reach the system the
   // way a real consumer does — through the package entrypoints — because an E2E
@@ -108,32 +167,37 @@ module.exports = [
   // is the cheapest possible enforcement (declarative, runs in `pnpm lint` and
   // therefore in CI) and it fails on the import, not on a review.
   //
-  // RRU-091 formalized the public subpath exports for the stylesheets
-  // (`@raulrod/ui/styles.css` and `@raulrod/tokens/styles.css`). Any other deep
-  // path under `@raulrod/*` is an internal and must not be imported from apps.
+  // The allowlist is derived from the packages' `exports` maps (see
+  // `publicEntrypoints`), so it cannot drift from the frontier it protects:
+  // anything under `@raulrod/*` that `exports` does not expose is banned, and
+  // anything it does expose is allowed without editing this file. A new public
+  // subpath (`@raulrod/ui/theme.css`, say) becomes legal the moment it is
+  // declared in `package.json`, and stops being legal the moment it is
+  // undeclared.
+  //
+  // Two escapes that used to exist are closed here rather than left to review:
+  //
+  // - the relative patterns were pinned to two depths (`../../packages/*`,
+  //   `../../../packages/*`), so a file nested deeper than the pattern could
+  //   reach into a sibling package. `**/packages/**` is depth-agnostic.
+  // - the rule only matched TypeScript, so a `.js`/`.mjs` helper in an app (a
+  //   Vite plugin, a config module) imported internals with no violation at all.
   {
-    files: ["apps/**/*.{ts,tsx,mts,cts}"],
+    files: ["apps/**/*.{js,mjs,cjs,ts,tsx,mts,cts}"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           patterns: [
             {
-              group: [
-                "@raulrod/**",
-                "!@raulrod/ui",
-                "!@raulrod/ui/styles.css",
-                "!@raulrod/tokens",
-                "!@raulrod/tokens/styles.css",
-                "!@raulrod/icons",
-              ],
+              group: ["@raulrod/**", ...publicEntrypoints().map((entry) => `!${entry}`)],
               message:
-                "Apps must import the packages through their public entrypoints (@raulrod/ui, @raulrod/tokens, @raulrod/icons). Deep paths are the `exports` frontier that RRU-091 formalizes and RRU-103 will enforce.",
+                "Apps must import the packages through their public entrypoints. The allowed set is derived from each package's `exports` map: a deep path is either an internal, or a subpath that has not been declared public. Fix the import, or — if the app genuinely needs it — declare the subpath in the package's `exports` (guía §24, RRU-091).",
             },
             {
-              group: ["../../packages/*", "../../../packages/*"],
+              group: ["**/packages/**"],
               message:
-                "Apps must not reach into another package's files. Build the packages and consume their public entrypoints.",
+                "Apps must not reach into another package's files. Build the packages and consume their public entrypoints; an app that needs something the API does not expose is evidence of a missing public API, not of a missing escape hatch (guía §25).",
             },
           ],
         },

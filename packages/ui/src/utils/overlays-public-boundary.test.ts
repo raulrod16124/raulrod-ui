@@ -71,4 +71,35 @@ describe("overlay infrastructure is private (DoD #3)", () => {
       ).toBeUndefined();
     }
   });
+
+  // The assertion above is blind to types: a TYPE has no runtime value, so
+  // `publicEntries[name]` is `undefined` whether or not the barrel exports it.
+  // Two of the leaks this task closed (`PopoverContextValue`, `TableContextValue`)
+  // were invisible to that loop, so naming them in a runtime list would have
+  // been decorative — a second assertion that passes either way.
+  //
+  // `pnpm typecheck` is the instrument here. `@ts-expect-error` suppresses "no
+  // exported member" today; if a name ever becomes exported the suppression
+  // stops suppressing anything and tsc fails with "Unused '@ts-expect-error'
+  // directive" — so the leak makes the probe itself the failure. The `expect`
+  // below carries no weight of its own; it only keeps the array referenced, and
+  // its count is the number of names under watch.
+  it("keeps the internal context types unreachable from the public entry", () => {
+    const unreachable = [
+      // @ts-expect-error — `DialogContextValue` is internal: not public API.
+      () => undefined as unknown as Public.DialogContextValue,
+      // @ts-expect-error — `PopoverContextValue` is internal: not public API.
+      () => undefined as unknown as Public.PopoverContextValue,
+      // @ts-expect-error — `DropdownMenuContextValue` is internal: not public API.
+      () => undefined as unknown as Public.DropdownMenuContextValue,
+      // @ts-expect-error — `FormFieldContextValue` is internal: not public API.
+      () => undefined as unknown as Public.FormFieldContextValue,
+      // @ts-expect-error — `RadioGroupContextValue` is internal: not public API.
+      () => undefined as unknown as Public.RadioGroupContextValue,
+      // @ts-expect-error — `TableContextValue` is internal: not public API.
+      () => undefined as unknown as Public.TableContextValue,
+    ];
+
+    expect(unreachable).toHaveLength(6);
+  });
 });
