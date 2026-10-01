@@ -115,9 +115,32 @@ export function ConfirmDialog() {
 | Overlays     | `Dialog`, `Popover`, `DropdownMenu`, `Tooltip`, `Tabs`                         |
 | Data display | `Pagination`, `Table`, `DataTable`                                             |
 
+## Performance
+
+The library ships ESM with `sideEffects: false`, so consumers pay for what they import.
+
+| Scenario                        | JS (gzip) |
+| ------------------------------- | --------- |
+| Import one component (`Button`) | ~70.8 kB  |
+| Import the whole public API     | ~86.7 kB  |
+| Total CSS (not tree-shaken)     | ~5.5 kB   |
+
+React itself dominates the single-component number; the design-system code in it is
+~2.2 kB. Icon costs stay per-icon (a shared ~4.1 kB lucide runtime plus the icon
+module). `@raulrod/tokens` is imported as types only, so its runtime adds nothing to
+the bundle.
+
+Reproduce the full baseline (per-component, per-icon, before/after) with:
+
+```bash
+pnpm perf:baseline
+```
+
+The detailed report is written to `docs/performance.md` (local, not versioned).
+
 ## Documentation
 
-- **Storybook** — deployed at `https://raulrod16124.github.io/raulrod-ui` (coming soon).
+- **Storybook** — deployed <a href="https://raulrod16124.github.io/raulrod-ui">here</a>
 - **Architecture Decision Records** — `docs/decisions/`.
 
 ## Development

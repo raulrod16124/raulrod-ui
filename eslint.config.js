@@ -21,6 +21,8 @@ module.exports = [
       "**/node_modules/**",
       "**/dist/**",
       "**/dist-tree-shake/**",
+      "**/dist-bundle-baseline-*/**",
+      "**/.bundle-baseline/**",
       "**/.turbo/**",
       "coverage/**",
       "**/storybook-static/**",

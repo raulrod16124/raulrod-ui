@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:tree-shake": "vite build --config vite.tree-shake.config.ts",
+    "build:bundle-baseline": "vite build --config vite.bundle-baseline.config.ts",
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

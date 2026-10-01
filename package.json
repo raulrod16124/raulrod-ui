@@ -19,6 +19,7 @@
     "version-packages": "changeset version",
     "release": "turbo run build --force && changeset publish",
     "size-limit": "pnpm build && pnpm --filter=@raulrod/playground build:tree-shake && size-limit",
+    "perf:baseline": "node tools/measure-bundle.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
