@@ -8,4 +8,6 @@
 
 **Measured, not asserted.** Every governed pair is now checked by a contrast gate that computes its ratio and matches it against an authorized row, so a token pair cannot ship at a ratio the design does not admit. Where a component was relying on a pair that failed, the pair was corrected rather than registered as a known defect: the registry of known defects is empty.
 
+**Package metadata.** This release is the first that says who owns the code and under what terms: the published manifest now carries `license: "MIT"` (matching the LICENSE at the repository root), a `repository` link pointing at this package's folder, a `homepage`, and a `bugs` tracker — and the license text itself ships inside the tarball, where a consumer unpacking it can read it. Before this, the registry rendered the license of all three packages as `UNKNOWN` and linked to no source.
+
 **Migration.** None. Both additions are new names, and every existing token keeps its value, its name and its role.

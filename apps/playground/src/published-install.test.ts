@@ -74,8 +74,15 @@ const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const APP_MANIFEST = join(REPO_ROOT, "apps", "playground", "package.json");
 
 /**
- * Files npm includes whether or not `files` lists them. Asserting the `files`
- * projection without this exception would fail on the manifest itself.
+ * Files npm includes whether or not `files` lists them — but only WHEN THEY EXIST
+ * in the package directory. npm force-includes `package.json` and the `main`
+ * target, and picks up README/LICENSE/CHANGELOG if it finds them at the package
+ * root; it does not climb the tree looking for them, which is why the LICENSE at
+ * the repo root ships to nobody and every package needs its own copy.
+ *
+ * So this exception only excuses these files from the `files` projection; it does
+ * not claim they are there. Whether a package actually ships its license is a
+ * different question, asked of the tarball by the RRU-112 block at the bottom.
  */
 const ALWAYS_PUBLISHED = ["package.json", "README", "LICENSE", "CHANGELOG"];
 
@@ -106,6 +113,10 @@ interface PackageManifest {
   types?: string;
   files?: string[];
   exports?: Record<string, unknown>;
+  license?: string;
+  repository?: { type?: string; url?: string; directory?: string };
+  homepage?: string;
+  bugs?: { url?: string };
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -885,5 +896,235 @@ describe("packed artifact (RRU-111)", () => {
     }
 
     expect(problems).toEqual([]);
+  });
+});
+
+// The two blocks above ask whether a package installs. This one asks what the
+// registry page says about it, which is the half of "publishing" a manifest can be
+// wrong about on its own — and that `npm view` confirmed was: all three packages
+// shipped with no `license` and no `repository`, and no LICENSE in the tarball at
+// all, because npm force-includes one only where the file exists and this repo
+// keeps its single copy at the root.
+//
+// Worth a gate rather than a review because of WHEN it has to be found. A published
+// version cannot be republished: whatever `license` the 1.0.0 tarball carries is
+// what every consumer of 1.0.0 sees, and the repair can only ever arrive as
+// 1.0.1 — so the defect ships even though the fix already exists. These assertions
+// run inside the job that publishes (`release.yml` runs `pnpm test` before
+// `changesets/action`), which makes the check that guards the release part of it.
+describe("published license and provenance (RRU-112)", () => {
+  /** The repo's license text, and the SPDX id parsed out of its first line. */
+  const ROOT_LICENSE = join(REPO_ROOT, "LICENSE");
+
+  /**
+   * The license id the root LICENSE states, e.g. `MIT` from `MIT License`.
+   *
+   * Derived rather than declared: a literal `"MIT"` in this spec would agree with
+   * the file right up to the day the license changed, and then this spec would be
+   * the stale party while the manifests kept publishing an id the repository no
+   * longer grants. Throwing when the first line names no license is deliberate — a
+   * gate comparing against a guess is worse than no gate.
+   */
+  function rootLicenseId(): string {
+    const first = readFileSync(ROOT_LICENSE, "utf8").split("\n")[0]?.trim() ?? "";
+    const id = /^(\S+)\s+Licen[cs]e\b/.exec(first)?.[1];
+
+    if (id === undefined) {
+      throw new Error(
+        `the first line of LICENSE reads "${first}", which names no license, so there is nothing ` +
+          "for a manifest's `license` field to be checked against",
+      );
+    }
+
+    return id;
+  }
+
+  /** A URL field counts as declared only if it says something. */
+  function declared(value: string | undefined): boolean {
+    return value !== undefined && value.trim() !== "";
+  }
+
+  /**
+   * What a consumer sees on the package's page and cannot act on: the license the
+   * registry renders, the source link, the documentation, the tracker.
+   *
+   * Pure, so the self-check below can feed it manifests broken on purpose. An
+   * inspection wired straight into `inspectPublished` could only ever be exercised
+   * by the repository being wrong, which is the one thing ADR-005 §5 says a gate
+   * must not rely on.
+   */
+  function metadataProblems(manifest: PackageManifest, expectedLicense: string): string[] {
+    const problems: string[] = [];
+
+    if (!declared(manifest.license)) {
+      problems.push(
+        "declares no `license` — the registry renders that as UNKNOWN, and an MIT LICENSE at the " +
+          "repo root is not what a consumer reads before installing",
+      );
+    } else if (manifest.license !== expectedLicense) {
+      problems.push(
+        `declares \`license: "${manifest.license}"\` while the repo's LICENSE says ${expectedLicense} ` +
+          "— the package grants terms the repository does not",
+      );
+    }
+
+    if (!declared(manifest.repository?.url)) {
+      problems.push(
+        "declares no `repository.url` — the package page has no link to the source, and no way to " +
+          "read what it was built from before depending on it",
+      );
+    } else if (!declared(manifest.repository?.directory)) {
+      problems.push(
+        "`repository.url` points at the monorepo with no `directory`, so every package's source " +
+          "link lands on the repo root instead of its own folder",
+      );
+    }
+
+    if (!declared(manifest.homepage)) {
+      problems.push(
+        "declares no `homepage` — the registry's Documentation link is the first thing a consumer " +
+          "looks for, and it would be empty",
+      );
+    }
+
+    if (!declared(manifest.bugs?.url)) {
+      problems.push(
+        "declares no `bugs.url` — a consumer who finds a defect gets no tracker to report it in, " +
+          "which is the same as losing it",
+      );
+    }
+
+    return problems;
+  }
+
+  /**
+   * The license text the tarball carries, compared to the repo's.
+   *
+   * `shipped === undefined` means the tarball has no LICENSE at all, which is a
+   * different defect from one that drifted and is reported as a different thing:
+   * the first is what the repo looks like today, the second is what a partial fix
+   * would look like.
+   */
+  function licenseTextProblems(shipped: string | undefined, expected: string): string[] {
+    if (shipped === undefined) {
+      return [
+        "ships no LICENSE — npm includes one only when the file exists in the package directory, " +
+          "and the repo's only copy sits at the root, outside `files`, so nothing carries it",
+      ];
+    }
+
+    if (shipped === expected) {
+      return [];
+    }
+
+    const headline = (text: string): string => text.split("\n")[0]?.trim() ?? "";
+
+    return [
+      `ships a LICENSE headed "${headline(shipped)}" where the repo's says "${headline(expected)}" — ` +
+        "the terms in the tarball are not the terms in the repository",
+    ];
+  }
+
+  it("declares, in every published manifest, the metadata a package page renders", () => {
+    const expectedLicense = rootLicenseId();
+    const problems: string[] = [];
+
+    for (const pkg of publishedPackages()) {
+      // The packed manifest, not the source one: this file's own rule is that the
+      // tarball is the artifact under test, and the packer rewrites what it ships.
+      const shipped = packedManifest(pkg);
+
+      problems.push(
+        ...metadataProblems(shipped, expectedLicense).map((problem) => `${pkg.dir}: ${problem}`),
+      );
+    }
+
+    expect(problems).toEqual([]);
+  });
+
+  it("ships, in every tarball, the license text the repository grants", () => {
+    const expected = readFileSync(ROOT_LICENSE, "utf8");
+    const problems: string[] = [];
+
+    for (const pkg of publishedPackages()) {
+      const packed = new Set(packedFiles(pkg));
+      const shipped = packed.has("LICENSE") ? packedText(pkg, "LICENSE") : undefined;
+
+      problems.push(
+        ...licenseTextProblems(shipped, expected).map((problem) => `${pkg.dir}: ${problem}`),
+      );
+    }
+
+    expect(problems).toEqual([]);
+  });
+
+  it("reports a package whose license metadata or license text is missing or wrong", () => {
+    // The self-check. Every gate above reads the repository, which means the only
+    // way to know they can report anything is to hand the same inspections
+    // packages that are wrong on purpose and watch them complain. These fixtures
+    // stay permanent, on the ADR-005 §5 argument: a gate that has never gone red
+    // is a gate asserting something false.
+    const expectedText = readFileSync(ROOT_LICENSE, "utf8");
+    const expectedId = rootLicenseId();
+
+    const compliant: PackageManifest = {
+      license: expectedId,
+      repository: {
+        type: "git",
+        url: "git+https://github.com/raulrod16124/raulrod-ui.git",
+        directory: "packages/ui",
+      },
+      homepage: "https://example.test",
+      bugs: { url: "https://example.test/issues" },
+    };
+
+    // The compliant row first, so a negative that passes for the wrong reason — an
+    // inspection that reports everything, or nothing — fails here instead of
+    // counting as evidence that the broken rows are caught.
+    expect(metadataProblems(compliant, expectedId)).toEqual([]);
+    expect(licenseTextProblems(expectedText, expectedText)).toEqual([]);
+
+    const broken: readonly { label: string; problems: string[] }[] = [
+      {
+        label: "no `license` field at all",
+        problems: metadataProblems({ ...compliant, license: undefined }, expectedId),
+      },
+      {
+        label: "a license the repository does not grant",
+        problems: metadataProblems({ ...compliant, license: "Apache-2.0" }, expectedId),
+      },
+      {
+        label: "a repository with no url",
+        problems: metadataProblems({ ...compliant, repository: { type: "git" } }, expectedId),
+      },
+      {
+        label: "a repository with no directory",
+        problems: metadataProblems(
+          { ...compliant, repository: { type: "git", url: "git+https://example.test/x.git" } },
+          expectedId,
+        ),
+      },
+      {
+        label: "a blank homepage",
+        problems: metadataProblems({ ...compliant, homepage: "   " }, expectedId),
+      },
+      {
+        label: "no bugs url",
+        problems: metadataProblems({ ...compliant, bugs: undefined }, expectedId),
+      },
+      {
+        label: "a tarball with no license file",
+        problems: licenseTextProblems(undefined, expectedText),
+      },
+      {
+        label: "a tarball licensed under something else",
+        problems: licenseTextProblems("Apache License\n\nCopyright (c) 2026\n", expectedText),
+      },
+    ];
+
+    expect(
+      broken.filter((row) => row.problems.length === 0).map((row) => row.label),
+      "these broken packages are reported as compliant, so the gates above cannot fail",
+    ).toEqual([]);
   });
 });
