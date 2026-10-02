@@ -96,12 +96,12 @@
 
 .rr-radio-input:checked {
   background-color: var(--rr-color-action-primary-background);
-  border-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-border-primary);
 }
 
 .rr-radio-input:checked:hover {
   background-color: var(--rr-color-action-primary-background-hover);
-  border-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-border-primary-hover);
 }
 
 /* --- Group invalid: FormField wiring (RRU-044) spreads `aria-invalid` onto

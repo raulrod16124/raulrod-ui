@@ -45,12 +45,8 @@ export default function App() {
 
 ## Theming
 
-Load the tokens before the component styles and set the theme on `<html>`:
-
-```tsx
-import "@raulrod/tokens/styles.css";
-import "@raulrod/ui/styles.css";
-```
+Load the tokens **before** the component stylesheet (see the Quick start above) and set the
+theme on `<html>`:
 
 ```html
 <html data-theme="dark">
@@ -58,32 +54,40 @@ import "@raulrod/ui/styles.css";
 </html>
 ```
 
-Available themes: `light` and `dark`.
+Available themes: `light` and `dark`. Leaving the attribute off follows the OS
+(`prefers-color-scheme`).
 
 ## Usage example
 
 ```tsx
-import { Dialog, Button, ChevronDown } from "@raulrod/ui";
+import {
+  Button,
+  ChevronDown,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@raulrod/ui";
 import "@raulrod/tokens/styles.css";
 import "@raulrod/ui/styles.css";
 
 export function ConfirmDialog() {
   return (
     <Dialog>
-      <Dialog.Trigger asChild>
-        <Button type="button">
-          Open <ChevronDown aria-hidden="true" />
-        </Button>
-      </Dialog.Trigger>
-      <Dialog.Content>
-        <Dialog.Header>
-          <Dialog.Title>Are you sure?</Dialog.Title>
-        </Dialog.Header>
-        <Dialog.Footer>
+      <DialogTrigger>
+        Remove account <ChevronDown aria-hidden="true" />
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Are you sure?</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
           <Button type="button">Cancel</Button>
           <Button type="button">Confirm</Button>
-        </Dialog.Footer>
-      </Dialog.Content>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
@@ -115,14 +119,66 @@ export function ConfirmDialog() {
 | Overlays     | `Dialog`, `Popover`, `DropdownMenu`, `Tooltip`, `Tabs`                         |
 | Data display | `Pagination`, `Table`, `DataTable`                                             |
 
+## Performance
+
+The library ships ESM with `sideEffects: false`, so consumers pay for what they import.
+
+| Scenario                        | JS (gzip) |
+| ------------------------------- | --------- |
+| Import one component (`Button`) | ~70.8 kB  |
+| Import the whole public API     | ~86.7 kB  |
+| Total CSS (not tree-shaken)     | ~5.5 kB   |
+
+React itself dominates the single-component number; the design-system code in it is
+~2.2 kB. Icon costs stay per-icon (a shared ~4.1 kB lucide runtime plus the icon
+module). `@raulrod/tokens` is imported as types only, so its runtime adds nothing to
+the bundle.
+
+Reproduce the full baseline (per-component, per-icon, before/after) with:
+
+```bash
+pnpm perf:baseline
+```
+
+The detailed report is written to `docs/performance.md` (local, not versioned).
+
 ## Documentation
 
-- **Storybook** — deployed at `https://raulrod16124.github.io/raulrod-ui` (coming soon).
+- **Storybook** — deployed <a href="https://raulrod16124.github.io/raulrod-ui">here</a>
+- **Security policy** — [`SECURITY.md`](SECURITY.md): how to report a vulnerability, what CI gates, and the URL/content contract.
 - **Architecture Decision Records** — `docs/decisions/`.
 
 ## Development
 
 This repository uses pnpm workspaces and Turborepo. Internal build guides and the work-board live in the `docs/` folder.
+
+`apps/playground` is a consumer application that installs the three packages the way an external
+project would, and it is where the installation itself is tested.
+[`apps/playground/README.md`](apps/playground/README.md) lists what it validates and which gate
+proves it; run it with `pnpm dev:playground`.
+
+The playground resolves `dist/` by workspace link, so it cannot answer what someone outside this
+repository gets. `pnpm verify:external` answers exactly that: it builds a throwaway project in the
+OS temp directory, installs the packages into it with `npm` — the package manager a consumer is
+most likely to use, and the one that rejects what a workspace link accepts — and then typechecks it
+in two resolution modes, renders it under Node ESM, builds it with Vite and reads the theme in
+Chromium.
+
+```bash
+pnpm verify:external                      # both routes
+pnpm verify:external --route=tarball      # what the next release would upload
+pnpm verify:external --route=registry     # what is on npm today
+pnpm verify:external --no-browser         # skip the Chromium pass
+```
+
+The two routes answer different questions. `tarball` packs the working tree, so it covers
+uncommitted work. `registry` installs `@raulrod/*@latest`, so it can be wrong because of a past
+release rather than of the current tree — and when the published version differs from the one in
+`packages/`, the run says so rather than letting a green result imply it validated your checkout.
+
+It needs the network and a browser, so it is a release-time check rather than a CI gate; the part of
+the same question that can be re-checked offline on every commit is
+`apps/playground/src/published-install.test.ts`.
 
 ## License
 

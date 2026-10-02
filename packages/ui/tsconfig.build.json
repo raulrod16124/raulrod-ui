@@ -1,4 +1,14 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.stories.tsx", "src/test-support/**"]
+  // The shipped set is `src/` minus everything that is not a consumer's code.
+  // `storybook-support` is the presentational scaffolding for `.stories.tsx`
+  // files (which are excluded here already), so compiling it into `dist/` put
+  // Storybook-only components in the published tarball for no reason (RRU-103).
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.tsx",
+    "src/test-support/**",
+    "src/storybook-support/**"
+  ]
 }

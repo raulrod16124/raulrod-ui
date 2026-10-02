@@ -14,6 +14,7 @@ import { Heading, Stack, Text, ToastProvider } from "@raulrod/ui";
 import "./app.css";
 
 import { A11yReviewSection } from "./a11y-review-section.js";
+import { ConsumerContract } from "./consumer-contract/section.js";
 import { FormSection } from "./form-section.js";
 import { OverlaysSection } from "./overlays-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
@@ -60,6 +61,21 @@ export function App() {
                 A11y review
               </Heading>
               <A11yReviewSection />
+            </section>
+
+            {/* What a consumer gets on arrival: the README snippets, rendered
+                (RRU-110). Mounts no overlay and reuses no accessible name, so
+                the unscoped E2E locators (`getByRole("dialog")`,
+                `getByRole("listbox")`) keep pointing at one element. */}
+            <section
+              aria-labelledby="consumer-contract-title"
+              className="pg-section"
+              id="consumer-contract"
+            >
+              <Heading as="h2" className="pg-section__title" id="consumer-contract-title">
+                Consumer contract
+              </Heading>
+              <ConsumerContract />
             </section>
           </Stack>
         </main>

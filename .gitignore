@@ -156,6 +156,10 @@ vite.config.ts.timestamp-*
 # RRU-092 tree-shaking measurement output (generated on demand)
 dist-tree-shake
 
+# RRU-100 bundle baseline: generated entry points + their build output
+.bundle-baseline
+dist-bundle-baseline-*
+
 # Docs (ignored by default; ADRs are tracked as architecture code)
 /docs/*
 !/docs/decisions/

@@ -109,11 +109,11 @@ export function Select({
     triggerRef.current = node;
   };
 
-  // Render-phase, side-effect free label map (Popover `collectSlots` precedent)
-  // → `.Value` and the live-region announcement never depend on the DOM and
-  // the markup is identical on server and client.
-  const items = collectItems(children);
-  const selectedLabel = selectedValue !== undefined ? items.get(selectedValue) : undefined;
+  // Render-phase, side-effect free label lookup (Popover `collectSlots`
+  // precedent) → `.Value` and the live-region announcement never depend on the
+  // DOM and the markup is identical on server and client. Only the selected
+  // item's label is needed, so the walk resolves that one label (RRU-101).
+  const selectedLabel = findItemLabel(children, selectedValue);
   const hasSelection = selectedLabel !== undefined;
 
   const select = (next: string): void => {
@@ -404,19 +404,27 @@ function useSelectContext(): SelectContextValue {
 
 /** Composition root slot-detection (ADR-004, Popover `collectSlots` precedent):
  *  walks the children tree (recursively honoring arrays, fragments and
- *  conditional expressions) collecting `value → label` from every
- *  `<Select.Item>`. Render-phase + side-effect free → identical on server and
+ *  conditional expressions) resolving the label of the `<Select.Item>` whose
+ *  `value` matches. Render-phase + side-effect free → identical on server and
  *  client. The label comes from the item's DOM text (displayed + type-ahead
- *  matching source stay in sync by construction). */
-function collectItems(children: ReactNode): Map<string, string> {
-  const items = new Map<string, string>();
+ *  matching source stay in sync by construction).
+ *
+ *  Only the SELECTED item is ever read, so this walks the tree without
+ *  materializing a `value → label` map and flattens the text of matching items
+ *  alone (RRU-101, measured): with no selection it resolves without touching a
+ *  single item, and the per-render cost no longer scales with the item count
+ *  the way a full map did. */
+function findItemLabel(children: ReactNode, wanted: string | undefined): string | undefined {
+  if (wanted === undefined) return undefined;
 
+  let found: string | undefined;
   const walk = (node: ReactNode): void => {
     Children.forEach(node, (child) => {
       if (!isValidElement(child)) return;
       if (child.type === SelectItem) {
         const props = child.props as { value?: string; children?: ReactNode };
-        if (props.value !== undefined) items.set(props.value, textFromChildren(props.children));
+        // Last match wins — the precedence a `value → label` map had.
+        if (props.value === wanted) found = textFromChildren(props.children);
       }
       const nested = (child.props as { children?: ReactNode }).children;
       if (nested !== undefined) walk(nested);
@@ -424,7 +432,7 @@ function collectItems(children: ReactNode): Map<string, string> {
   };
 
   walk(children);
-  return items;
+  return found;
 }
 
 /** Flattens a ReactNode to its visible text (labels, icons' aria-labels) —

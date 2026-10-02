@@ -213,6 +213,23 @@ describe("IconButton authored CSS contract", () => {
     );
   });
 
+  it("paints the link variant with link.text, and the secondary edge with border.strong", async () => {
+    // Same two corrections as Button (RRU-126/127), asserted here too because
+    // these are two independent stylesheets: a shared token does not mean a
+    // shared declaration.
+    const css = await readComponentCss("icon-button/IconButton.css");
+
+    expect(css).toMatch(/\.rr-icon-button--link\s*\{[^}]*color:\s*var\(--rr-color-link-text\)/);
+    expect(css).toMatch(
+      /\.rr-icon-button--link:hover\s*\{[^}]*color:\s*var\(--rr-color-link-text-hover\)/,
+    );
+    expect(css).not.toMatch(/\.rr-icon-button--link[^{]*\{[^}]*color:\s*var\(--rr-color-action-/);
+    expect(css).toMatch(
+      /\.rr-icon-button--secondary\s*\{[^}]*border-color:\s*var\(--rr-color-border-strong\)/,
+    );
+    expect(css).not.toMatch(/border-color:\s*var\(--rr-color-border-default\)/);
+  });
+
   it("animates the spinner and honors prefers-reduced-motion", async () => {
     const css = await readComponentCss("icon-button/IconButton.css");
 

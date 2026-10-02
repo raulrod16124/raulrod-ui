@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>External consumer</title>
+    <script>
+      // docs/theming.md §4: the attribute is written before the first paint, so
+      // there is no flash. No attribute means "follow the OS".
+      (function () {
+        try {
+          var stored = localStorage.getItem("rr-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (error) {
+          /* storage unavailable → system */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

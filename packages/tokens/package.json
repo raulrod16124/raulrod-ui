@@ -2,6 +2,16 @@
   "name": "@raulrod/tokens",
   "version": "0.1.2",
   "description": "Design tokens for RaulRod UI: primitive, semantic and component layers.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raulrod16124/raulrod-ui.git",
+    "directory": "packages/tokens"
+  },
+  "homepage": "https://raulrod16124.github.io/raulrod-ui/",
+  "bugs": {
+    "url": "https://github.com/raulrod16124/raulrod-ui/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",

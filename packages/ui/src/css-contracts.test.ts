@@ -521,6 +521,12 @@ interface JudgedTarget {
  * cannot be kept green by leaving a stale entry behind. Every entry carries the
  * ratio it was measured at, so a token value changing under a registered defect
  * is caught too.
+ *
+ * **Empty as of RRU-126/127/128** (2026-10-02), which closed the last three
+ * entries this registry held: the link text got its own token, and the control
+ * boundaries moved off `border.default` and off the primary FILL. The next entry
+ * added here is a defect someone chose not to fix, and it has to name the card
+ * that owns it.
  */
 interface KnownDefect {
   readonly card: string;
@@ -532,35 +538,7 @@ interface KnownDefect {
   readonly why: string;
 }
 
-const KNOWN_DEFECTS: readonly KnownDefect[] = [
-  {
-    card: "RRU-126",
-    where:
-      /\.rr-(icon-)?button--link(:hover)?: color\.action\.primary\.background(\.hover)? \(color\)/,
-    surfaces: PAGE_SURFACES,
-    themes: ["dark"],
-    ratios: [3.32, 3.02, 2.56, 2.33],
-    why: "a token authorized as a 3:1 control boundary is painted as link text, which needs 4.5:1",
-  },
-  {
-    card: "RRU-127",
-    where:
-      /\.rr-(icon-)?button--secondary(:hover)?: color\.border\.default \(border-color\)|\.rr-table: color\.border\.default \(border\)/,
-    surfaces: PAGE_SURFACES,
-    themes: ["light", "dark"],
-    ratios: [1.46, 1.38, 1.79, 1.63],
-    why: "`border.default` cannot identify the edge of a control, and the secondary fill it outlines is 1.13:1 against the page, so neither the border nor the fill carries the boundary",
-  },
-  {
-    card: "RRU-128",
-    where:
-      /:(hover|checked|indeterminate)[^{]*: color\.action\.primary\.background(\.hover)? \(border-color\)/,
-    surfaces: PAGE_SURFACES,
-    themes: ["dark"],
-    ratios: [2.56, 2.33, 3.32, 3.02],
-    why: "the primary ramp is used as a control boundary in the dark theme, where the table never authorized it: the resting step measures 3.32:1 without ever being verified, and the hover step drops to 2.56:1, below the 3:1 it needs",
-  },
-];
+const KNOWN_DEFECTS: readonly KnownDefect[] = [];
 
 /** Registry index -> how many failing paints it absorbed on this run. */
 const knownDefectHits = new Map<number, number>();
@@ -859,9 +837,21 @@ describe("contrast: every paint a component performs is an authorized AA pair", 
     ).toEqual([]);
   });
 
-  it("registered the defects the audit found, with the card that owns each", () => {
-    const absorbed = [...knownDefectHits.values()].reduce((total, count) => total + count, 0);
-    expect(absorbed, "no failing paint was absorbed by the registry").toBeGreaterThan(0);
+  it("reports every failure the registry does not cover", () => {
+    // The forward half of the ratchet, paired with the test above: a paint that
+    // fails and matches no registered entry lands in `problems`, so this is the
+    // half that stops the registry from HIDING a defect (the other stops it from
+    // keeping a dead one).
+    //
+    // It used to assert `absorbed > 0`, which only said anything while the
+    // registry was non-empty — after RRU-126/127/128 emptied it, that assertion
+    // could only be satisfied by inventing a defect to register. The invariant
+    // worth keeping is the direction, not the count.
+    const uncovered = audits.flatMap((entry) => entry.problems);
+    expect(
+      uncovered,
+      "a failing paint no registered defect covers: fix it, or register it with the card that owns it",
+    ).toEqual([]);
   });
 });
 

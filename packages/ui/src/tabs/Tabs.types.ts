@@ -116,6 +116,10 @@ export interface TabsContextValue {
   /** Value of the first ENABLED tab — the fallback tab stop in the roving
    *  tabindex when nothing is selected. */
   firstEnabledValue?: string;
+  /** The ONE value carrying `tabIndex={0}` in the tablist. Decided ONCE by the
+   *  root (never per trigger): the selected tab when it is enabled, otherwise
+   *  `firstEnabledValue`. `undefined` only when every tab is disabled. */
+  tabStopValue?: string;
   /** Ordered `<Tabs.Trigger>` model, aligned with the DOM order of the tabs —
    *  consumed by the shared roving math (`utils/menu.ts`). */
   tabs: TabsRovingItem[];

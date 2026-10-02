@@ -45,6 +45,41 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Same cache and key as `ci.yml`: the four gate commands below are all
+      # `turbo run`, so without it every push to `main` re-does the work a PR on
+      # the same commit already did — on the job that publishes.
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      # Quality gate (RRU-112). `ci.yml` only runs on `pull_request`, so before
+      # this step the only automated check on the way to npm was `changesets/
+      # action` itself — the job that publishes is not the job that verifies.
+      # `changesets/action` is deliberately LAST: it is the only step that both
+      # writes a commit and talks to the registry, so every gate below runs
+      # first and a red build never reaches `npm publish`.
+      #
+      # The four commands mirror `ci.yml`'s quality gate in the same order, so a
+      # PR that is green is not re-litigated with different rules on the way
+      # out. `pnpm release` below already runs `turbo run build --force`, and a
+      # separate `pnpm build` here would only duplicate it; `ci.yml` covers the
+      # build for every PR.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
       - name: Create Release PR or Publish to npm
         uses: changesets/action@v1
         with:

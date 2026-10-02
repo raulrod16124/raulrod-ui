@@ -30,6 +30,15 @@ export const semantic = {
   // Invalid/danger border (RRU-043): red-600 clears AA ≥3:1 against surface in
   // both themes (4.54 light / 3.23 dark — verified by check-contrast.mjs).
   "color.border.danger": { light: primitives["red-600"], dark: primitives["red-600"] },
+  // Primary ramp as a CONTROL BOUNDARY (RRU-128): a checked Checkbox/Radio/Switch
+  // and a primary Button on hover draw their edge with this, not with the fill.
+  // The steps differ from `action.primary.background(.hover)` on purpose — that
+  // pair is tuned for white TEXT on the fill, and its dark hover step measures
+  // 2.56:1 / 2.33:1 against the dark page, which is below the 3:1 a boundary
+  // needs (color.md §6.2). Both clear ≥3:1 on default AND surface in both
+  // themes: 5.17:1 / 4.86:1 light and 5.31:1 / 4.83:1 dark at rest.
+  "color.border.primary": { light: primitives["blue-600"], dark: primitives["blue-500"] },
+  "color.border.primary.hover": { light: primitives["blue-700"], dark: primitives["blue-600"] },
   "color.action.primary.background": {
     light: primitives["blue-600"],
     dark: primitives["blue-600"],
@@ -105,6 +114,22 @@ export const semantic = {
   "color.text.destructive": { light: primitives["red-900"], dark: primitives["red-300"] },
   "color.background.destructive": { light: primitives["red-100"], dark: primitives["red-950"] },
   "color.focus.ring": { light: primitives["blue-550"], dark: primitives["blue-500"] },
+  // Link text (RRU-126). It was painted with `action.primary.background`, a
+  // token authorized at 3:1 as a CONTROL BOUNDARY — a different job than text,
+  // which needs 4.5:1 (color.md §6). In dark that measured 3.32:1 at rest and
+  // 2.56:1 on hover (2.33:1 against `background.surface`), so the link text now
+  // has its own intent and its own steps.
+  //
+  // Deliberately NOT in `color.text.*`: that namespace feeds the `ColorText`
+  // union the Text/Heading `color` prop is typed against, and a link is the one
+  // text color the typography components have no use for. Naming it `color.link.*`
+  // keeps the taxonomy honest without widening an unrelated public prop.
+  //
+  // The theme changes the value, not the intent: light walks DOWN the ramp on
+  // hover (blue-600 → blue-700) and dark walks UP (blue-500 → blue-400), because
+  // each hover has to increase separation from the page it sits on.
+  "color.link.text": { light: primitives["blue-600"], dark: primitives["blue-500"] },
+  "color.link.text.hover": { light: primitives["blue-700"], dark: primitives["blue-400"] },
 
   // Typography (RRU-022): theme-agnostic scalars from docs/typography.md §2–§5.
   // font.size.* in px; font.weight.* unitless; font.leading.* unitless;

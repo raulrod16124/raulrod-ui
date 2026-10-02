@@ -152,9 +152,64 @@ describe("Button disabled and loading states", () => {
     const button = screen.getByRole("button", { name: "Save" });
 
     await userEvent.click(button);
-    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard("{enter}");
 
     expect(onClick).toHaveBeenCalledTimes(2);
+  });
+});
+
+// The `rel` default (RRU-102). Observable behavior, not markup trivia: what the
+// consumer sees is what the OPENED document gets — a `window.opener` handle back
+// to this page (reverse tabnabbing) and this page's URL in its `Referer`
+// header. A `target` is the trigger, `rel` is the protection, and forgetting the
+// second one while using the first is the bug this closes.
+describe("Button link rel default", () => {
+  it.each(["_blank", "_parent", "_top", "docs"])(
+    'defaults rel to "noopener noreferrer" for target="%s"',
+    (target) => {
+      render(
+        <Button href="https://example.com" target={target}>
+          Ext
+        </Button>,
+      );
+
+      expect(screen.getByRole("link", { name: "Ext" })).toHaveAttribute(
+        "rel",
+        "noopener noreferrer",
+      );
+    },
+  );
+
+  it("emits no rel without a target (same browsing context, nothing to protect)", () => {
+    expect(renderToStaticMarkup(<Button href="/docs">Docs</Button>)).not.toContain("rel=");
+    expect(
+      renderToStaticMarkup(
+        <Button href="/docs" target="_self">
+          Docs
+        </Button>,
+      ),
+    ).not.toContain("rel=");
+  });
+
+  it("lets an explicit rel win, including the empty value", () => {
+    expect(
+      renderToStaticMarkup(
+        <Button href="https://example.com" target="_blank" rel="external">
+          Ext
+        </Button>,
+      ),
+    ).toContain('rel="external"');
+    expect(
+      renderToStaticMarkup(
+        <Button href="https://example.com" target="_blank" rel="">
+          Ext
+        </Button>,
+      ),
+    ).toContain('rel=""');
+  });
+
+  it("never touches rel on the button render, where there is no navigation", () => {
+    expect(renderToStaticMarkup(<Button>Save</Button>)).not.toContain("rel=");
   });
 });
 
@@ -207,6 +262,29 @@ describe("Button authored CSS contract", () => {
     expect(css).toMatch(
       /\.rr-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--rr-color-focus-ring\)/,
     );
+  });
+
+  it("paints the link variant with link.text, and the secondary edge with border.strong", async () => {
+    // Two pairs that used to be painted with the wrong token, both measured
+    // (RRU-126/127):
+    //
+    //   - `link` was `color.action.primary.background`, a token authorized at 3:1
+    //     as a control boundary. Text needs 4.5:1, and in dark it measured
+    //     3.32:1 at rest / 2.33:1 on hover.
+    //   - `secondary` edged itself with `color.border.default`, which measures
+    //     1.46:1 / 1.38:1 against the page — the outline a `secondary` button is
+    //     identified by was invisible.
+    const css = await readComponentCss("button/Button.css");
+
+    expect(css).toMatch(/\.rr-button--link\s*\{[^}]*color:\s*var\(--rr-color-link-text\)/);
+    expect(css).toMatch(
+      /\.rr-button--link:hover\s*\{[^}]*color:\s*var\(--rr-color-link-text-hover\)/,
+    );
+    expect(css).not.toMatch(/\.rr-button--link[^{]*\{[^}]*color:\s*var\(--rr-color-action-/);
+    expect(css).toMatch(
+      /\.rr-button--secondary\s*\{[^}]*border-color:\s*var\(--rr-color-border-strong\)/,
+    );
+    expect(css).not.toMatch(/border-color:\s*var\(--rr-color-border-default\)/);
   });
 
   it("animates the spinner and honors prefers-reduced-motion", async () => {

@@ -52,7 +52,7 @@ export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps
   const controlledValue = value !== undefined;
   const selectedValue = controlledValue ? value : uncontrolledValue;
 
-  // Render-phase, side-effect free tab model (Select `collectItems` precedent)
+  // Render-phase, side-effect free tab model (Select `findItemLabel` precedent)
   // → the ids/roving wiring never depend on the DOM and the markup is
   // identical on server and client.
   const tabs = collectTabs(children);
@@ -66,6 +66,24 @@ export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps
   });
   const firstEnabledValue = tabs.find((item) => !item.disabled)?.value;
 
+  // RRU-130: the roving tab stop is ONE global decision, made here in the root
+  // from the same model that produced the ids — not one per trigger. Decided
+  // per trigger it needs "am I the selected tab, or is the stop free?", and
+  // those two clauses can be true AT THE SAME TIME for two different triggers:
+  // with `a/b/c` selected on `b`, `b` answers the first clause and `a` answers
+  // the second, so the tablist carried two `tabIndex={0}` and Tab walked
+  // through the tabs one at a time instead of landing on the selected one.
+  //
+  // Two independent reasons can free the stop, and both are properties of the
+  // MODEL, not of the trigger asking: no selection exists yet (a freshly
+  // mounted tablist, APG), or the selected value is disabled (pathological
+  // seeding such as `<Tabs value="archived">` on a disabled trigger — WCAG
+  // forbids parking the stop on a node that can never take focus). So the root
+  // resolves it once, and the triggers only compare.
+  const selectedItem = tabs.find((item) => item.value === selectedValue);
+  const tabStopValue =
+    selectedItem !== undefined && !selectedItem.disabled ? selectedItem.value : firstEnabledValue;
+
   const setValue = (next: string): void => {
     // Guard keeps the contract "onValueChange fires only when the value
     // actually changes" (RadioGroup/Select precedent).
@@ -78,6 +96,7 @@ export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps
   const tabsContext: TabsContextValue = {
     selectedValue,
     firstEnabledValue,
+    tabStopValue,
     tabs,
     idsByValue,
     setValue,
@@ -153,8 +172,10 @@ TabsList.displayName = "TabsList";
 /** `Tabs.Trigger` slot: one `role="tab"` `<button>` with the roving tabindex
  *  and the ARIA wiring forced after the spread. `aria-selected` is emitted
  *  ONLY when a selection exists (a freshly-mounted tablist with no value has
- *  no selected tab — APG), and the tab stop falls back to the first enabled
- *  tab then. The consumer's onClick is chained after the internal select. */
+ *  no selected tab — APG). The roving stop itself was decided by the root
+ *  (`tabStopValue`), so this slot only compares against it and the tablist
+ *  always has exactly one tab stop (RRU-130). The consumer's onClick is
+ *  chained after the internal select. */
 export const TabsTrigger = forwardRef<HTMLButtonElement, TabsTriggerProps>(function TabsTrigger(
   { className, value, disabled = false, onClick, children, ...props },
   ref,
@@ -163,12 +184,11 @@ export const TabsTrigger = forwardRef<HTMLButtonElement, TabsTriggerProps>(funct
   const entry = tabs.idsByValue.get(value);
   const hasSelection = tabs.selectedValue !== undefined;
   const isSelected = tabs.selectedValue === value;
-  // The roving tab stop is ALWAYS a focusable (enabled) tab: a selected-but-
-  // disabled value (pathological consumer seeding) shows as selected but must
-  // not trap tabindex on a node that can never take focus (WCAG) — the stop
-  // falls back to the first enabled tab.
-  const hasStopOnSelected = isSelected && !disabled;
-  const isTabStop = hasStopOnSelected || (!hasStopOnSelected && tabs.firstEnabledValue === value);
+  // Exactly one tab answers true, by construction: the root resolved the stop
+  // once (RRU-130). Comparing is the whole job here — a trigger cannot talk
+  // itself into a second tab stop, and it does not need to know whether the
+  // selected tab is disabled to know it is not itself the stop.
+  const isTabStop = tabs.tabStopValue === value;
 
   return (
     <button

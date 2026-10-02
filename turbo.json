@@ -2,7 +2,7 @@
   "$schema": "https://turborepo.dev/schema.json",
   "cacheDir": "node_modules/.cache/turbo",
   "globalEnv": ["CI"],
-  "globalDependencies": ["vitest.preset.mts", "tsconfig.base.json"],
+  "globalDependencies": ["vitest.preset.mts", "tsconfig.base.json", "eslint.config.js"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -441,7 +441,14 @@ describe("Table authored CSS contract", () => {
       /\.rr-table\s*\{([^}]*)\}/.exec(await readComponentCss("table/Table.css"))?.[1] ?? "";
 
     expect(wrapper).toMatch(/overflow-x:\s*auto/);
-    expect(wrapper).toMatch(/border:\s*1px solid var\(--rr-color-border-default\)/);
+    // RRU-127: the frame is what separates the table from the page, so it is
+    // drawn with border.strong — `border.default` measured 1.38:1 against a
+    // surface, which is not a boundary at all. The row hairlines below stay on
+    // `border.default`: a 1px separator INSIDE the table is decorative, and
+    // `border-bottom` is not a property the contrast gate reads (it cannot say
+    // which color in `1px solid X` is the boundary when the shorthand is absent).
+    expect(wrapper).toMatch(/border:\s*1px solid var\(--rr-color-border-strong\)/);
+    expect(wrapper).not.toMatch(/border:\s*1px solid var\(--rr-color-border-default\)/);
     expect(wrapper).toMatch(/border-radius:\s*var\(--rr-radius-md\)/);
   });
 

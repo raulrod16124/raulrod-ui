@@ -1,0 +1,10 @@
+/* Consumer CSS, deliberately using tokens and nothing else (ADR-003 override).
+ * This is the documented way to paint an app: the tokens decide the values and
+ * the consumer only says where they apply. */
+.app {
+  background: var(--rr-color-background-default);
+  color: var(--rr-color-text-primary);
+  font-family: var(--rr-font-family-sans);
+  min-height: 100vh;
+  padding: var(--rr-space-8);
+}

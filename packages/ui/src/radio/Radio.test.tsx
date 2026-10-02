@@ -169,6 +169,21 @@ describe("Radio authored CSS contract", () => {
     );
   });
 
+  it("edges the selected state with border.primary, not with the fill (RRU-128)", async () => {
+    // Same split as Checkbox: the fill carries the dot's text, the boundary has
+    // to clear 3:1 against the page in dark, which the fill's hover step does
+    // not. See `color.border.primary` in @raulrod/tokens.
+    const css = await readComponentCss("radio/Radio.css");
+
+    expect(css).toMatch(
+      /\.rr-radio-input:checked\s*\{[^}]*border-color:\s*var\(--rr-color-border-primary\)/,
+    );
+    expect(css).toMatch(
+      /\.rr-radio-input:checked:hover\s*\{[^}]*border-color:\s*var\(--rr-color-border-primary-hover\)/,
+    );
+    expect(css).not.toMatch(/border-color:\s*var\(--rr-color-action-primary-background/);
+  });
+
   it("propagates the group aria-invalid to every option and mutes the disabled label", async () => {
     const css = await readComponentCss("radio/Radio.css");
 

@@ -117,6 +117,52 @@ jobs:
           path: apps/playground/playwright-report/
           retention-days: 7
 
+  # Dependency security gate (RRU-102). Two thresholds, not one, because the
+  # two dependency sets have different consequences and very different sizes:
+  # the PUBLISHED surface is 3 packages carrying ONE third-party runtime
+  # dependency (lucide-react) plus the react/react-dom peers, so a moderate
+  # advisory there is ours to fix; the ~700 devDependencies are tooling (Storybook, Vite, Vitest, Playwright) whose
+  # advisories usually arrive without an upstream fix, and blocking every merge
+  # on them trains the team to ignore the gate. Splitting the thresholds keeps
+  # "moderate and above must be clean where it reaches consumers" true while
+  # staying fixable.
+  #
+  # `--ignore-registry-errors` on both: a registry outage must not turn a green
+  # repo red for something that is not a finding. It cannot mask a real
+  # advisory — that still fails, it only stops registry errors from failing.
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Needed because the published set is resolved per workspace project:
+      # `--prod` audits the importers' production dependencies, which the
+      # lockfile alone does not attribute. `--frozen-lockfile` also makes this
+      # the check that the lockfile a reviewer reads is the one being audited.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit published dependencies (moderate and above)
+        run: pnpm audit --prod --audit-level moderate --ignore-registry-errors
+
+      - name: Audit dev dependencies (high and above)
+        run: pnpm audit --audit-level high --ignore-registry-errors
+
   # Bundle-size regression gate. Runs in parallel with the quality gate because
   # it performs its own tree-shake build; a failure here must not mask lint /
   # typecheck / test failures, and vice versa.

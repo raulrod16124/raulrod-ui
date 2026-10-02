@@ -187,6 +187,33 @@ describe("Checkbox authored CSS contract", () => {
     );
   });
 
+  it("edges the checked state with border.primary, not with the fill it is filled with (RRU-128)", async () => {
+    // The fill and the boundary are different jobs and now different tokens. The
+    // fill is judged against its own text; the boundary is judged against the
+    // page around the control and needs 3:1 in BOTH themes, which the fill's dark
+    // hover step does not have (2.56:1). Asserting the split keeps the two from
+    // being merged again by someone reading them as the same "primary blue".
+    const css = await readComponentCss("checkbox/Checkbox.css");
+
+    for (const state of [
+      /\.rr-checkbox:checked:not\(:indeterminate\)\s*\{/,
+      /\.rr-checkbox:indeterminate\s*\{/,
+    ]) {
+      expect(css, state.source).toMatch(
+        new RegExp(`${state.source}[^}]*border-color:\\s*var\\(--rr-color-border-primary\\)`),
+      );
+    }
+    for (const state of [
+      /\.rr-checkbox:checked:not\(:indeterminate\):hover\s*\{/,
+      /\.rr-checkbox:indeterminate:hover\s*\{/,
+    ]) {
+      expect(css, state.source).toMatch(
+        new RegExp(`${state.source}[^}]*border-color:\\s*var\\(--rr-color-border-primary-hover\\)`),
+      );
+    }
+    expect(css).not.toMatch(/border-color:\s*var\(--rr-color-action-primary-background/);
+  });
+
   it("rings on focus-visible and paints aria-invalid with the danger border", async () => {
     const css = await readComponentCss("checkbox/Checkbox.css");
 

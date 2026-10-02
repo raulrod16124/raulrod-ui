@@ -42,6 +42,11 @@ const buttonClasses = createVariants(buttonModifiers);
  * (component-pattern.mdx §4.1). Styling lives entirely in `Button.css`
  * (`rr-*` classes over CSS custom properties, ADR-003).
  *
+ * On the anchor render, `href`/`target`/`rel` are forwarded to the DOM
+ * verbatim — the library does not sanitize URLs (SECURITY.md §Content and URLs; React
+ * neutralizes `javascript:` at runtime) — with the single exception of a
+ * default `rel` when `target` leaves the current browsing context (RRU-102).
+ *
  * The ref is typed for the primary render (`HTMLButtonElement`) so the common
  * `useRef<HTMLButtonElement>` works without variance friction; the anchor
  * branch carries the single justified cast (typescript.md §6).
@@ -100,6 +105,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 
   if (href !== undefined) {
+    // Any `target` other than `_self` navigates a DIFFERENT browsing context,
+    // and that context then holds a live `window.opener` handle back to this
+    // page (reverse tabnabbing) plus this page's URL in the `Referer` header.
+    // Both protections belong to whoever writes the link, and forgetting
+    // `rel="noopener noreferrer"` on a `target="_blank"` is invisible in review
+    // and harmless until it is not — so the anchor render defaults it. A `rel`
+    // the consumer passes always wins, `rel=""` included: the override stays
+    // explicit (RRU-102).
+    const externalTarget = target !== undefined && target !== "_self";
+
     return (
       <a
         {...props}
@@ -110,7 +125,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         ref={ref as Ref<HTMLAnchorElement>}
         href={href}
         target={target}
-        rel={rel}
+        rel={rel ?? (externalTarget ? "noopener noreferrer" : undefined)}
         aria-busy={loading || undefined}
         aria-disabled={inert || undefined}
         className={classes}

@@ -1,0 +1,343 @@
+/// <reference types="node" />
+// Consumer contract of the playground (RRU-110).
+//
+// The README is the first code a consumer compiles, and until this spec existed
+// NOTHING compiled it: a fenced Markdown block is prose. The repository shipped
+// a README whose example used `Dialog.Trigger asChild` — an API that does not
+// exist and that ADR-004 closed on purpose — while 1 000+ unit tests, 40 E2E
+// specs and a `size-limit` gate were green, because none of them read the README.
+// This spec is the instrument that closes that hole, and it states two facts a
+// consumer app is supposed to prove (§25):
+//
+//   1. EVERY `tsx` snippet the README publishes exists VERBATIM in a source file
+//      of this app, and that file is part of the app's module graph — so the
+//      snippet is compiled by `pnpm typecheck` and rendered in the browser.
+//   2. EVERY entrypoint the three published packages declare in their `exports`
+//      maps is imported by this app. Before the card, two of the five were not:
+//      `@raulrod/tokens` (types) and `@raulrod/icons` (values).
+//
+// Both sets are DERIVED (filesystem walk, package manifests), never written out
+// by hand — the RRU-103 lesson: a hand-maintained list states the same fact twice
+// and drifts in the opposite direction of the thing it mirrors.
+//
+// Anti-vacuity is deliberate, because a gate that cannot fail is not a gate
+// (ADR-005 §5, the RRU-115 lesson):
+//   * the README must actually yield snippets, otherwise "every snippet is
+//     mirrored" passes on zero snippets;
+//   * the snippet must live in a NON-test file, so the spec cannot satisfy itself
+//     by carrying a copy of the text it is supposed to verify;
+//   * a mirror must be imported by the app, so the snippet cannot rot into dead
+//     code that still type-checks;
+//   * a package whose `exports` map is missing or empty fails LOUD instead of
+//     quietly shrinking the set it was supposed to guard.
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { describe, expect, it } from "vitest";
+
+import { INSTALLED_PACKAGES } from "./consumer-contract/install-report.js";
+
+/** `apps/playground/src/` — the module graph a consumer would build. */
+const APP_SRC = fileURLToPath(new URL(".", import.meta.url));
+/** Repo root, three levels up from `apps/playground/src/`. */
+const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+
+/** The packages whose `exports` maps define what a consumer can resolve. */
+const PUBLISHED_PACKAGES = ["packages/ui", "packages/tokens", "packages/icons"];
+
+interface AppSource {
+  /** POSIX-style path relative to `APP_SRC`, e.g. `consumer-contract/section.tsx`. */
+  path: string;
+  text: string;
+}
+
+/**
+ * The install report is excluded from the walk on purpose.
+ *
+ * It is the one module in the app whose text MENTIONS every public specifier
+ * without necessarily importing any of them — it exists to display them. Left
+ * in the set, it would satisfy "does a source import `@raulrod/icons`?" all by
+ * itself, and the honest answer (nobody imports it any more) would turn into a
+ * green test. A panel must never be the evidence for its own claim, so the
+ * exclusion lives here, at the single place sources are derived, instead of
+ * being repeated at each check that could be fooled by it.
+ */
+const REPORT_MODULE = "consumer-contract/install-report.ts";
+
+function readAppSources(): AppSource[] {
+  const sources: AppSource[] = [];
+
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+
+      if (!/\.tsx?$/.test(entry.name) || entry.name.includes(".test.")) {
+        continue;
+      }
+
+      const path = relative(APP_SRC, full).split(sep).join("/");
+
+      if (path === REPORT_MODULE) {
+        continue;
+      }
+
+      sources.push({
+        path,
+        text: readFileSync(full, "utf8"),
+      });
+    }
+  };
+
+  walk(APP_SRC);
+
+  return sources.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/**
+ * `it.each` throws at COLLECTION time on an empty table, which surfaces as a
+ * confusing runner error instead of a failed assertion. When a derivation comes
+ * back empty, this substitutes a row that cannot match anything, so the real
+ * assertion fails with its own message instead of the suite failing to start.
+ */
+function rowsOrSentinel<T>(rows: T[], sentinel: T): T[] {
+  return rows.length > 0 ? rows : [sentinel];
+}
+
+/** Every ```tsx fence of the README, verbatim, in document order. */
+function readReadmeSnippets(): string[] {
+  const readme = readFileSync(join(REPO_ROOT, "README.md"), "utf8");
+  const snippets: string[] = [];
+
+  for (const match of readme.matchAll(/```tsx\n([\s\S]*?)```/g)) {
+    // Trailing newlines are the only normalization: the fence boundary is an
+    // artifact of the Markdown, while the snippet itself must match exactly.
+    snippets.push((match[1] ?? "").trimEnd());
+  }
+
+  return snippets;
+}
+
+/**
+ * Every app source reachable from another app source, as extension-less
+ * app-relative paths.
+ *
+ * An import specifier is written relative to the IMPORTER, so a snippet mirrored
+ * at `consumer-contract/quick-start.tsx` is imported as `./quick-start.js` from
+ * its sibling and as `../consumer-contract/quick-start.js` from `app.tsx`.
+ * Comparing raw specifier strings would therefore miss the very case it should
+ * prove, so the specifiers are resolved against each importer's directory and
+ * compared as paths. Bare (package) specifiers are skipped here: the public
+ * entrypoints are asserted separately, by name.
+ */
+function reachableSourcePaths(sources: AppSource[]): Set<string> {
+  const reachable = new Set<string>();
+
+  for (const source of sources) {
+    const fromDir = dirname(source.path);
+    const specifiers = [...source.text.matchAll(/(?:from|import)\s+"(\.[^"]+)"/g)].map(
+      (match) => match[1] ?? "",
+    );
+
+    for (const specifier of specifiers) {
+      reachable.add(join(fromDir, specifier).split(sep).join("/").replace(/\.js$/, ""));
+    }
+  }
+
+  return reachable;
+}
+
+function publicEntrypoints(): string[] {
+  return [...publicEntrypointOwners().keys()];
+}
+
+/**
+ * Every public specifier, mapped to the package that declares it.
+ *
+ * The mapping is what lets the install-report checks catch a MISATTRIBUTED
+ * entrypoint: `"@raulrod/tokens/styles.css"` listed under `@raulrod/ui` is
+ * still a real specifier, so a set comparison would wave it through while the
+ * panel told a consumer the wrong package owns it.
+ */
+function publicEntrypointOwners(): Map<string, string> {
+  const owners = new Map<string, string>();
+
+  for (const packageDir of PUBLISHED_PACKAGES) {
+    const manifest = JSON.parse(
+      readFileSync(join(REPO_ROOT, packageDir, "package.json"), "utf8"),
+    ) as { name?: string; exports?: Record<string, unknown> };
+
+    if (manifest.name === undefined || manifest.exports === undefined) {
+      // Fail LOUD: a manifest that cannot be read would otherwise shrink the
+      // guarded set to nothing and turn this spec into a tautology.
+      throw new Error(`${packageDir}/package.json has no "name"/"exports" to derive the API from`);
+    }
+
+    for (const subpath of Object.keys(manifest.exports)) {
+      // An `exports` KEY is written `./styles.css`; the SPECIFIER a consumer
+      // imports is `@raulrod/ui/styles.css`. Keeping the raw key would guard a
+      // specifier that can never be written, and the check would pass on an app
+      // that imports nothing.
+      owners.set(
+        subpath === "." ? manifest.name : `${manifest.name}/${subpath.replace(/^\.\//, "")}`,
+        manifest.name,
+      );
+    }
+  }
+
+  return owners;
+}
+
+/** The `name` of every package that declares itself publishable. */
+function publishedPackageNames(): string[] {
+  return PUBLISHED_PACKAGES.map((packageDir) => {
+    const manifest = JSON.parse(
+      readFileSync(join(REPO_ROOT, packageDir, "package.json"), "utf8"),
+    ) as { name?: string };
+
+    if (manifest.name === undefined) {
+      throw new Error(`${packageDir}/package.json has no "name" to derive the package set from`);
+    }
+
+    return manifest.name;
+  });
+}
+
+describe("consumer contract (RRU-110)", () => {
+  it("publishes snippets to mirror, so the mirror check cannot pass on an empty set", () => {
+    expect(readReadmeSnippets().length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("derives the public entrypoints from the manifests, so the coverage check cannot pass on an empty set", () => {
+    const entrypoints = publicEntrypoints();
+
+    expect(entrypoints).toContain("@raulrod/ui");
+    expect(entrypoints).toContain("@raulrod/ui/styles.css");
+    expect(entrypoints).toContain("@raulrod/tokens");
+    expect(entrypoints).toContain("@raulrod/tokens/styles.css");
+    expect(entrypoints).toContain("@raulrod/icons");
+  });
+
+  it.each(
+    rowsOrSentinel(
+      readReadmeSnippets().map((snippet, index) => [index + 1, snippet] as const),
+      [0, "no snippet was found in the README"] as const,
+    ),
+  )("README snippet %i exists verbatim in a source file of the app", (_index, snippet) => {
+    const sources = readAppSources();
+    const mirrors = sources.filter((source) => source.text.includes(snippet));
+
+    expect(
+      mirrors.map((source) => source.path),
+      "the README snippet is not mirrored verbatim in apps/playground/src (a consumer compiling it would get errors the repo never saw)",
+    ).not.toHaveLength(0);
+
+    const reachable = reachableSourcePaths(sources);
+
+    for (const mirror of mirrors) {
+      // Compiling is necessary but not enough: an unimported file still passes
+      // `tsc`. The snippet has to belong to the app the E2E suite drives.
+      const modulePath = mirror.path.replace(/\.tsx?$/, "");
+
+      expect(
+        reachable.has(modulePath),
+        `${mirror.path} mirrors a README snippet but no app source imports it, so it is dead code that merely type-checks`,
+      ).toBe(true);
+    }
+  });
+
+  it.each(
+    rowsOrSentinel(
+      publicEntrypoints().map((entrypoint) => [entrypoint] as const),
+      [" no public entrypoint was derived"] as const,
+    ),
+  )("consumes the public entrypoint %s", (entrypoint) => {
+    const sources = readAppSources();
+    const consumers = sources.filter((source) => source.text.includes(`"${entrypoint}"`));
+
+    expect(
+      consumers.map((source) => source.path),
+      `no app source imports "${entrypoint}": a published entrypoint nobody consumes is an entrypoint whose breakage no gate would catch`,
+    ).not.toHaveLength(0);
+  });
+});
+
+// The install report (`consumer-contract/install-report.ts`) is the one place in
+// the app that makes a CLAIM about the packages instead of using them, and a
+// consumer reads it off the screen. Three ways for it to rot, one test each:
+// a package that stops shipping and stays on screen, a specifier that no
+// manifest declares, and a specifier the app no longer imports.
+describe("install report (RRU-110)", () => {
+  it("covers exactly the packages that declare themselves publishable", () => {
+    expect([...INSTALLED_PACKAGES].map((pkg) => pkg.name).sort()).toEqual(
+      publishedPackageNames().sort(),
+    );
+  });
+
+  it("advertises only specifiers their own package declares, and no invented one", () => {
+    const owners = publicEntrypointOwners();
+    const problems: string[] = [];
+
+    for (const pkg of INSTALLED_PACKAGES) {
+      for (const specifier of pkg.entrypoints) {
+        const owner = owners.get(specifier);
+
+        if (owner === undefined) {
+          problems.push(
+            `"${specifier}" (under ${pkg.name}) is not declared in any \`exports\` map`,
+          );
+        } else if (owner !== pkg.name) {
+          problems.push(
+            `"${specifier}" is declared by ${owner}, but the report files it under ${pkg.name}`,
+          );
+        }
+      }
+    }
+
+    expect(problems).toEqual([]);
+  });
+
+  it("advertises only specifiers the app actually imports", () => {
+    const sources = readAppSources();
+    const problems = INSTALLED_PACKAGES.flatMap((pkg) =>
+      pkg.entrypoints
+        .filter((specifier) => !sources.some((source) => source.text.includes(`"${specifier}"`)))
+        .map(
+          (specifier) =>
+            `"${specifier}" is on screen but no app source imports it: the panel would be advertising an entrypoint this app does not consume`,
+        ),
+    );
+
+    expect(problems).toEqual([]);
+  });
+
+  it("is rendered by the app, so the panel cannot rot behind a passing test file", () => {
+    // The three checks above only read `INSTALLED_PACKAGES`: the module could sit
+    // unreferenced and every one of them would still be green while DoD #1
+    // ("installed as a package, visible") showed nothing on the page. That is
+    // not hypothetical — a stray `git checkout` during this very task dropped
+    // the UI while this file kept passing, which is what makes it worth a gate.
+    const reachable = reachableSourcePaths(readAppSources());
+
+    expect(
+      reachable.has("consumer-contract/install-report"),
+      `${REPORT_MODULE} is not imported by any app source, so the install report is dead data: tests would read it while a consumer opening the app would not see it`,
+    ).toBe(true);
+  });
+
+  it("advertises no version, which changesets rewrites on every release", () => {
+    // `changeset version` owns the manifests' `version`. A copy here would go
+    // stale on the first release and turn this spec into noise people learn to
+    // ignore — which is worse than not asserting anything at all.
+    //
+    // Serialized whole rather than field-by-field: a `version` added to the
+    // interface later must be caught too, and enumerating today's fields would
+    // quietly stop guarding the next one.
+    expect(JSON.stringify(INSTALLED_PACKAGES)).not.toMatch(/\d+\.\d+\.\d+/);
+  });
+});

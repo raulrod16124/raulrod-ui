@@ -8,9 +8,11 @@
     "dev": "vite",
     "build": "vite build",
     "build:tree-shake": "vite build --config vite.tree-shake.config.ts",
+    "build:bundle-baseline": "vite build --config vite.bundle-baseline.config.ts",
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -28,6 +30,7 @@
     "react-dom": "^19.3.0",
     "rollup-plugin-visualizer": "^7.1.1",
     "typescript": "^7.0.2",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "vitest": "^5.0.1"
   }
 }

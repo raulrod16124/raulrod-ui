@@ -2,6 +2,22 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Since pnpm 11 the `pnpm` field of package.json is ignored: every setting,
+# including this one, lives here (a `pnpm.overrides` block in package.json is
+# silently a no-op, not an error — verified in RRU-102).
+overrides:
+  # GHSA-w5hq-g745-h8pq (moderate): uuid <11.1.1 misses a bounds check in
+  # v3/v5/v6 when the caller passes a buffer. Reached here through
+  # @storybook/addon-actions@8.6.18 (uuid ^9.0.0), which pins the last 8.x
+  # release — there is no upstream fix to wait for.
+  #
+  # ^11.1.1 is the ONLY safe target: uuid 12+ dropped the `node.require`
+  # condition from its `exports`, and addon-actions is CJS (`require('uuid')`).
+  # Not exploitable meanwhile — addon-actions only calls `uuid.v4()` with no
+  # buffer, and the advisory needs a caller-provided one — so this is risk
+  # removal, not a workaround. See docs/security.md (RRU-102).
+  uuid: ^11.1.1
+
 allowBuilds:
   # esbuild ships its platform binary in a postinstall script; Vite (the
   # playground app, RRU-069) cannot run without it.

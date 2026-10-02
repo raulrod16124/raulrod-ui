@@ -12,6 +12,12 @@ import {
 
 function render(html: string): HTMLElement {
   const host = document.createElement("div");
+  // The ONLY dangerous-API disable in the repo (RRU-102). This fixture needs
+  // markup, and a test file is never published: `tsconfig.build.json` excludes
+  // `*.test.*`, `*.stories.*` and `test-support/` from the emitted `dist`, so
+  // nothing here can reach a consumer. Production sources carry no disable —
+  // build the DOM node-by-node instead if this fixture ever needs to grow.
+  // eslint-disable-next-line no-restricted-syntax -- test fixture, not shipped
   host.innerHTML = html;
   document.body.appendChild(host);
   return host;

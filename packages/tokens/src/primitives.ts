@@ -22,6 +22,11 @@ export const primitives = {
   "gray-900": "#2b323b",
   "gray-925": "#1f242b",
   "gray-950": "#171c22",
+  // blue-400 (RRU-126): the lighter step of the primary ramp, needed because the
+  // dark theme's link hover has to move AWAY from blue-500 and blue-500 is
+  // already the resting link color there. A dark-theme hover that darkens the
+  // link walks it into the page, so the ramp gained its first lighter step.
+  "blue-400": "#60a5fa",
   "blue-500": "#4c8cff",
   "blue-550": "#155dfc",
   "blue-600": "#2563eb",

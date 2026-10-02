@@ -123,12 +123,12 @@
 
 .rr-switch-input:checked {
   background-color: var(--rr-color-action-primary-background);
-  border-color: var(--rr-color-action-primary-background);
+  border-color: var(--rr-color-border-primary);
 }
 
 .rr-switch-input:checked:hover {
   background-color: var(--rr-color-action-primary-background-hover);
-  border-color: var(--rr-color-action-primary-background-hover);
+  border-color: var(--rr-color-border-primary-hover);
 }
 
 .rr-switch-input:checked::after {
