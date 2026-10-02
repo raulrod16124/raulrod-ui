@@ -95,7 +95,7 @@
 .rr-icon-button--secondary {
   background: var(--rr-color-action-secondary-background);
   color: var(--rr-color-action-secondary-text);
-  border-color: var(--rr-color-border-default);
+  border-color: var(--rr-color-border-strong);
 }
 
 .rr-icon-button--secondary:hover {
@@ -142,11 +142,11 @@
 .rr-icon-button--link {
   background: transparent;
   border-color: transparent;
-  color: var(--rr-color-action-primary-background);
+  color: var(--rr-color-link-text);
 }
 
 .rr-icon-button--link:hover {
-  color: var(--rr-color-action-primary-background-hover);
+  color: var(--rr-color-link-text-hover);
 }
 
 /* --- Disabled: LAST so it wins over every `:hover` above (same specificity,

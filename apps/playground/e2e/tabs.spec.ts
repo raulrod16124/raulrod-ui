@@ -96,4 +96,34 @@ test.describe("tabs", () => {
     expect(focus?.text).toContain("Read the guide");
     expect(focus?.text).not.toContain("This panel contains text only");
   });
+
+  // RRU-130. The component specs count the stops; this is the same promise as a
+  // keyboard user meets it — ARROW moves the selection, and the NEXT Tab into the
+  // tablist has to arrive on the selected tab. It arrived on "Overview" instead,
+  // because the roving stop was decided per trigger and the first enabled tab
+  // always qualified as the free one.
+  test("entering the tablist lands on the SELECTED tab, and it is the only stop", async ({
+    page,
+  }) => {
+    await tab(page, "Overview").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(tab(page, "Usage")).toHaveAttribute("aria-selected", "true");
+
+    // Counted in the browser rather than through the locator API: "exactly one"
+    // is a statement about the whole tablist, and asserting one tab's attribute
+    // is what let the second stop through in the first place.
+    const stops = await tablist(page)
+      .locator('[role="tab"][tabindex="0"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim()));
+    expect(stops).toEqual(["Usage"]);
+
+    // Tabbing backwards out of the panel walks back into the tablist: this is the
+    // Tab that lands on the stop, and it must be the selected one.
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    const focus = await activeElement(page);
+
+    expect(focus?.role).toBe("tab");
+    expect(focus?.text).toBe("Usage");
+  });
 });

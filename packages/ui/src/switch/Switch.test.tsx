@@ -193,6 +193,21 @@ describe("Switch authored CSS contract", () => {
     expect(base).not.toContain("border-default");
   });
 
+  it("edges the checked track with border.primary, not with the fill (RRU-128)", async () => {
+    // The checked track is both a fill and a boundary, and it needs different
+    // tokens for each: the fill is read against the knob's white, the boundary
+    // against the page — and in dark the fill's hover step falls to 2.56:1.
+    const css = await readComponentCss("switch/Switch.css");
+
+    expect(css).toMatch(
+      /\.rr-switch-input:checked\s*\{[^}]*border-color:\s*var\(--rr-color-border-primary\)/,
+    );
+    expect(css).toMatch(
+      /\.rr-switch-input:checked:hover\s*\{[^}]*border-color:\s*var\(--rr-color-border-primary-hover\)/,
+    );
+    expect(css).not.toMatch(/border-color:\s*var\(--rr-color-action-primary-background/);
+  });
+
   it("derives the knob size and travel from the track tokens", async () => {
     const css = await readComponentCss("switch/Switch.css");
 

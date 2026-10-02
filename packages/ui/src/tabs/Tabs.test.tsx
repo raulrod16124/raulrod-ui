@@ -142,6 +142,64 @@ describe("Tabs ARIA contract (DoD #2, WAI-ARIA Tabs)", () => {
   });
 });
 
+describe("Tabs roving tab stop: exactly ONE, always", () => {
+  // RRU-130. The stop used to be computed per trigger as
+  // `isSelected || !stopTaken && isFirstEnabled`, which is not a partition:
+  // with the selection on `activity`, `activity` satisfied the first clause and
+  // `overview` — the first enabled tab — the second, so BOTH carried
+  // `tabIndex={0}` and Tab walked the tabs one at a time instead of arriving on
+  // the selected one. Asserting the selected tab's index was never enough to
+  // catch it, so these count the stops in the whole tablist.
+  const tabStops = (): HTMLButtonElement[] =>
+    Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"][tabindex="0"]'));
+
+  it("no selection: the first enabled tab is the ONLY stop", () => {
+    render(composedTabs());
+
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-overview"]);
+  });
+
+  it("selection on a NON-first tab: the selected tab is the ONLY stop", () => {
+    render(composedTabs({ defaultValue: "activity" }));
+
+    // The regression itself: `tab-overview` used to be a stop here too.
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-activity"]);
+    expect(trigger("tab-overview").tabIndex).toBe(-1);
+  });
+
+  it("selection on the last tab: still the ONLY stop", () => {
+    render(composedTabs({ defaultValue: "settings" }));
+
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-settings"]);
+  });
+
+  it("selection seeded on a DISABLED tab: the stop moves to the first enabled one, still only one", () => {
+    render(composedTabs({ defaultValue: "disabled" }));
+
+    // Freeing the stop because the selection is disabled is a fact about the
+    // MODEL, known to every trigger — which is exactly why the fallback has to
+    // be decided once, in the root.
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-overview"]);
+    expect(trigger("tab-disabled").tabIndex).toBe(-1);
+  });
+
+  it("a controlled selection keeps exactly one stop across re-renders", () => {
+    const { rerender } = render(composedTabs({ value: "overview" }));
+    expect(tabStops()).toHaveLength(1);
+
+    rerender(composedTabs({ value: "settings" }));
+
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-settings"]);
+  });
+
+  it("selecting by click moves the single stop instead of adding one", async () => {
+    render(composedTabs({ defaultValue: "overview" }));
+    await clickOn("tab-settings");
+
+    expect(tabStops().map((node) => node.dataset.testid)).toEqual(["tab-settings"]);
+  });
+});
+
 describe("Tabs selection: click + clickability", () => {
   it("clicking a tab selects it, shows its panel and fires onValueChange", async () => {
     const onValueChange = vi.fn();

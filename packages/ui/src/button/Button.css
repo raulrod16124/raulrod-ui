@@ -71,7 +71,7 @@
 .rr-button--secondary {
   background: var(--rr-button-secondary-background);
   color: var(--rr-button-secondary-text);
-  border-color: var(--rr-color-border-default);
+  border-color: var(--rr-color-border-strong);
 }
 
 .rr-button--secondary:hover {
@@ -118,13 +118,13 @@
 .rr-button--link {
   background: transparent;
   border-color: transparent;
-  color: var(--rr-color-action-primary-background);
+  color: var(--rr-color-link-text);
   padding: var(--rr-space-0);
   text-decoration: underline;
 }
 
 .rr-button--link:hover {
-  color: var(--rr-color-action-primary-background-hover);
+  color: var(--rr-color-link-text-hover);
 }
 
 /* --- Disabled / aria-disabled: LAST so it wins over every `:hover`

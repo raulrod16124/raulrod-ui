@@ -21,7 +21,10 @@
 
 .rr-table {
   overflow-x: auto;
-  border: 1px solid var(--rr-color-border-default);
+  /* RRU-127: this edge is what separates the table from the page it sits on, so
+     it has to clear 1.4.11's 3:1. `border.default` measured 1.46:1 / 1.38:1 in
+     light and 1.79:1 / 1.63:1 in dark — a frame that was invisible. */
+  border: 1px solid var(--rr-color-border-strong);
   border-radius: var(--rr-radius-md);
 }
 

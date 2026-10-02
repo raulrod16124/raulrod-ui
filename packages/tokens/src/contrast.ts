@@ -119,9 +119,29 @@ export const AUTHORIZED_PAIRS: readonly AuthorizedPair[] = [
   ["color.action.info.text", "color.action.info.background", 4.5, true, true],
   ["color.action.info.text", "color.action.info.background.hover", 4.5, true, true],
   ["color.border.strong", "color.background.default", 3.0, true, true],
+  // A boundary is drawn PAST the border box, so it meets the page on either side
+  // of the component (1.4.11). Only `background.default` was authorized, which
+  // left every control whose boundary is `border.strong` unauthorized on a
+  // surface — the gap RRU-127 closed when it moved the `secondary` variant and
+  // Table onto this token (color.md §6.2 rows: 4.62:1 light / 4.34:1 light
+  // surface, 4.67:1 dark / 4.25:1 dark surface).
+  ["color.border.strong", "color.background.surface", 3.0, true, true],
   ["color.border.danger", "color.background.default", 3.0, true, true],
   ["color.focus.ring", "color.background.default", 3.0, true, true],
   ["color.focus.ring", "color.background.surface", 3.0, true, true],
+  // Primary ramp as a CONTROL BOUNDARY, verified in dark (RRU-128). It used to
+  // be painted with the fill token `action.primary.background(.hover)`, whose
+  // hover step measures 2.56:1 / 2.33:1 against the dark page — below the 3:1 a
+  // boundary needs, so a checked control lost its edge on hover. The boundary
+  // gets its own steps instead of moving the fill: the fill has to keep the
+  // darkening hover that `action.primary.text` reads well against (white on
+  // blue-500 is 3.23:1, so blue-500 could not become the dark hover fill).
+  // color.md §6.2 rows: 5.17:1 / 4.86:1 light, 5.31:1 / 4.83:1 dark; hover
+  // 6.70:1 / 6.31:1 light, 3.32:1 / 3.02:1 dark.
+  ["color.border.primary", "color.background.default", 3.0, true, true],
+  ["color.border.primary", "color.background.surface", 3.0, true, true],
+  ["color.border.primary.hover", "color.background.default", 3.0, true, true],
+  ["color.border.primary.hover", "color.background.surface", 3.0, true, true],
   ["color.action.primary.background", "color.background.default", 3.0, true, false],
   ["color.action.primary.background", "color.background.surface", 3.0, true, false],
   ["color.action.destructive.background", "color.background.default", 3.0, true, false],
