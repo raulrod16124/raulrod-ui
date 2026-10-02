@@ -36,15 +36,47 @@ built output on purpose — see below.
 
 ## What it validates, and which gate proves it
 
-| Validated                                    | Gate                                                                                                                                                                |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Installation: what npm would upload          | `src/published-install.test.ts` — packs each tarball and checks it ships every `exports` target, declares `files`, keeps React a peer, and leaks no test/build file |
-| Public API surface: exports and types        | `src/consumer-contract.test.ts` — every declared entrypoint is imported; every README snippet is mirrored and compiled                                              |
-| What this app installs (visible in the page) | `src/consumer-contract.test.ts` + `src/consumer-contract/install-report.ts`                                                                                         |
-| Theming: system, light, dark, no flash       | `e2e/theme.spec.ts` — three states and their precedence over the OS preference                                                                                      |
-| Overlays, form, table, theme switch          | `e2e/*.spec.ts` — the interactions, not the markup                                                                                                                  |
-| Server rendering                             | `src/ssr-smoke.test.tsx` — renders the app with no DOM globals and twice, for hydration determinism                                                                 |
-| Tree-shaking                                 | `pnpm size-limit`, `pnpm perf:baseline`                                                                                                                             |
+Everything in this table runs against `dist/` resolved by **workspace link**, so it answers
+questions about the packages as built. What a consumer _outside_ the repo receives is a separate
+question, answered by `pnpm verify:external` (see below).
+
+| Validated                                    | Gate                                                                                                                                                                                                                   |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation: what npm would upload          | `src/published-install.test.ts` — packs each tarball and checks it ships every `exports` target, declares `files`, keeps React a peer, and leaks no test/build file                                                    |
+| Installation: the packed artifact's edges    | `src/published-install.test.ts` — the shipped JavaScript imports only declared packages, every range is fetchable, `workspace:` is rewritten rather than pinned by hand, and the emitted theme layer stands on its own |
+| Public API surface: exports and types        | `src/consumer-contract.test.ts` — every declared entrypoint is imported; every README snippet is mirrored and compiled                                                                                                 |
+| What this app installs (visible in the page) | `src/consumer-contract.test.ts` + `src/consumer-contract/install-report.ts`                                                                                                                                            |
+| Theming: system, light, dark, no flash       | `e2e/theme.spec.ts` — three states and their precedence over the OS preference                                                                                                                                         |
+| Overlays, form, table, theme switch          | `e2e/*.spec.ts` — the interactions, not the markup                                                                                                                                                                     |
+| Server rendering                             | `src/ssr-smoke.test.tsx` — renders the app with no DOM globals and twice, for hydration determinism                                                                                                                    |
+| Tree-shaking                                 | `pnpm size-limit`, `pnpm perf:baseline`                                                                                                                                                                                |
+
+## Installation outside this repository
+
+`pnpm verify:external` (`tools/external-install-check.mjs`) covers what the table above cannot. It
+copies `tools/fixtures/external-consumer/` into a temp directory, writes a `package.json` that knows
+nothing about the monorepo, and from there on nothing in this repository participates: `npm`
+installs the packages, the consumer's own `tsc` resolves them in `bundler` and `node16` modes, Node
+ESM renders a component with `renderToString`, Vite builds the page, and Chromium reads the computed
+values of the theme in six states.
+
+The one thing it deliberately checks that nothing else can is **provenance**: `pnpm pack` rewrites
+`workspace:` to a concrete version, and when that version does not match what the consumer asked
+for, npm is free to satisfy the transitive range from the registry instead. The tool then inspects
+the whole `node_modules` tree — nested copies included — and fails rather than reporting a pass for
+a tree that was half downloaded.
+
+Two routes, because they answer different questions:
+
+- `--route=tarball` (default) installs `pnpm pack` output, so it covers work that is not committed
+  yet. This is what belongs in a review.
+- `--route=registry` installs `@raulrod/*@latest`, so it covers what is on npm today. It warns when
+  the published version differs from the one in `packages/`, because a green run here does not mean
+  the working tree was validated.
+
+`--no-browser` skips the Chromium pass; the run then says so instead of claiming a theme was
+checked in a browser. It needs the network and a browser, so it is a release-time check rather than
+a CI gate.
 
 ## What it is not
 

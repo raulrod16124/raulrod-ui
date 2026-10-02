@@ -157,6 +157,29 @@ project would, and it is where the installation itself is tested.
 [`apps/playground/README.md`](apps/playground/README.md) lists what it validates and which gate
 proves it; run it with `pnpm dev:playground`.
 
+The playground resolves `dist/` by workspace link, so it cannot answer what someone outside this
+repository gets. `pnpm verify:external` answers exactly that: it builds a throwaway project in the
+OS temp directory, installs the packages into it with `npm` — the package manager a consumer is
+most likely to use, and the one that rejects what a workspace link accepts — and then typechecks it
+in two resolution modes, renders it under Node ESM, builds it with Vite and reads the theme in
+Chromium.
+
+```bash
+pnpm verify:external                      # both routes
+pnpm verify:external --route=tarball      # what the next release would upload
+pnpm verify:external --route=registry     # what is on npm today
+pnpm verify:external --no-browser         # skip the Chromium pass
+```
+
+The two routes answer different questions. `tarball` packs the working tree, so it covers
+uncommitted work. `registry` installs `@raulrod/*@latest`, so it can be wrong because of a past
+release rather than of the current tree — and when the published version differs from the one in
+`packages/`, the run says so rather than letting a green result imply it validated your checkout.
+
+It needs the network and a browser, so it is a release-time check rather than a CI gate; the part of
+the same question that can be re-checked offline on every commit is
+`apps/playground/src/published-install.test.ts`.
+
 ## License
 
 [MIT](LICENSE)

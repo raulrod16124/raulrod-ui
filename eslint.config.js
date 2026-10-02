@@ -110,6 +110,20 @@ module.exports = [
     },
   },
 
+  // This file is a Node script, but the `page.evaluate` callbacks inside it are
+  // serialised and executed in Chromium. They are browser code that lives in a
+  // Node file, so the browser globals are declared here rather than silenced with
+  // an inline disable on every line.
+  {
+    files: ["tools/external-install-check.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+  },
+
   {
     files: ["**/*.{ts,tsx,mts,cts}"],
     languageOptions: {
