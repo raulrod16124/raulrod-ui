@@ -1,6 +1,6 @@
 {
   "name": "@raulrod/tokens",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Design tokens for RaulRod UI: primitive, semantic and component layers.",
   "license": "MIT",
   "repository": {
