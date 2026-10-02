@@ -1,6 +1,6 @@
 {
   "name": "@raulrod/icons",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Icon set for RaulRod UI: re-export of lucide-react (ADR-007).",
   "license": "MIT",
   "repository": {
