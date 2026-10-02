@@ -29,6 +29,16 @@ Peer dependencies:
 - `react >= 18.2.0`
 - `react-dom >= 18.2.0`
 
+Both ends of that range are exercised, not just declared. `pnpm verify:external:react18` installs
+the packages from a `pnpm pack` tarball into a throwaway project outside the repository and runs the
+consumer's own gates on them — `tsc --noEmit` in `bundler` and `node16`, `renderToString()` under
+Node ESM, a `vite build`, and the six theme states in Chromium. It does so twice: on **18.2.0**,
+the declared floor, and on the newest 18.x. React 19 is covered by the same tool as the default.
+
+So: the range is verified at its lower bound and its upper bound for the same major, and the
+verifier prints the React version it actually got from `node_modules` rather than the range it
+asked npm for.
+
 ## Quick start
 
 Import the system stylesheet once, then use the public API:

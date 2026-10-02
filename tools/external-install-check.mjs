@@ -33,6 +33,25 @@
 //                              tree, so it says which version it installed
 //                              instead of letting a green run imply otherwise.
 //
+// A THIRD AXIS, `--react` (RRU-132). The two routes answer "which packages".
+// `@raulrod/ui` declares `react/react-dom: ">=18.2.0"` as a PEER, and nothing in
+// this repository ever installed anything below `^19.3.0` — the playground, the
+// E2E suite, this fixture and the root devDependencies all did. A peer range is
+// the one promise in a package's manifest that the package itself cannot keep:
+// nothing stops the claim from being published and never once exercised. So the
+// fixture installs a React major the repo does not otherwise use, and every React
+// API the library touches (`createPortal`, `renderToString`, `createRoot`) exists
+// in both majors — the risk was never "does it import", it was whether a hook or a
+// renderer differs underneath.
+//
+// `--react` takes a MAJOR (`18`, `19`) or an EXACT version (`18.2.0`), because
+// the peer says `>=18.2.0` and the newest 18.x is not that floor. Testing only
+// 18.3.1 would leave the bottom of the declared range as unexercised as it was
+// before this flag existed, just further up. Runtime pins what you ask for;
+// `@types/react*` follows the MAJOR, because the types packages version
+// independently and pairing 18's runtime with 19's types would test a combination
+// no consumer can install.
+//
 // The `workspace:` trap is why the tarball route is packed with pnpm and
 // installed with npm. `npm pack` copies `"@raulrod/icons": "workspace:*"` into
 // the tarball, and `npm install` answers `EUNSUPPORTEDPROTOCOL` to that — a fact
@@ -212,16 +231,37 @@ function fail(route, message, hint) {
 }
 
 function printHelp() {
-  log(`Uso: pnpm verify:external [--route <tarball|registry|both>] [--no-browser]
+  log(`Uso: pnpm verify:external [--route <tarball|registry|both>] [--react <major|version>] [--no-browser]
 
-  --route <r>   installs to exercise. Default: both.
-  --no-browser  skips the Chromium pass. The install, types, runtime and build
-                assertions still run; the theme is then only checked as TEXT in
-                the built CSS, which is weaker and says so.`);
+  --route <r>    Which packages to install. Default: both.
+  --react <r>    Which React the consumer installs. Default: 19, the major every
+                 other route in this repo already exercises. A major (18) installs
+                 the newest release of it; an exact version (18.2.0) pins that
+                 one, which is how the DECLARED FLOOR of the ">=18.2.0" peer gets
+                 tested rather than the top of the same major.
+  --no-browser   skips the Chromium pass. The install, types, runtime and build
+                 assertions still run; the theme is then only checked as TEXT in
+                 the built CSS, which is weaker and says so.`);
+}
+
+/**
+ * The React ranges the fixture will ask npm for.
+ *
+ * Returned rather than interpolated so that `@types/react*` cannot drift from the
+ * runtime major: they version independently, so asking for `^18.0.0` types next to
+ * an 18 runtime and `^19.0.0` next to a 19 runtime is the only pairing that
+ * corresponds to something a consumer can actually install.
+ */
+function reactRanges(request) {
+  const isMajor = /^\d+$/.test(request);
+  const major = isMajor ? request : request.split(".")[0];
+  const runtime = isMajor ? `^${major}.0.0` : request;
+
+  return { runtime, "react-dom": runtime, typesMajor: major };
 }
 
 function parseArgs(args) {
-  const options = { route: "both", browser: true };
+  const options = { route: "both", browser: true, react: "19" };
 
   // An index loop, not `for..of`: `--route <valor>` consumes the next argument,
   // and `for..of` would then read that value as a flag of its own.
@@ -230,6 +270,11 @@ function parseArgs(args) {
 
     if (arg === "--no-browser") {
       options.browser = false;
+    } else if (arg === "--react") {
+      index += 1;
+      options.react = args[index];
+    } else if (arg.startsWith("--react=")) {
+      options.react = arg.slice("--react=".length);
     } else if (arg === "--route") {
       index += 1;
       options.route = args[index];
@@ -247,6 +292,17 @@ function parseArgs(args) {
     fail(
       "args",
       `--route "${options.route}" no es válida (tarball | registry | both).`,
+      "Un valor ausente llega aquí también: se avisa del valor, no de la bandera.",
+    );
+  }
+
+  // React versions this script knows how to ASK FOR. Not "versions that exist":
+  // npm is the authority on that, and a range that resolves to nothing fails at
+  // `npm install` with npm's own message, which is clearer than a guess here.
+  if (!/^\d+(\.\d+){0,2}$/.test(options.react)) {
+    fail(
+      "args",
+      `--react "${options.react}" no es válida (18 | 19 | 18.2.0).`,
       "Un valor ausente llega aquí también: se avisa del valor, no de la bandera.",
     );
   }
@@ -329,10 +385,10 @@ async function packInto(destination) {
  * `"type": "module"` because that is what a modern app uses and what the packages
  * declare; React as a direct dependency because that is what a peer means.
  */
-function consumerManifest(route, tarballs) {
+function consumerManifest(route, tarballs, react) {
   const dependencies = {
-    react: "^19.3.0",
-    "react-dom": "^19.3.0",
+    react: react.runtime,
+    "react-dom": react["react-dom"],
   };
 
   for (const { name } of PACKAGES) {
@@ -348,8 +404,8 @@ function consumerManifest(route, tarballs) {
     // The `@types/*` packages are here because every TypeScript React consumer has
     // them: leaving them out would test the fixture instead of the packages.
     devDependencies: {
-      "@types/react": "^19.3.0",
-      "@types/react-dom": "^19.3.0",
+      "@types/react": `^${react.typesMajor}.0.0`,
+      "@types/react-dom": `^${react.typesMajor}.0.0`,
       typescript: "^5.9.3",
       vite: "^7.3.6",
     },
@@ -484,8 +540,39 @@ function reportInstalledVersions(route, installed) {
   }
 }
 
+/**
+ * Which React actually got installed, next to the peer range that asked for it.
+ *
+ * The reason this exists is the same as `reportInstalledVersions`, applied to the
+ * third axis: a green run that merely printed "--react=18" would prove nothing if
+ * npm had resolved something else, and "React 18 works" is exactly the claim
+ * RRU-132 exists to be able to make. So the version comes from
+ * `node_modules/react/package.json` — the file npm wrote — and never from the
+ * range this script asked for.
+ *
+ * The peer range is read from the INSTALLED `@raulrod/ui`, not from `packages/`,
+ * because on the registry route those are two different versions and the manifest
+ * a consumer reads is the published one.
+ */
+function reportReact(dir, react, uiManifestPath) {
+  const installedPath = join(dir, "node_modules", "react", "package.json");
+  const installed = JSON.parse(readFileSync(installedPath, "utf8")).version;
+  const wantedMajor = react.typesMajor;
+
+  if (!installed.startsWith(`${wantedMajor}.`)) {
+    warn(
+      `this run asked for React ${react.runtime} but node_modules/react is ${installed}: the result says ` +
+        "nothing about the major that was requested.",
+    );
+  }
+
+  const peers = JSON.parse(readFileSync(uiManifestPath, "utf8")).peerDependencies ?? {};
+
+  return `React ${installed} (peer declarado: ${peers.react ?? "sin declarar"})`;
+}
+
 /** Installs the packages with npm, on purpose. See the header. */
-async function install(dir, route, tarballs) {
+async function install(dir, route, tarballs, react) {
   try {
     await run(NPM, ["install", "--no-audit", "--no-fund", "--loglevel=warn"], dir);
   } catch (error) {
@@ -507,7 +594,13 @@ async function install(dir, route, tarballs) {
   checkInstallProvenance(dir, route, tarballs);
   reportInstalledVersions(route, installed);
 
-  return installed;
+  const reactSummary = reportReact(
+    dir,
+    react,
+    join(dir, "node_modules", "@raulrod", "ui", "package.json"),
+  );
+
+  return { installed, reactSummary };
 }
 
 /**
@@ -880,8 +973,10 @@ function checkThemeInCss(css) {
 
 /** One whole route: a project outside the repo, installed and exercised. */
 async function runRoute(route, options) {
+  const react = reactRanges(options.react);
+
   log(
-    `\n▸ Ruta ${route}${route === "registry" ? "  (npm install @raulrod/*@latest)" : "  (pnpm pack → npm install)"}`,
+    `\n▸ Ruta ${route}${route === "registry" ? "  (npm install @raulrod/*@latest)" : "  (pnpm pack → npm install)"}  ·  React ${react.runtime}`,
   );
 
   const baseDir = mkdtempSync(join(tmpdir(), `raulrod-external-${route}-`));
@@ -902,14 +997,15 @@ async function runRoute(route, options) {
     cpSync(FIXTURE, dir, { recursive: true });
     writeFileSync(
       join(dir, "package.json"),
-      `${JSON.stringify(consumerManifest(route, tarballs), null, 2)}\n`,
+      `${JSON.stringify(consumerManifest(route, tarballs, react), null, 2)}\n`,
     );
 
     step(
       `npm install (${route === "registry" ? "desde el registro" : "desde los tarballs locales"})`,
     );
-    const versions = await install(dir, route, tarballs);
+    const { installed: versions, reactSummary } = await install(dir, route, tarballs, react);
     ok(`instalado: ${PACKAGES.map(({ name }) => `${name}@${versions[name]}`).join(", ")}`);
+    ok(reactSummary);
 
     step("tsc --noEmit (moduleResolution: bundler y node16)");
     await typecheck(dir, route);
@@ -963,7 +1059,7 @@ async function main() {
   }
 
   log(
-    `\n✓ ${routes.length === 1 ? "Ruta" : "Rutas"} ${routes.join(", ")} verificada${routes.length === 1 ? "" : "s"}.`,
+    `\n✓ ${routes.length === 1 ? "Ruta" : "Rutas"} ${routes.join(", ")} verificada${routes.length === 1 ? "" : "s"} con React ${options.react}.`,
   );
 
   // The summary reports what ran, not what would have run. A run that skipped the
@@ -974,6 +1070,16 @@ async function main() {
     : "instala, tipos en dos resoluciones, runtime en Node, build con bundler y el tema como TEXTO en el CSS";
 
   log(`  ${claims}.\n`);
+
+  // A run on one React major says nothing about another, so the scope line names
+  // the one it covered. Without it, a `--react=18` green and a `--react=19` green
+  // print the same sentence and the reader has to remember which one they ran.
+  if (options.react !== "19") {
+    log(
+      `  Nota: esto cubre React ${options.react} en esta major, no la otra. Para el rango completo del peer\n` +
+        "  hace falta una ejecución por major; se registra en docs/design-system-jira.md.\n",
+    );
+  }
 }
 
 try {
