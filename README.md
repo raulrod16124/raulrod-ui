@@ -186,8 +186,12 @@ uncommitted work. `registry` installs `@raulrod/*@latest`, so it can be wrong be
 release rather than of the current tree — and when the published version differs from the one in
 `packages/`, the run says so rather than letting a green result imply it validated your checkout.
 
-It needs the network and a browser, so it is a release-time check rather than a CI gate; the part of
-the same question that can be re-checked offline on every commit is
+It needs the network, so the CI job runs the `--no-browser` route (`verify:external --route=tarball
+--no-browser`) against a real published tarball on every PR: the theme question is answered as text
+in the built CSS there, which is cheaper than re-installing a browser for it — the `e2e` job already
+covers the real browser. The React 18 pass (`verify:external:react18`) stays manual and
+release-time, because the peer floor is declared `>=18.2.0` and proving one major proves nothing
+about the other. The part of the same question that can be re-checked offline on every commit is
 `apps/playground/src/published-install.test.ts`.
 
 ## License

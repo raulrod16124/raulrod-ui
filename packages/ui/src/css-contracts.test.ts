@@ -161,27 +161,87 @@ const KNOWN_TRANSITION_PROPERTIES = new Set([
 ]);
 
 /**
- * The properties a `transition` value transitions, one per comma item. `none`
- * transitions nothing and `all` is rejected outright, so the answer is a set of
- * real properties or an empty one.
+ * One comma item of a `transition` value: the property it fades, and the
+ * duration as authored (`undefined` when the item names no time, which the
+ * shorthand treats as an initial `0s`).
  */
-function transitionedProperties(value: string): {
-  readonly properties: string[];
+interface TransitionItem {
+  readonly property: string;
+  readonly duration: string | undefined;
+}
+
+/**
+ * The longest a transition may run when it does NOT move anything (RRU-124).
+ *
+ * RRU-072 decided that a `prefers-reduced-motion` guard covers movement and
+ * geometry, not every `transition`: a colour or border fade is an AFFORDANCE —
+ * it is how the component says "this changed" — and it does not drive the
+ * vestibular symptoms the media query exists for. That exemption is only
+ * defensible while the fade is short enough to read as a state change rather
+ * than as motion.
+ *
+ * `motion.duration.fast` (100ms) is that line, and it is the shortest duration
+ * token the DS ships, so the policy reads without a number anyone has to keep
+ * in sync: a non-movement transition may not outlast the fastest thing we have.
+ * Movement keeps `motion.duration.base` because that is a different question —
+ * there the guard decides, not the clock.
+ */
+const PERCEPTIBLE_DURATION_CEILING_MS = 100;
+
+/**
+ * A duration in milliseconds, whether authored as a time or as a token.
+ * `undefined` for anything that is not one — an easing curve, an unresolvable
+ * reference — so the caller can decline to judge instead of guessing.
+ */
+function durationMs(token: string): number | undefined {
+  const authored = /^(\d*\.?\d+)(m?s)$/.exec(token);
+  if (authored !== null) {
+    const value = Number(authored[1]);
+    return authored[2] === "s" ? value * 1000 : value;
+  }
+
+  // Follow one level of indirection into the token layer, the same way
+  // `resolveColor` does for colours: a component token is an atomic alias.
+  const variable = /^var\((--rr-[a-z0-9-]+)\)$/.exec(token)?.[1];
+  if (variable === undefined) return undefined;
+  const entry = SEMANTIC_BY_VAR.get(variable);
+  if (entry === undefined || typeof entry.value !== "string") return undefined;
+  return entry.value === token ? undefined : durationMs(entry.value);
+}
+
+/**
+ * The `transition` value read one comma item at a time. `none` transitions
+ * nothing and `all` is rejected outright, so the answer is a list of real
+ * properties or an empty one.
+ *
+ * ONE parser for both jobs (which properties move, how long they run): a
+ * second reader could agree with a broken one, and then the gate would pass
+ * for the wrong reason.
+ */
+function transitionItems(value: string): {
+  readonly items: readonly TransitionItem[];
   readonly all: boolean;
 } {
-  const properties: string[] = [];
+  const items: TransitionItem[] = [];
   let all = false;
-  for (const item of value.split(",")) {
-    const first = item.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  for (const entry of value.split(",")) {
+    const tokens = entry.trim().split(/\s+/).filter(Boolean);
+    const first = tokens[0]?.toLowerCase() ?? "";
     if (first === "") continue;
     if (first === "none") continue;
     if (first === "all") {
       all = true;
       continue;
     }
-    properties.push(first);
+    items.push({
+      property: first,
+      // The time is whichever remaining token resolves to one; an easing token
+      // like `var(--rr-motion-easing-standard)` does not, so this cannot
+      // mistake the curve for the clock.
+      duration: tokens.slice(1).find((token) => durationMs(token) !== undefined),
+    });
   }
-  return { properties, all };
+  return { items, all };
 }
 
 /** Does this declaration switch the animation off? */
@@ -242,13 +302,14 @@ async function reducedMotionProblems(file: string): Promise<string[]> {
 
     const transition = declaration(rule, "transition");
     if (transition !== undefined) {
-      const { properties, all } = transitionedProperties(transition.value);
+      const { items, all } = transitionItems(transition.value);
       if (all) {
         problems.push(
           `${at(rule, transition.line)}: \`transition: all\` hides what moves — list the properties`,
         );
       }
-      for (const property of properties) {
+      for (const item of items) {
+        const { property } = item;
         if (!KNOWN_TRANSITION_PROPERTIES.has(property)) {
           problems.push(
             `${at(rule, transition.line)}: \`${property}\` is not classified — add it to the policy with its reason`,
@@ -257,6 +318,17 @@ async function reducedMotionProblems(file: string): Promise<string[]> {
           problems.push(
             `${at(rule, transition.line)}: ${property} moves, but no prefers-reduced-motion rule stops it`,
           );
+        } else if (!MOVEMENT_PROPERTIES.has(property) && item.duration !== undefined) {
+          // Only a non-movement fade is bounded by the clock. A movement
+          // transition is a deliberate animation whose length is the design
+          // decision, and its reduced-motion escape removes it outright for
+          // anyone who needs that — lengthening it is not the fix.
+          const ms = durationMs(item.duration);
+          if (ms !== undefined && ms > PERCEPTIBLE_DURATION_CEILING_MS) {
+            problems.push(
+              `${at(rule, transition.line)}: ${property} fades for ${ms}ms, over the ${PERCEPTIBLE_DURATION_CEILING_MS}ms ceiling for anything that does not move — use \`motion.duration.fast\` or drop the transition`,
+            );
+          }
         }
       }
     }
@@ -969,13 +1041,74 @@ describe("the contract is not a no-op (negative probes, ADR-005)", () => {
     await writeFile(
       path,
       `.rr-probe {
-  transition: background-color 200ms ease, transform 200ms ease;
+  transition: background-color var(--rr-motion-duration-fast) ease, transform 200ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rr-probe {
     transition: none;
   }
+}
+`,
+      "utf8",
+    );
+    expect(await reducedMotionProblems(path)).toEqual([]);
+  });
+
+  it("flags a colour or border fade slower than the perceptible ceiling", async () => {
+    // The ceiling is what keeps RRU-072's exemption for fades defensible: no
+    // reduced-motion escape is required for something that does not move, but
+    // only while it is short enough to read as a state change.
+    const path = join(probeDirectory, "slow-fade.css");
+    await writeFile(
+      path,
+      `.rr-probe {
+  transition: border-color 250ms ease, background-color var(--rr-motion-duration-base) ease;
+}
+`,
+      "utf8",
+    );
+    const problems = await reducedMotionProblems(path);
+    expect(problems).toHaveLength(2);
+    expect(problems[0]).toContain("border-color fades for 250ms");
+    expect(problems[0]).toContain("over the 100ms ceiling");
+    expect(problems[1]).toContain("background-color fades for 200ms");
+  });
+
+  it("does not bound movement by the ceiling — its length is the design's call", async () => {
+    // Movement is a deliberate animation with a reduced-motion escape, so the
+    // clock is not what decides it. `Select` and `Progress` ship `transform`
+    // and `width` at `motion.duration.base` and must stay legal; a probe here
+    // would forbid the DS's own two slowest transitions.
+    const path = join(probeDirectory, "movement-is-not-a-fade.css");
+    await writeFile(
+      path,
+      `.rr-probe {
+  transition: transform var(--rr-motion-duration-base) ease, width 300ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-probe {
+    transition: none;
+  }
+}
+`,
+      "utf8",
+    );
+    expect(await reducedMotionProblems(path)).toEqual([]);
+  });
+
+  it("ignores an easing token that looks like a duration", async () => {
+    // `durationMs` walks one level into the token layer to tell a time from a
+    // curve. If it ever mistook `var(--rr-motion-easing-standard)` — which
+    // resolves to `cubic-bezier(...)` — for a clock, every transition in the
+    // DS would read as an unresolvable number and the ceiling would be dead
+    // code that never fires. This probe is what keeps it honest.
+    const path = join(probeDirectory, "easing-is-not-a-duration.css");
+    await writeFile(
+      path,
+      `.rr-probe {
+  transition: background-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
 }
 `,
       "utf8",
