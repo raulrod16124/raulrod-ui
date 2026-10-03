@@ -10,10 +10,11 @@ versioned).
 
 | Version | Supported |
 | ------- | --------- |
-| `0.1.x` | ✅        |
+| `1.0.x` | ✅        |
 
-The library is pre-1.0: fixes ship as patches within `0.1.x`, and anything that
-would change the public API waits for `1.0.0`.
+The library is at `1.0.0`: fixes ship as patches within `1.0.x`, and anything
+that would change or remove the public API ships as a minor or a major, with
+release notes.
 
 ## Reporting a vulnerability
 
@@ -40,6 +41,29 @@ offending line, the spec fails on the published artifact. A component that
 genuinely needs raw HTML is a public-API decision — it needs an ADR and a
 documented, narrowly-typed escape hatch, not a lint exception.
 
+### Informational: the external-install job
+
+One CI job runs `pnpm verify:external --route=tarball --no-browser` on every
+change. It installs the packed packages into a throwaway project outside the
+repository, typechecks them in two resolution modes, renders one under Node ESM
+and builds the page with Vite — the only check that answers "what does a
+consumer outside this repo actually receive".
+
+It is **informational**: it runs with `continue-on-error`, so a red result does
+not block the merge. It needs the network and a clean runner, and it is
+propense to failing for reasons that are not a package bug; a gate that goes
+red on infrastructure is a gate people learn to ignore. Read a failure there as
+a signal to investigate, not as a blocked merge.
+
+Two things stay manual, on purpose:
+
+- **The `--route=registry` check.** It installs `@raulrod/*@latest`, so it
+  measures the last release, not the tree under review — a red run there says
+  nothing about the commit in front of you. It runs before publishing.
+- **The React 18 pass.** `--react` covers one major per run, so React 19 in CI
+  says nothing about the `>=18.2.0` peer floor. `pnpm verify:external:react18`
+  covers it; the playground and its E2E run against React 19.
+
 ## Content and URLs
 
 Components render **content as text or as React nodes**. There is no `html` prop
@@ -59,5 +83,13 @@ browsing context.
 
 Releases are published from `main` by GitHub Actions using the `NPM_TOKEN` secret
 and the automatic `GITHUB_TOKEN`; no credential is stored in the repository and
-no `.npmrc` with a token is committed. `pnpm publish --dry-run` output is
-reviewed as part of the release PR.
+no `.npmrc` with a token is committed. The workflow runs lint, format check,
+typecheck and tests before the publish step, and `ci.yml` only runs on pull
+requests — so those gates are the ones protecting a release, not a redundant
+second opinion. `pnpm publish --dry-run` output is reviewed as part of the
+release PR.
+
+Before a release is published, `pnpm verify:external --route=registry` is run by
+hand against the packages as they exist on npm. It is a release-time check, not
+a per-commit one, for the reason given above: it measures what is published, not
+the tree being reviewed.

@@ -199,3 +199,74 @@ jobs:
 
       - name: Bundle size check
         run: pnpm size-limit
+
+  # "What does someone outside this repository actually receive?" (RRU-131).
+  # `tools/external-install-check.mjs` is the only check that answers it, and
+  # until now it only ran by hand, so a PR could merge with the install broken
+  # and a consumer would be the first to say so. Without a job in ci.yml the
+  # question had no owner.
+  #
+  # `--route=tarball` and NOT `registry`: this job answers "would the next
+  # release be installable", which is a property of the tree under review.
+  # `registry` installs `@latest`, so a failure there is about a past release,
+  # and it would turn every PR red for a commit that cannot fix it. It stays a
+  # release-time check, run by hand before publishing.
+  #
+  # `continue-on-error` for the same reason as the `audit` job above: this route
+  # needs the network (npm installs React, Vite and TypeScript into the
+  # throwaway project) and a clean runner, so it fails for reasons that are not
+  # a package bug. A gate that goes red on infrastructure teaches the repo to
+  # ignore the gate. The honest consequence: this job EXECUTES the check, it does
+  # not PROTECT the merge — `SECURITY.md` must not promise otherwise.
+  external-install:
+    name: External install
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The route starts with `pnpm pack`, which ships `files: ["dist", ...]`, so
+      # the packages must be built first or the tarball is empty and the check
+      # would "pass" against an install with no library in it. Turborepo's cache
+      # is safe here in a way it is not for E2E: a stale `dist` cannot make the
+      # install succeed, it can only make it fail with a missing export.
+      - name: Build
+        run: pnpm build
+
+      # No Chromium pass (`--no-browser`): the `e2e` job already installs and
+      # caches the browser, and the theme check in a real browser is covered
+      # there. Duplicating it would cost minutes per PR to re-answer a question
+      # this route answers as text in the built CSS — and the run says so
+      # instead of claiming a browser verified the theme.
+      #
+      # React 19 only, which is the default: this is the major every other route
+      # in the repo exercises. The declared peer floor (`>=18.2.0`) is checked by
+      # `pnpm verify:external:react18`, which stays manual — one major per run
+      # proves nothing about the other, so the two are separate runs on purpose.
+      - name: External install check
+        run: pnpm verify:external --route=tarball --no-browser

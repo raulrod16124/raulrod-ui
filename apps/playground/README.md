@@ -75,8 +75,32 @@ Two routes, because they answer different questions:
   the working tree was validated.
 
 `--no-browser` skips the Chromium pass; the run then says so instead of claiming a theme was
-checked in a browser. It needs the network and a browser, so it is a release-time check rather than
-a CI gate.
+checked in a browser.
+
+## What runs where
+
+`verify:external` is not one check with one trigger, so this is the honest split:
+
+| Run                                     | When                      | What it covers                                                                                                                                                                                                 |
+| --------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `external-install` job (`ci.yml`)       | every push and PR         | `--route=tarball --no-browser`, React 19: install, types in two resolutions, Node ESM render, Vite build, theme as text in the built CSS. **Informational** — `continue-on-error`, it does not block the merge |
+| `pnpm verify:external:react18`          | by hand, before a release | `--react=18.2.0` and `--react=18`: the declared peer floor and the latest 18.x. One major per run, so this is separate from the job rather than folded into it                                                 |
+| `pnpm verify:external --route=registry` | by hand, before a release | `@raulrod/*@latest` as installed from npm: what a consumer gets today, not the working tree                                                                                                                    |
+
+Two things the job deliberately does **not** do, and why:
+
+- **No Chromium.** The `e2e` job installs and caches the browser and covers the
+  theme in a real one. Duplicating it here would cost minutes per PR to answer
+  the same question twice.
+- **No `--route=registry` on every commit.** That route measures the last
+  release, so a failure there is about a commit that is not in front of you, and
+  it would make every PR red for something it cannot fix.
+
+The job runs with `continue-on-error` because the route needs the network (npm
+installs React, Vite and TypeScript into the throwaway project) and a clean
+runner: it fails for reasons that are not a package bug often enough that a
+blocking gate would be learned to ignore. A red `External install` is a signal
+to look, not a blocked merge — see `SECURITY.md` §Informational.
 
 ## What it is not
 
