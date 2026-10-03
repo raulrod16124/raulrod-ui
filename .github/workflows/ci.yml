@@ -63,6 +63,16 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # DEMO.md is the document a reviewer reads first, and prose is not compiled:
+      # it rots by being almost right — a renamed file, a deleted script, a stale
+      # count. This step re-derives its claims from the tree. Unlike the
+      # `external-install` job it is BLOCKING, and the asymmetry is the point: it
+      # needs no network, no browser and no build output, so there is nothing in it
+      # that can fail for a reason that is not the repository's fault. It runs last
+      # because it is the only step that reads the finished state of the tree.
+      - name: Demo claims
+        run: pnpm check:demo
+
   # Runs in parallel with the quality gate instead of after it: the suite is
   # Chromium-only and cold (~1 min of install), and a failing interaction should
   # not have to wait for a green build job to say so.

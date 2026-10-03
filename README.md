@@ -154,6 +154,9 @@ The detailed report is written to `docs/performance.md` (local, not versioned).
 
 ## Documentation
 
+- **Demo script** — [`DEMO.md`](DEMO.md): a five-minute tour of the repository, what each part
+  demonstrates, what it does not prove, and the fifteen questions this project should be able to
+  answer. Every claim in it is verified against the tree by `pnpm check:demo`.
 - **Storybook** — deployed <a href="https://raulrod16124.github.io/raulrod-ui">here</a>
 - **Security policy** — [`SECURITY.md`](SECURITY.md): how to report a vulnerability, what CI gates, and the URL/content contract.
 - **Architecture Decision Records** — `docs/decisions/`.

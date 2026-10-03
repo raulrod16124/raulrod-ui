@@ -29,12 +29,19 @@ server-side component to attack.
 
 ## What we check on every change
 
-| Gate                                            | What it proves                                                                                                      |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `pnpm audit --prod --audit-level moderate` (CI) | No known moderate-or-worse advisory in what we publish                                                              |
-| `pnpm audit --audit-level high` (CI)            | No known high-or-worse advisory in the dev toolchain                                                                |
-| ESLint ban on dangerous APIs                    | No `dangerouslySetInnerHTML`, `eval`/`Function`, DOM string writes or `javascript:` literals in shipped code        |
-| `security-contracts` spec (`packages/ui`)       | No raw-HTML or unbounded-polymorphism prop in the public types; every rendered URL attribute is a reviewed decision |
+| Gate                                            | What it proves                                                                                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm audit --prod --audit-level moderate` (CI) | No known moderate-or-worse advisory in what we publish                                                                                                    |
+| `pnpm audit --audit-level high` (CI)            | No known high-or-worse advisory in the dev toolchain                                                                                                      |
+| ESLint ban on dangerous APIs                    | No `dangerouslySetInnerHTML`, `eval`/`Function`, DOM string writes or `javascript:` literals in shipped code                                              |
+| `security-contracts` spec (`packages/ui`)       | No raw-HTML or unbounded-polymorphism prop in the public types; every rendered URL attribute is a reviewed decision                                       |
+| `pnpm check:demo` (CI)                          | The public `DEMO.md` still describes this repository: every path it cites, every command it quotes and every count it prints are re-derived from the tree |
+
+The first four rows are security gates; the last one is not, and it earns its place in the same
+table because it answers the same question from a different angle — whether the repository still
+says what it does. It runs in the quality gate and it **blocks**, unlike the informational job
+below: it needs no network, no browser and no build output, so there is nothing in it that can fail
+for a reason that is not this repository's fault.
 
 The ESLint ban and the spec are deliberately redundant: the rule fails at the
 offending line, the spec fails on the published artifact. A component that
