@@ -46,6 +46,17 @@
 // update the number instead of the work, so the document points at the command
 // that produces the figure (`pnpm test`, `pnpm perf:baseline`) and lets the reader
 // run it. That is why the claim table is short.
+//
+// A package's own patch number was the mistake in that category, and it cost a
+// release: the bump to 1.0.1 turned the release PR's own quality gate red. So
+// the rule is sharper than "moves on every commit" — the test is whether the
+// claim can survive the PR that changes the thing it describes. A patch number
+// cannot; the major line, the export count and the React floor can, because none
+// of them moves as a side effect of cutting a release. What is gated instead of
+// the patch number is the coherence of the release itself: `checkReleaseCoherence`
+// requires every published package's `version` to match the newest heading of its
+// own CHANGELOG.md. That is a stronger claim than the number it replaced, and
+// unlike it, it is green on every automated release.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -223,25 +234,121 @@ function publishedPackages() {
   }
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => readJson("packages", entry.name, "package.json"))
+    .map((entry) => ({
+      dir: entry.name,
+      manifest: readJson("packages", entry.name, "package.json"),
+    }))
     .filter(
-      (manifest) =>
+      ({ manifest }) =>
         manifest && manifest.private !== true && /^@raulrod\//.test(manifest.name ?? ""),
     );
 }
 
-function uiVersion() {
+/**
+ * The release *line* of `@raulrod/ui` — `1.0.1` becomes `1.x`.
+ *
+ * WHY NOT THE EXACT VERSION. This derivation used to return `package.json`'s
+ * `version` verbatim and DEMO.md quoted it, which is the one claim in this
+ * document that could never be satisfied by any commit. The release PR that
+ * bumps the number is the very PR whose CI runs this script: `release.yml` runs
+ * the gate, then `changesets/action` opens "chore(root): version packages", and
+ * `ci.yml` runs `check:demo` again against the bumped tree. The old check went
+ * red on 100% of releases touching this package, and it was unfixable in place —
+ * the edit would land in a branch the bot force-pushes, so the next release
+ * re-broke it. A gate that only ever reports "update the number instead of the
+ * work" trains people to merge without reading, which is worse than not
+ * gating the claim at all.
+ *
+ * The line survives every patch and minor. It fails at `2.0.0`, and that is
+ * correct: a 2.0 is a portfolio-worthy event and DEMO.md *should* be rewritten
+ * to say so. The exact patch is one `## <version>` heading away in
+ * `packages/ui/CHANGELOG.md` for any reader who needs it.
+ */
+function uiReleaseLine() {
   const manifest = readJson("packages", "ui", "package.json");
-  return manifest?.version ?? null;
+  const version = manifest?.version;
+  if (typeof version !== "string") return null;
+  const major = version.match(/^(\d+)\.\d+\.\d+/);
+  if (!major) return null;
+  return `${major[1]}.x`;
 }
 
 function reactFloor() {
   const manifest = readJson("packages", "ui", "package.json");
   // `>=18.2.0` → `18.2.0`. The floor is the claim RRU-132 verified at both ends,
-  // so it is the one version string in the repository worth gating.
+  // and it is gateable for the same reason `uiReleaseLine()` is: a range's floor
+  // only moves when the compatibility policy is deliberately widened, which is
+  // an event worth failing a PR over. A package's own patch number is not.
   const range = manifest?.peerDependencies?.react;
   const match = typeof range === "string" && range.match(/(\d+\.\d+\.\d+)/);
   return match ? match[1] : null;
+}
+
+/**
+ * Every published package's `version` must be the newest entry in its own
+ * `CHANGELOG.md`.
+ *
+ * WHY THIS REPLACES THE EXACT VERSION. `changeset version` writes those two
+ * files in the same pass, so the invariant holds on every automated release
+ * without anyone editing a document. What it catches is the failure the old
+ * version claim was blind to: a version hand-edited without a changelog entry, a
+ * changelog written for a release that never happened, or `pnpm version-packages`
+ * half-applied. And unlike the old claim it is *judged by* the release PR
+ * instead of being invalidated *by* it — which is the whole reason the release
+ * pipeline was red.
+ *
+ * PER PACKAGE, NEVER ACROSS PACKAGES. `.changeset/config.json` sets
+ * `updateInternalDependencies: "patch"`, which bumps dependents rather than
+ * dependencies, so a patch to `@raulrod/ui` legitimately leaves `@raulrod/tokens`
+ * and `@raulrod/icons` behind. Asserting the three are in lockstep would fail on
+ * a correct release, which is the fastest way to make a gate be ignored.
+ */
+function checkReleaseCoherence() {
+  const packages = publishedPackages();
+  if (packages === null) return 0;
+  if (packages.length === 0) {
+    fail("No hay paquetes publicados que verificar.");
+    return 0;
+  }
+
+  let coherent = 0;
+  for (const { dir, manifest } of packages) {
+    const version = manifest.version;
+    if (typeof version !== "string") {
+      fail(`${manifest.name} no declara "version".`);
+      continue;
+    }
+    const changelog = join(ROOT, "packages", dir, "CHANGELOG.md");
+    if (!existsSync(changelog)) {
+      fail(
+        `${manifest.name} no tiene CHANGELOG.md.`,
+        "Un paquete publicado sin changelog no es publicable.",
+      );
+      continue;
+    }
+    // changesets prepends, so the first `## <version>` heading is the newest one.
+    const heading = readFileSync(changelog, "utf8").match(
+      /^##\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\s*$/m,
+    );
+    if (!heading) {
+      fail(
+        `packages/${dir}/CHANGELOG.md no tiene ningún heading "## <version>".`,
+        "changesets genera ese encabezado; si falta, el changelog está a medias.",
+      );
+      continue;
+    }
+    if (heading[1] !== version) {
+      fail(
+        `${manifest.name}: package.json dice ${version}, su CHANGELOG dice ${heading[1]}.`,
+        "`changeset version` escribe los dos a la vez. Suelen divergir si alguien edita una versión a mano.",
+      );
+      continue;
+    }
+    coherent += 1;
+  }
+
+  ok(`CHANGELOG y package.json coinciden en ${coherent} paquete(s) publicado(s)`);
+  return coherent;
 }
 
 const CLAIMS = [
@@ -259,9 +366,8 @@ const CLAIMS = [
       countFiles(join(ROOT, "packages", "ui", "src"), (n) => n.endsWith(".stories.tsx")),
   },
   {
-    label: "Story files",
-    derive: () =>
-      countFiles(join(ROOT, "packages", "ui", "src"), (n) => n.endsWith(".stories.tsx")),
+    label: "MDX documentation pages",
+    derive: () => countFiles(join(ROOT, "packages", "ui", "src"), (n) => n.endsWith(".mdx")),
   },
   {
     label: "Components",
@@ -281,8 +387,8 @@ const CLAIMS = [
     derive: () => countCiJobs(),
   },
   {
-    label: "Published version",
-    derive: () => uiVersion(),
+    label: "Published line",
+    derive: () => uiReleaseLine(),
   },
   {
     label: "React peer floor",
@@ -566,6 +672,9 @@ function main() {
   log("▸ Cifras declaradas");
   const claims = checkClaims(markdown);
 
+  log("▸ Coherencia de release");
+  const releases = checkReleaseCoherence();
+
   log("▸ Rutas referenciadas");
   const paths = checkPaths(markdown);
 
@@ -575,7 +684,7 @@ function main() {
   log("▸ URLs externas");
   const urls = checkUrls(markdown);
 
-  const total = claims + paths + commands + urls;
+  const total = claims + releases + paths + commands + urls;
   if (failures.length > 0) {
     process.stderr.write(`\n✗ ${failures.length} afirmación(es) de DEMO.md no se sostienen.\n\n`);
     process.exit(1);
