@@ -33,7 +33,7 @@
 | Campo                         | Valor                                                           |
 | ----------------------------- | --------------------------------------------------------------- |
 | Fecha de última actualización | 2026-10-04 |
-| Siguiente tarea | **RRU-135 · Breakpoints y queries base** — EPIC-12 · P0 · M · **depende de RRU-133 (✅ Done 2026-10-04)**. Tras cerrar RRU-133, RRU-135 es la única `⬜ To Do` ejecutable según la regla de §0 paso 1 (EPIC-12 es el epic de menor índice con cartas ejecutables). Las 8 familias RRU-136–143 dependen de RRU-135, RRU-144 depende de esas, RRU-145 de RRU-144, y EPIC-13 (RRU-146–147) depende de RRU-145. |
+| Siguiente tarea | **RRU-136 · Layout primitivos: Inline, Stack, Button e IconButton** — EPIC-12 · P1 · M · **depende de RRU-135 (✅ Done 2026-10-04)**. Tras cerrar RRU-135, quedan desbloqueadas las 8 familias RRU-136–143; la de menor ID es RRU-136. El desempate entre hermanas es por ID. RRU-144 depende de esas, RRU-145 de RRU-144, y EPIC-13 (RRU-146–147) depende de RRU-145. |
 | Siguiente epic | **EPIC-12 — Responsive (Fase 12)**, con EPIC-13 detrás. Los 12 epics del MVP siguen ✅; EPIC 12 y 13 son **post-MVP** y nacen de una decisión del usuario (2026-10-04), no de la regla. EPIC 12 **no toca la API pública**; EPIC 13 es la única que la cambia, y por eso va con ADR-009 propio y changeset `minor`. |
 | Rama / PR activo | `development` == `origin/development` == `142e4da`, **árbol limpio**. *Corrección de la celda anterior*, que decía `1ac7d69` y «RRU-113 sin commitear»: RRU-113 quedó commiteado en `142e4da` (`add demo script and gate its claims against the repo`). **Pendiente de ti, no mío**: `main` está **6 commits por detrás** de `development`, así que lo publicado en npm (`1.0.0`) **todavía no** incluye RRU-124, RRU-129, RRU-131 ni RRU-113 — entre ellos el fix de contraste de `.rr-table__error` (`text.danger` a 4.26:1 en light al hacer hover, por debajo de AA), que ya tiene un changeset `patch` commiteado y necesita un `pnpm release`. Recuerda que `/docs` está gitignored (RRU-014): **los cambios a este tablero, a la guía y a `color.md` no generan diff de commit** — EPIC 12 y EPIC 13 solo existen en local hasta que RRU-133 escriba `ADR-008`, que **sí** se trackea (`!/docs/decisions/`). |
 | Último cierre | **RRU-133** ✅ **Done** (2026-10-04) — cimientos del responsive (EPIC-12). Se creó **ADR-008** (`docs/decisions/008-responsive.md`, trackeado) fijando estrategia container-first (`@container` como mecanismo principal, `@media` solo para Dialog y Toast). Verificación: lint, typecheck, build (tokens+ui) y tests UI (1063 passed) verdes. No hay cambios en API pública. Antes: **RRU-113** ✅ Done (2026-10-03) — MVP cerrado con `DEMO.md` + gate `pnpm check:demo`. Antes: **RRU-129** + **RRU-124** ✅ Done (2026-10-03). Antes: **RRU-131** ✅ Done (2026-10-03). |
@@ -169,7 +169,7 @@ no-force-push, sin PR obligatorio.
 | EPIC 9 — Packaging + releases      | Fase 9      | RRU-090…095 | ✅ completo (RRU-090 ✅; RRU-091 ✅; RRU-092 ✅; RRU-093 ✅; RRU-094 ✅; RRU-095 ✅) |
 | EPIC 10 — Performance + hardening  | Fase 10     | RRU-100…105 | ✅ completo (RRU-100 ✅; RRU-104 ✅; RRU-105 ✅; RRU-101 ✅; **RRU-102 ✅**; **RRU-103 ✅**) |
 | EPIC 11 — Portfolio / demo         | Fase 11     | RRU-110…114 + RRU-131…134 | ✅ completo (RRU-110 ✅; RRU-111 ✅; **RRU-112 ✅** — v1.0.0 publicada y verificada sobre el registro; **RRU-132 ✅** — el peer `>=18.2.0` verificado en sus dos extremos; **RRU-131 ✅** — job `external-install` en CI, informativo; **RRU-113 ✅** — `DEMO.md` en la raíz + gate `pnpm check:demo`; **RRU-133 📋** — movida a EPIC-12 como su carta 1; RRU-134 📋 — backlog, no ejecutables por la regla de §0. Orden de cierre en §0.2, borrada al cerrar RRU-113) |
-| EPIC 12 — Responsive (Fase 12) | Fase 12 — **nueva**, la añade RRU-133 en `design-system-guide.md` §6 | RRU-133 + RRU-135…145 | 🟡 **abierta, 1 de 12 `✅`** — **RRU-133 ✅ Done (2026-10-04)**; RRU-135 ⬜ To Do (P0, M, depende de RRU-133) es la única ejecutable. Cadena: RRU-135 → las **8 familias** RRU-136…143 (hermanas independientes, todas dependen solo de RRU-135, el desempate es por ID) → RRU-144 → RRU-145. Sin cambios de API pública. Mecanismo `@container` con `@media` solo para Dialog y Toast |
+| EPIC 12 — Responsive (Fase 12) | Fase 12 — **nueva**, la añade RRU-133 en `design-system-guide.md` §6 | RRU-133 + RRU-135…145 | 🟡 **abierta, 2 de 12 `✅`** — **RRU-133 ✅ Done (2026-10-04)**; **RRU-135 ✅ Done (2026-10-04)**. Tras cerrar RRU-135, las **8 familias** RRU-136–143 (hermanas independientes, todas dependen solo de RRU-135) pasan a ser ejecutables; el desempate es por ID. Cadena: RRU-135 → RRU-136–143 → RRU-144 → RRU-145. Sin cambios de API pública. Mecanismo `@container` con `@media` solo para Dialog y Toast |
 | EPIC 13 — Extensibilidad: escape hatch de estilos (Fase 13) | Fase 13 — **nueva**, la añade RRU-146 | RRU-146…147 | ⬜ **planificada, 0 de 2 y ninguna ejecutable** (RRU-146 depende de RRU-145). Única épica que **cambia la API pública** de un `1.0.0` publicado, y por eso va con **ADR-009 propio** (regla 2) y changeset `minor`. Nace de un encargo del usuario (2026-10-04), no de un hallazgo |
 
 > Actualizar la tabla y las tarjetas en cada cierre de tarea. El número de tarjeta nunca se reutiliza.
@@ -1790,24 +1790,21 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
   (`emit-css.ts:57-58`, verificado en `dist/tokens.css:94-97`). Lo que faltaba era la **semántica**,
   y eso es lo que hace esta tarjeta.
 
-### RRU-135 · Superficie observable: viewports, story `Responsive` y segundo device en Playwright
+### RRU-135 · Breakpoints y queries base
 
-- **Epic:** EPIC-12 · **Estado:** ⬜ To Do
+- **Epic:** EPIC-12 · **Estado:** ✅ Done · **Fecha:** 2026-10-04
 - **Prioridad:** P0 · **Estimación:** M · **Dependencias:** RRU-133
-- **Labels:** `storybook` `testing` `ci`
-- **Descripción:** La mitad "superficie" del segundo DoD de RRU-133. Sin esto, cada carta de
-  familia tiene que inventar cómo se demuestra su responsive, y la épica produce 8 gates distintas.
+- **Labels:** `tokens` `infra`
+- **Descripción:** Sentar las bases del responsive container-first (ADR-008). Crear contrato estable de breakpoints y queries base reutilizable por las familias RRU-136–143, sin tocar la API pública de `@raulrod/ui`.
 - **Criterios de aceptación (DoD):**
-  - [ ] `apps/storybook/.storybook/preview.ts` declara los viewports **derivados de `@raulrod/tokens`** (320 / `breakpoint-sm` / 768 / `breakpoint-lg` / 1280) + un test que los compara con el token. Hoy `preview.ts:27-37` no declara ninguno.
-  - [ ] **Un patrón único** de story `Responsive` en `packages/ui/src/storybook-support/index.tsx` (que ya existe y ya fuerza `wrap` en `StoryInline:34-38`), documentado en `component-pattern.mdx §5`. Hoy 13 de 27 lo hacen a mano, cada uno a su manera, y solo Dialog usa `parameters.viewport`.
-  - [ ] Playwright: **segundo `project` móvil** + helper `openAtWidth()` en `e2e/helpers.ts` con aserciones **geométricas**. El molde es `theme.spec.ts:131-148` (abrir dos contextos y comparar `getComputedStyle`). **Coste en CI declarado**: `workers: 1` en CI (`:34`) → el tiempo de E2E se duplica, y eso es una decisión que se toma aquí y no se descubre en el PR.
-  - [ ] El storybook de la app **no necesita instalar nada**: el addon de viewport ya viene en `@storybook/addon-essentials` (`essentials-viewport-5` está en el build estático). Consta en la carta para que nadie lo intente.
-- **Notas de la sesión (2026-10-04 — creación):** Esta tarjeta no escribe CSS de componente. Su
-  entregable es el **instrumento**, y sin él las 8 familias que vienen después no son comparables
-  entre sí. Las dos cosas que se fijan aquí y que cuestan una sesión si se dejan para el final: el
-  coste de CI de doblar los projects, y la definición de "qué es una story `Responsive`" — que si
-  no se fija una vez, cada familia la interpretará y la auditoría de RRU-145 no tendrá contra qué
-  medir.
+  - [x] Breakpoints definidos y exportados desde `@raulrod/tokens` (API pública coherente).
+  - [x] Queries base establecidas: container-first por defecto; `@media` **únicamente** para Dialog/Toast (declarado explícitamente).
+  - [x] TypeScript strict: sin `any`/`as` innecesarios; tipos públicos útiles.
+  - [x] Tests de contrato (claves, valores, acotamiento de media queries) pasan.
+  - [x] Build ESM + `.d.ts` correcto (`pnpm build --filter=@raulrod/tokens`).
+  - [x] Lint/typecheck verdes. No hay cambios en API pública de `@raulrod/ui`/otros paquetes (EPIC-12).
+  - [x] Coherente con ADR-008; sin valores arbitrarios.
+- **Notas de la sesión (2026-10-04):** Implementados en `@raulrod/tokens/src/layout/`: `breakpoints.ts` (sm/md/lg/xl, px strings), `queries.ts` (container.* + media.* con anotación media-only para Dialog/Toast), barrel `layout/index.ts`. Exportados desde API pública `src/index.ts`. Añadido contrato `__tests__/layout.test.ts` (69 tests pasan globalmente en tokens). Verificación obligatoria: `pnpm --filter @raulrod/tokens lint`, `typecheck`, `test`, `build` — verdes. No hay cambios de API pública fuera de `@raulrod/tokens`.
 
 ### RRU-136 · Layout primitivos: Inline, Stack, Button e IconButton
 

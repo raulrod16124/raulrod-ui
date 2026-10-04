@@ -40,6 +40,14 @@ export type {
   TypeScale,
   ZIndex,
 } from "./derived.js";
+export { breakpoints, queries } from "./layout/index.js";
+export type {
+  BreakpointKey,
+  BreakpointValue,
+  ContainerQueries,
+  MediaQueries,
+  Queries,
+} from "./layout/index.js";
 
 export type PrimitiveToken = keyof typeof primitives;
 export type SemanticToken = keyof typeof semantic;
