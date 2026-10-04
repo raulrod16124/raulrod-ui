@@ -32,11 +32,18 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Architecture Decision Records  | 7      |
 | Playwright E2E specs           | 7      |
 | CI jobs                        | 5      |
-| Published version              | 1.0.0  |
+| Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |
 
 Every figure above is derived from the tree by `pnpm check:demo`. Test counts and bundle sizes are
 deliberately absent: they move on every commit, so this document gives you the command instead.
+
+The version is quoted as a line rather than as an exact patch for the same reason. `1.0.1` is the
+heading at the top of `packages/ui/CHANGELOG.md`, and the next patch will replace it — a claim
+that the release PR's own quality gate invalidated every time could only be met by editing this
+document, which is the behaviour the gate exists to prevent. What `pnpm check:demo` does assert
+about the release is that each published package's `version` matches the newest heading of its own
+CHANGELOG, so a release cannot go out half-written.
 
 ## The chain
 
@@ -49,7 +56,7 @@ an application that knows nothing about the monorepo.
 | Design tokens        | `packages/tokens/src`, then the token guide in Storybook                            | `packages/ui/src/css-contracts.test.ts` — contrast and reduced-motion gates                      |
 | Component library    | `apps/playground/src/app.tsx`, or the stories behind each component                 | `pnpm test`, `pnpm test:e2e`                                                                     |
 | Documentation        | `docs/decisions/`, `packages/ui/src/docs/`                                          | `README.md`, and [Storybook](https://raulrod16124.github.io/raulrod-ui) deployed to GitHub Pages |
-| Published package    | the three packages on npm, at 1.0.0                                                 | `tools/external-install-check.mjs`, run by the `external-install` CI job                         |
+| Published package    | the three packages on npm, on the 1.x line                                          | `tools/external-install-check.mjs`, run by the `external-install` CI job                         |
 | Consumer application | `apps/playground`, and the throwaway project in `tools/fixtures/external-consumer/` | `pnpm verify:external`                                                                           |
 
 ### 1. Design tokens
