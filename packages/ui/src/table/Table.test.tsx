@@ -544,6 +544,25 @@ describe("Table authored CSS contract", () => {
     expect(error).toMatch(/text-align:\s*center/);
   });
 
+  it("the error row paints its own surface so the row hover cannot reach it (RRU-129)", async () => {
+    const css = await readComponentCss("table/Table.css");
+    const error = /\.rr-table__error\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+
+    // The error row IS a `.rr-table__row` inside `.rr-table__body`, so the
+    // generic hover paints `background.sunken` behind this text. Owning the
+    // surface is what keeps `text.danger` on an authorized pair.
+    //
+    // This spec — not the contrast gate — is what guards the fill. The gate
+    // stays green without it: a cell with no background of its own is judged
+    // against the page surfaces, where `text.danger` is authorized anyway, so
+    // deleting this declaration silently reinstates 4.26:1 in light. Probed.
+    expect(error).toMatch(/background-color:\s*var\(--rr-color-background-default\)/);
+
+    // A `transparent` fill would satisfy the regex above only by accident: it
+    // paints nothing, so the hover fill would show through exactly as before.
+    expect(error).not.toMatch(/background(?:-color)?:\s*transparent/);
+  });
+
   it("the caption un-centers the browser default", async () => {
     const caption =
       /\.rr-table__caption\s*\{([^}]*)\}/.exec(await readComponentCss("table/Table.css"))?.[1] ??

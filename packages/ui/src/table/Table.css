@@ -17,7 +17,9 @@
    cells stay transparent so the row fill shows through; NOT interactive
    (no cursor/focus — a table row preview is informational).
    Empty state: `.rr-table__empty` is the single full-width row — text.muted
-   over `.rr-table__table` background (authorized muted pair). */
+   over `.rr-table__table` background (authorized muted pair).
+   Error state: `.rr-table__error` paints that same surface itself, so the row
+   hover cannot reach it (RRU-129 — see the rule for the measured ratios). */
 
 .rr-table {
   overflow-x: auto;
@@ -115,9 +117,28 @@
   text-align: center;
 }
 
+/* Error state row (RRU-129): the fill is what makes this pair measurable.
+   This cell is a full-width `TableRow`, so the generic body-row hover reaches
+   it and `text.danger` on `background.sunken` measured 4.26:1 in light —
+   below 4.5:1 for text. The relationship lived in the JSX, not the CSS, so no
+   stylesheet-level gate could derive it and the defect shipped unnoticed.
+   Painting the surface HERE ends the dependence on the ancestor: the pair
+   becomes `text.danger` on `background.default` (4.83:1 light / 6.19:1 dark,
+   color.md §6.1), and because the cell now OWNS its surface the contrast gate
+   judges that real pair instead of assuming the page underneath — which is
+   what let the defect hide. Note the honest limit: the gate still does not
+   FAIL if this fill is deleted, because a cell with no background of its own
+   is judged against the page surfaces, where `text.danger` happens to be
+   authorized anyway. `Table.test.tsx` is what guards the fill.
+   The visible effect is that the error row no longer highlights on hover,
+   which is right: this is a status message, not a data row, and the hover is
+   documented above as a non-interactive preview. The empty row needs no such
+   fill — muted survives the hover fill in both themes (4.81:1 / 5.11:1). */
+
 .rr-table__error {
   padding: var(--rr-space-8);
   color: var(--rr-color-text-danger);
+  background-color: var(--rr-color-background-default);
   text-align: center;
 }
 

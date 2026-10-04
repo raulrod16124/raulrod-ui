@@ -29,6 +29,16 @@ Peer dependencies:
 - `react >= 18.2.0`
 - `react-dom >= 18.2.0`
 
+Both ends of that range are exercised, not just declared. `pnpm verify:external:react18` installs
+the packages from a `pnpm pack` tarball into a throwaway project outside the repository and runs the
+consumer's own gates on them — `tsc --noEmit` in `bundler` and `node16`, `renderToString()` under
+Node ESM, a `vite build`, and the six theme states in Chromium. It does so twice: on **18.2.0**,
+the declared floor, and on the newest 18.x. React 19 is covered by the same tool as the default.
+
+So: the range is verified at its lower bound and its upper bound for the same major, and the
+verifier prints the React version it actually got from `node_modules` rather than the range it
+asked npm for.
+
 ## Quick start
 
 Import the system stylesheet once, then use the public API:
@@ -144,6 +154,9 @@ The detailed report is written to `docs/performance.md` (local, not versioned).
 
 ## Documentation
 
+- **Demo script** — [`DEMO.md`](DEMO.md): a five-minute tour of the repository, what each part
+  demonstrates, what it does not prove, and the fifteen questions this project should be able to
+  answer. Every claim in it is verified against the tree by `pnpm check:demo`.
 - **Storybook** — deployed <a href="https://raulrod16124.github.io/raulrod-ui">here</a>
 - **Security policy** — [`SECURITY.md`](SECURITY.md): how to report a vulnerability, what CI gates, and the URL/content contract.
 - **Architecture Decision Records** — `docs/decisions/`.
@@ -176,8 +189,12 @@ uncommitted work. `registry` installs `@raulrod/*@latest`, so it can be wrong be
 release rather than of the current tree — and when the published version differs from the one in
 `packages/`, the run says so rather than letting a green result imply it validated your checkout.
 
-It needs the network and a browser, so it is a release-time check rather than a CI gate; the part of
-the same question that can be re-checked offline on every commit is
+It needs the network, so the CI job runs the `--no-browser` route (`verify:external --route=tarball
+--no-browser`) against a real published tarball on every PR: the theme question is answered as text
+in the built CSS there, which is cheaper than re-installing a browser for it — the `e2e` job already
+covers the real browser. The React 18 pass (`verify:external:react18`) stays manual and
+release-time, because the peer floor is declared `>=18.2.0` and proving one major proves nothing
+about the other. The part of the same question that can be re-checked offline on every commit is
 `apps/playground/src/published-install.test.ts`.
 
 ## License
