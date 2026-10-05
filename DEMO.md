@@ -30,7 +30,7 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Story files                    | 27     |
 | MDX documentation pages        | 17     |
 | Architecture Decision Records  | 8      |
-| Playwright E2E specs           | 10     |
+| Playwright E2E specs           | 11     |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |
@@ -126,7 +126,7 @@ five minutes.
 | Overlay behaviour     | `apps/playground/src/overlays-section.tsx` — a Select and a Popover opened from inside a Dialog                                         | Covered — `apps/playground/e2e/overlays.spec.ts` and two more overlay specs         |
 | Tables                | same section: `Table` in four states, `DataTable` with sorting, filtering, selection and pagination                                     | Covered — `apps/playground/e2e/data-table.spec.ts`                                  |
 | Forms                 | `apps/playground/src/form-section.tsx` — consumer-owned validation, error slot, success toast                                           | Covered — `apps/playground/e2e/form.spec.ts`                                        |
-| Responsive            | —                                                                                                                                       | **Not covered.** See below.                                                         |
+| Responsive            | Table and DataTable at 320px in `apps/playground/src/a11y-review-section.tsx`                                                           | Covered — `apps/playground/e2e/table-responsive.spec.ts`                            |
 
 Two of these deserve a note rather than a row.
 
@@ -136,19 +136,20 @@ Storybook does the same thing in `apps/storybook/.storybook/preview-head.html`. 
 white on every reload is a bug users read as "this page is slow", and no amount of correct CSS
 compensates for it.
 
-**Responsive is the honest gap.** §35 of the design guide asks that the demo let a reviewer observe
-responsive behaviour, and this repository does not have it. The only `@media` rules in the component
-stylesheets are `prefers-reduced-motion`; there is no width-based breakpoint anywhere in
-`packages/` or `apps/`. What exists today is fluid layout in the playground — wrapping rows, a
-max-width container — which is not the same claim. Verifying it is one command:
+**Responsive is partially covered.** Table and DataTable now react to container width (horizontal
+scroll, density change, sticky header in a bounded scrollport) and are asserted at 320px in
+`apps/playground/e2e/table-responsive.spec.ts`. The rest of the component family — Pagination, Tabs,
+FormField, Input, Textarea, Radio, and a playground-wide responsive section — is still pending the
+EPIC-12 cards RRU-141, RRU-142 and RRU-144. The only width-based `@media` rules in the component
+stylesheets remain Dialog and Toast (viewport geometry); everything else uses `@container`
+(ADR-008). Verifying the current state is one command:
 
 ```bash
-git grep -n "@media" -- "packages/**/*.css" "apps/**/*.css"
+git grep -n "@container\|@media" -- "packages/**/*.css"
 ```
 
-The work is registered as `RRU-133` rather than left as a footnote. Stating the gap costs one row
-in a table; pretending the fluid layout is responsive would have cost the whole document its
-credibility, because it is the one claim here a reviewer could disprove by resizing a window.
+Stating the gap costs one row in a table; pretending the fluid layout is responsive would have cost
+the whole document its credibility.
 
 ## Reproduce any of it
 

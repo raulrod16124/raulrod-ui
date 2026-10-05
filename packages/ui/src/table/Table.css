@@ -23,6 +23,10 @@
 
 .rr-table {
   overflow-x: auto;
+  /* The table wrapper is its own inline-size container so density can react to
+     the space it actually has, not to the viewport. ADR-008 is container-first;
+     Table is the first component in the family that needs it (RRU-140). */
+  container-type: inline-size;
   /* RRU-127: this edge is what separates the table from the page it sits on, so
      it has to clear 1.4.11's 3:1. `border.default` measured 1.46:1 / 1.38:1 in
      light and 1.79:1 / 1.63:1 in dark — a frame that was invisible. */
@@ -87,6 +91,19 @@
 .rr-table--size-sm .rr-table__cell {
   padding: var(--rr-space-1) var(--rr-space-2);
   font-size: var(--rr-font-size-xs);
+}
+
+/* Density reacts to the container width: when the table itself is narrow,
+   drop to the `sm` meter automatically. The explicit `rr-table--size-sm`
+   modifier keeps the same values and is still available for consumers who
+   want small density regardless of width (RRU-140). */
+
+@container (max-width: 640px) {
+  .rr-table__header,
+  .rr-table__cell {
+    padding: var(--rr-space-1) var(--rr-space-2);
+    font-size: var(--rr-font-size-xs);
+  }
 }
 
 /* Alignment axis (layout keywords, no tokens). */

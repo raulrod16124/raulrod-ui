@@ -156,17 +156,17 @@ export const Responsive: Story = {
     columns,
     data: Array.from({ length: 5 }, (_, i) => ({
       id: i + 1,
-      name: i === 0 ? 'Very Long Person Name That Should Wrap Gracefully' : `Person ${i + 1}`,
-      role: i === 2 ? 'Very Long Role Title That May Need Wrapping' : 'Member',
+      name: i === 0 ? "Very Long Person Name That Should Wrap Gracefully" : `Person ${i + 1}`,
+      role: i === 2 ? "Very Long Role Title That May Need Wrapping" : "Member",
       hours: (i + 1) * 10,
     })),
-    caption: 'Team hours',
+    caption: "Team hours",
     filtering: {
-      defaultValue: '',
+      defaultValue: "",
       onChange: () => undefined,
       getValue: (row) => `${row.name} ${row.role}`,
-      label: 'Filter by name or role',
-      placeholder: 'Search users...',
+      label: "Filter by name or role",
+      placeholder: "Search users...",
     },
     pagination: {
       pageSize: 5,
@@ -177,7 +177,7 @@ export const Responsive: Story = {
   },
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };

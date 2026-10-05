@@ -171,7 +171,8 @@ export const Responsive: Story = {
           <Table.Cell>jon.lopez+qa@example.com</Table.Cell>
           <Table.Cell>6b902e73-8c44-46f1-bb80-d90f36af22f0</Table.Cell>
           <Table.Cell>
-            Long unbroken token 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+            Long unbroken token
+            7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
           </Table.Cell>
         </Table.Row>
         <Table.Row>
@@ -180,7 +181,8 @@ export const Responsive: Story = {
           <Table.Cell>mara@example.com</Table.Cell>
           <Table.Cell>9a407058-dbc9-4d41-b9c4-b25d67113e70</Table.Cell>
           <Table.Cell>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua.
           </Table.Cell>
         </Table.Row>
       </Table.Body>
@@ -188,7 +190,7 @@ export const Responsive: Story = {
   ),
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };

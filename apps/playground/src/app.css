@@ -84,3 +84,11 @@ body {
   width: 8rem;
   height: 1rem;
 }
+
+/* Bounded scrollport for the sticky Table demo (RRU-140). The table wrapper owns
+   the horizontal scroll; the consumer bounds the height and adds vertical scroll
+   so the sticky header has a scrollport to stick to. */
+.pg-table-scrollport {
+  max-block-size: calc(3 * var(--rr-space-16));
+  overflow-y: auto;
+}
