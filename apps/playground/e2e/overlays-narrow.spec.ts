@@ -250,3 +250,143 @@ test.describe("floating overlays at a width narrower than their content", () => 
     await expectInsideViewport(page.getByRole("tooltip"), { width: WIDE, height: 900 });
   });
 });
+
+test.describe("the Select listbox matches the field it belongs to", () => {
+  /** Opens the narrow `Select` and returns its trigger and listbox. */
+  async function openNarrowSelect(page: Page): Promise<{
+    trigger: Locator;
+    listbox: Locator;
+  }> {
+    const trigger = page.getByTestId("narrow-select-trigger");
+    await trigger.click();
+    const listbox = page.getByRole("listbox");
+    await expect(listbox).toBeVisible();
+    return { trigger, listbox };
+  }
+
+  test("the listbox is exactly as wide as the trigger, and scrolls instead of spilling", async ({
+    browser,
+  }) => {
+    const page = await openAtViewport(browser, NARROW, NARROW_HEIGHT);
+    const { trigger, listbox } = await openNarrowSelect(page);
+
+    await expectInsideViewport(listbox, { width: NARROW, height: NARROW_HEIGHT });
+
+    // The width claim, measured on both boxes rather than inferred: before the card
+    // this panel opened at the full 320px of screen while the field under it was
+    // 272px wide, so a select looked like it belonged to something else. Comparing
+    // the two BORDER boxes is the whole claim — `left` is shared with the trigger
+    // and `inline-size` is written by the positioner, so the equality below can only
+    // come from both halves of the card together.
+    //
+    // Mutation-checked, both directions. Deleting `matchAnchorWidth: true` from
+    // Select.tsx reddens this and the two tests below (the panel falls back to the
+    // width its content demands, 65px short of the 384px bound at 1280px), and
+    // deleting `box-sizing: border-box` from the panel root reddens them too, by
+    // exactly 8px in BOTH widths — the panel's own 4px padding on each side, which
+    // the clamp stops measuring. The focus-order test stays green under both, as it
+    // should: it is about reaching the options, not sizing them.
+    const triggerWidth = (await boxOf(trigger)).width;
+    const listboxWidth = (await boxOf(listbox)).width;
+    expect(
+      listboxWidth,
+      "the listbox must be exactly as wide as the field it belongs to",
+    ).toBeCloseTo(triggerWidth, 0);
+
+    // The inline axis, and the assertion that needed the third line of the card:
+    // `box-sizing` is not inherited, so `width: 100%` plus `space-3` padding made
+    // every option 24px wider than the box it had to fit in, and the listbox
+    // scrolled SIDEWAYS to reach them — measured at `scrollWidth` 336 against a
+    // `clientWidth` of 312 before the fix. `expectInsideViewport` above stays green
+    // while that happens, because the scrollport absorbs it, which is why the
+    // content has to be measured rather than the box. Deleting the ONE line from
+    // `.rr-select-item` reproduces those numbers exactly — this assertion reports
+    // `24`, not an approximation of it.
+    expect(
+      await overflowPx(listbox),
+      "the listbox must not scroll sideways to reach its options",
+    ).toBe(0);
+
+    // The block axis, for the reason `NARROW_HEIGHT` exists: twelve options are
+    // taller than the `100dvh - 2 * space-4` clamp, so this measures real overflow
+    // and not a coincidence of the viewport.
+    expect(
+      await blockOverflowPx(listbox),
+      "the listbox must genuinely be taller than its clamp",
+    ).toBeGreaterThan(0);
+  });
+
+  test("a long option wraps inside the bound instead of widening the panel", async ({
+    browser,
+  }) => {
+    const page = await openAtViewport(browser, NARROW, NARROW_HEIGHT);
+    const { trigger, listbox } = await openNarrowSelect(page);
+
+    // Relative heights, not a magic number: a one-line option is exactly as tall as
+    // a short one, so if the 40-character label wrapped, it is TALLER than the
+    // options beside it. Measured on the option's own box because the label is a
+    // text node inside it, and compared against the listbox rather than the
+    // viewport so the claim is about wrapping and not about the bound.
+    const long = listbox.getByRole("option", { name: "Annual billing with prorated seat change" });
+    const short = listbox.getByRole("option", { name: "Starter", exact: true });
+    expect((await boxOf(long)).height).toBeGreaterThan((await boxOf(short)).height);
+    expect((await boxOf(long)).width).toBeLessThanOrEqual((await boxOf(listbox)).width);
+
+    // And the panel did not move to accommodate the wrap, which is the failure the
+    // inline-size write prevents.
+    await expectInsideViewport(listbox, { width: NARROW, height: NARROW_HEIGHT });
+    expect((await boxOf(listbox)).width).toBeCloseTo((await boxOf(trigger)).width, 0);
+  });
+
+  test("the clamped listbox scrolls through its own focus order", async ({ browser }) => {
+    const page = await openAtViewport(browser, NARROW, NARROW_HEIGHT);
+    const { listbox } = await openNarrowSelect(page);
+
+    // The keyboard claim, and the reason this panel may scroll: the roving tabindex
+    // lives on the panel and the options are `tabIndex={-1}`, so ArrowDown walks
+    // focus onto options the browser then scrolls into view. The last one is only
+    // reachable this way — no pointer involved, and it is off-screen when it opens.
+    const options = listbox.getByRole("option");
+    await expect(options).toHaveCount(12);
+    let guard = 0;
+    while ((await activeElement(page))?.text !== "Custom" && guard < 40) {
+      await page.keyboard.press("ArrowDown");
+      guard += 1;
+    }
+    const last = listbox.getByRole("option", { name: "Custom", exact: true });
+    await expect(last).toBeFocused();
+    await expect(last).toBeInViewport();
+  });
+
+  test("the Select bound also holds at 1280px", async ({ browser }) => {
+    const page = await openAtViewport(browser, WIDE);
+    const { trigger, listbox } = await openNarrowSelect(page);
+
+    // The other end of the range, and the half a 320px-only test never executes. At
+    // this width the field is 1024px and matching it is WRONG: the listbox takes
+    // the durable 384px term of its `min()` clamp instead, because a listbox twice
+    // as wide as its content looks like a layout bug and — more importantly — every
+    // option becomes a single short line with the chevron stranded far from the
+    // labels it points at. This is why the hook is opt-in and the cap is not.
+    //
+    // This is the assertion that proves the ORDER of the two halves: the positioner
+    // really does write 1024px into the inline style, and the stylesheet's cap is
+    // what brings the panel back to 384. Mutation-checked in both directions —
+    // dropping `matchAnchorWidth: true` lets the panel reach 318.56px (its
+    // content, unrestrained), and dropping the panel's `box-sizing` pushes it to
+    // 392px, 8px past the bound.
+    await expectInsideViewport(listbox, { width: WIDE, height: 900 });
+    expect((await boxOf(listbox)).width).toBeCloseTo(384, 0);
+    expect((await boxOf(listbox)).width).toBeLessThan((await boxOf(trigger)).width);
+
+    // Twelve options at 384px are 488px of content in a viewport with 868px of
+    // room, so the block bound never engages here and this claim is vacuously true
+    // — kept anyway because its absence is the trap this test exists to avoid: at
+    // 320px the same list scrolls 184px, and a "the listbox scrolls" assertion
+    // written only for the narrow width would leave desktop unchecked.
+    expect(
+      await blockOverflowPx(listbox),
+      "a 384px listbox with twelve options must fit without scrolling",
+    ).toBeLessThanOrEqual(1);
+  });
+});

@@ -268,6 +268,12 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(func
     panelRef,
     placement,
     active: select.open,
+    // The listbox is the one overlay whose width is part of its contract: a
+    // dropdown that is not the width of the field it belongs to reads as a
+    // different control (RRU-138). CSS cannot express it — the panel is
+    // `position: fixed`, so it has no containing block to be a percentage of —
+    // which is why this is the single JS line EPIC-12 authorizes.
+    matchAnchorWidth: true,
   });
   useListboxKeyboard({
     listboxRef: panelRef,

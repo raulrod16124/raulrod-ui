@@ -158,6 +158,36 @@ export const LongContent: Story = {
   ),
 };
 
+/**
+ * The 320px case, open on load (RRU-138).
+ *
+ * `defaultOpen` because the defect is only visible once the panel is measured, and
+ * the inline bound is the half that fits in Storybook's 320×568 viewport: the
+ * listbox stops at the trigger's width instead of the full 320px of screen, and
+ * the options wrap rather than scrolling sideways. The BLOCK scrollport needs a
+ * shorter viewport than Storybook offers, so the E2E owns that half — see
+ * `apps/playground/e2e/overlays-narrow.spec.ts`.
+ */
+export const Responsive: Story = {
+  render: () => (
+    <Select>
+      <SelectTrigger>
+        <SelectValue>Pick a plan</SelectValue>
+        <SelectIcon />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="starter">Starter — one seat, monthly</SelectItem>
+        <SelectItem value="team">Team — ten seats, monthly</SelectItem>
+        <SelectItem value="annual">Annual billing with prorated seat change</SelectItem>
+        <SelectItem value="enterprise">Enterprise — unlimited seats, annual</SelectItem>
+      </SelectContent>
+    </Select>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};
+
 export const Keyboard: Story = {
   render: () => <ExampleSelect onValueChange={fn()} />,
   play: async ({ canvasElement }) => {

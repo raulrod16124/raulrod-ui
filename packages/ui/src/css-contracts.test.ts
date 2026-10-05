@@ -1405,14 +1405,23 @@ describe("the responsive contract is not a no-op (negative probes, RRU-136)", ()
 //
 // The bound is the `Toast.css` mold, and this gate pins the three properties that
 // make it load-bearing rather than decorative:
-//   - `max-inline-size` on all three panels, so no panel can be wider than the
+//   - `max-inline-size` on all four panels, so no panel can be wider than the
 //     viewport minus `space-4` on each side;
 //   - `max-block-size` + `overflow: auto` where the panel is keyboard-reachable
-//     through its scrollport (Popover, DropdownMenu);
+//     through its scrollport (Popover, DropdownMenu, and the Select listbox, whose
+//     options own the roving tabindex);
 //   - and, deliberately, the ABSENCE of a scrollport on Tooltip (see below), so a
 //     later change cannot re-add an overflow a keyboard user cannot reach.
+//
+// RRU-138 adds the Select listbox to the family. It needed the bound MORE than the
+// other three, and not only for the width: measured on the E2E before the card,
+// the panel was 312px wide on a 320px viewport — 40px wider than the 272px field
+// it belongs to, with its right edge exactly on the screen edge — and 328px tall
+// against a `max-height` that declared 320px, because without `box-sizing` both
+// clamps measure the content box. The options were 24px wider than the panel's
+// content box for the same reason, which made the listbox scroll SIDEWAYS.
 
-/** The panels RRU-137 bounded, with the class each one renders. */
+/** The panels RRU-137/RRU-138 bounded, with the class each one renders. */
 const BOUNDED_PANELS: readonly {
   readonly selector: string;
   readonly file: string;
@@ -1422,6 +1431,7 @@ const BOUNDED_PANELS: readonly {
   { selector: ".rr-popover-content", file: "popover/Popover.css", scrollable: true },
   { selector: ".rr-dropdown-menu", file: "dropdown-menu/DropdownMenu.css", scrollable: true },
   { selector: ".rr-tooltip", file: "tooltip/Tooltip.css", scrollable: false },
+  { selector: ".rr-select-listbox", file: "select/Select.css", scrollable: true },
 ];
 
 /** The last declaration of `property` in the base rule for `selector`. */
@@ -1456,14 +1466,14 @@ function panelBoundsProblems(path: string, rules: readonly CssRule[]): readonly 
   const boxSizing = panelDeclaration(rules, panel.selector, "box-sizing");
   if (boxSizing?.value !== "border-box") {
     problems.push(
-      `${path}: ${panel.selector} declares box-sizing: ${boxSizing?.value ?? "nothing"}, so its max-* clamps measure the content box and the panel ends up flush with the screen edges. Declare "border-box" on the panel root (RRU-137).`,
+      `${path}: ${panel.selector} declares box-sizing: ${boxSizing?.value ?? "nothing"}, so its max-* clamps measure the content box and the panel ends up flush with the screen edges. Declare "border-box" on the panel root (RRU-137/RRU-138).`,
     );
   }
 
   const inline = panelDeclaration(rules, panel.selector, "max-inline-size");
   if (inline === undefined) {
     problems.push(
-      `${path}: ${panel.selector} has no max-inline-size, so its width is shrink-to-fit against the viewport and a long panel opens wider than the screen (RRU-137).`,
+      `${path}: ${panel.selector} has no max-inline-size, so its width is shrink-to-fit against the viewport and a long panel opens wider than the screen (RRU-137/RRU-138).`,
     );
   } else if (!inline.value.includes("100vw")) {
     // Not "any bound is fine": a `max-inline-size: 100%` would resolve against a
@@ -1480,12 +1490,12 @@ function panelBoundsProblems(path: string, rules: readonly CssRule[]): readonly 
   if (panel.scrollable) {
     if (block === undefined) {
       problems.push(
-        `${path}: ${panel.selector} has no max-block-size, so a panel taller than the screen cannot scroll (RRU-137).`,
+        `${path}: ${panel.selector} has no max-block-size, so a panel taller than the screen cannot scroll (RRU-137/RRU-138).`,
       );
     }
     if (overflow?.value !== "auto") {
       problems.push(
-        `${path}: ${panel.selector} declares overflow: ${overflow?.value ?? "nothing"}, so its max-block-size clips the content instead of scrolling it. A bounded block size needs "auto" (RRU-137).`,
+        `${path}: ${panel.selector} declares overflow: ${overflow?.value ?? "nothing"}, so its max-block-size clips the content instead of scrolling it. A bounded block size needs "auto" (RRU-137/RRU-138).`,
       );
     }
   } else if (overflow?.value === "auto") {
@@ -1517,7 +1527,7 @@ describe("floating overlays: every panel is bounded by the viewport (RRU-137)", 
     }
   });
 
-  it("claims three panels and three panels, no more", () => {
+  it("claims four panels and four panels, no more", () => {
     // The scope floor, so this cannot quietly grow into a repo-wide style rule.
     // Dialog and Toast measure the viewport too, but they are RRU-139's card and
     // they carry their own bounds, and a contract written in two places is a
@@ -1645,6 +1655,191 @@ describe("the overlay bound is not a no-op (negative probes, RRU-137)", () => {
   overflow-wrap: anywhere;
 }
 `,
+      ),
+    ).toEqual([]);
+  });
+});
+
+// --- The listbox's inner declarations (RRU-138) --------------------------------
+//
+// Two declarations of the Select that no other gate in the repo would notice
+// missing, which is why they are written here rather than left to a comment.
+//
+// The card's first criterion is the clear case, and RRU-136 already documented the
+// rule for it: a declaration whose absence has no observable effect in the CURRENT
+// composition is asserted in the authored CSS, because rewriting an E2E to go red
+// on it would mean asserting an internal modifier name. `.rr-select-trigger` is a
+// `<button>` whose value cell declares its own `min-width: 0`, so the trigger
+// already reaches a floor of roughly its own padding today — the floor only
+// appears when a consumer puts raw text straight into the trigger. The card's
+// premise, that the trigger inherits an `<input>`'s ~177px UA floor, is FALSE: the
+// trigger is a button, and measured at 320px the floor is the padding plus the
+// chevron. The declaration is still right, and this is where that decision is
+// pinned.
+//
+// The second is the panel-root `box-sizing` contract applied one level down.
+// `box-sizing` is not inherited, so `panelBoundsProblems` checking the panel root
+// says nothing about `.rr-select-item`, and an item with `width: 100%` plus
+// `space-3` padding is 24px wider than the box it fills. Measured before the card:
+// the listbox scrolled 24px sideways instead of scrolling its options.
+
+/** Select declarations whose absence is invisible everywhere except this file. */
+const SELECT_DECLARATIONS: readonly {
+  readonly selector: string;
+  readonly file: string;
+  readonly property: string;
+  readonly value: string;
+  readonly why: string;
+}[] = [
+  {
+    selector: ".rr-select-trigger",
+    file: "select/Select.css",
+    property: "min-width",
+    value: "0",
+    why: "a flex item is floored at its min-content size, so without this a trigger with raw text children cannot shrink inside a tight row",
+  },
+  {
+    selector: ".rr-select-item",
+    file: "select/Select.css",
+    property: "box-sizing",
+    value: "border-box",
+    why: "`width: 100%` plus `space-3` padding makes every option 24px wider than the panel's content box, so the listbox scrolls sideways",
+  },
+  {
+    selector: ".rr-select-item",
+    file: "select/Select.css",
+    property: "overflow-wrap",
+    value: "anywhere",
+    why: "an option label with no spaces is the RRU-136 long-label case: wrapping is the policy, and truncating an option is not available",
+  },
+];
+
+/**
+ * What `rules` is missing from `entries`, as readable lines.
+ *
+ * `entries` is a parameter because the entries share one stylesheet: without it
+ * every case in the `it.each` below would receive the same file-wide answer and
+ * report three failures for one deleted declaration, which trains people to read
+ * past this gate.
+ */
+function selectDeclarationProblems(
+  path: string,
+  rules: readonly CssRule[],
+  entries: readonly (typeof SELECT_DECLARATIONS)[number][] = SELECT_DECLARATIONS,
+): readonly string[] {
+  return entries
+    .filter((entry) => entry.file === path)
+    .filter(
+      (entry) => panelDeclaration(rules, entry.selector, entry.property)?.value !== entry.value,
+    )
+    .map(
+      (entry) =>
+        `${path}: ${entry.selector} must declare ${entry.property}: ${entry.value}, because ${entry.why} (RRU-138).`,
+    );
+}
+
+describe("the Select's inner declarations (RRU-138)", () => {
+  it.each(SELECT_DECLARATIONS)("$selector declares $property: $value", async (entry) => {
+    expect(selectDeclarationProblems(entry.file, await parseCssRules(entry.file), [entry])).toEqual(
+      [],
+    );
+  });
+
+  it("judges every selector it claims, and each one really exists", async () => {
+    // The coverage proof, so the block above cannot pass by finding nothing.
+    for (const file of new Set(SELECT_DECLARATIONS.map((entry) => entry.file))) {
+      const rules = await parseCssRules(file);
+      for (const entry of SELECT_DECLARATIONS.filter((declared) => declared.file === file)) {
+        expect(
+          rules.some((rule) => rule.keyframes === null && rule.selectors.includes(entry.selector)),
+          `${file} has no rule for ${entry.selector}`,
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe("the Select contract is not a no-op (negative probes, RRU-138)", () => {
+  /**
+   * Writes a probe stylesheet and judges it the way `select/Select.css` is judged.
+   *
+   * Every probe carries the OTHER two declarations in their compliant form, so a
+   * probe can only go red for the one thing it is about — the same discipline as
+   * the RRU-137 tooltip probe, which contrasts the scrollport against the
+   * compliant stylesheet in the same test.
+   */
+  const probe = async (name: string, css: string): Promise<readonly string[]> => {
+    const path = join(probeDirectory, name);
+    await writeFile(path, css, "utf8");
+    return selectDeclarationProblems("select/Select.css", await parseCssRules(path));
+  };
+
+  it("flags a trigger that cannot shrink, and accepts the one that can", async () => {
+    const compliant = `
+.rr-select-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+`;
+    expect(
+      (
+        await probe(
+          "floored-trigger.css",
+          `.rr-select-trigger {
+  display: inline-flex;
+  width: 100%;
+}
+${compliant}`,
+        )
+      ).join("\n"),
+    ).toContain("min-width: 0");
+
+    expect(
+      await probe(
+        "shrinking-trigger.css",
+        `.rr-select-trigger {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+}
+${compliant}`,
+      ),
+    ).toEqual([]);
+  });
+
+  it("flags an option whose padding escapes the panel, and one that wraps", async () => {
+    const compliant = `
+.rr-select-trigger {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+}
+`;
+    const floored = await probe(
+      "padded-option.css",
+      `.rr-select-item {
+  display: flex;
+  width: 100%;
+  padding: var(--rr-space-2) var(--rr-space-3);
+}
+${compliant}`,
+    );
+    expect(floored.join("\n")).toContain("box-sizing: border-box");
+    expect(floored.join("\n")).toContain("overflow-wrap: anywhere");
+
+    expect(
+      await probe(
+        "wrapping-option.css",
+        `.rr-select-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  padding: var(--rr-space-2) var(--rr-space-3);
+}
+${compliant}`,
       ),
     ).toEqual([]);
   });

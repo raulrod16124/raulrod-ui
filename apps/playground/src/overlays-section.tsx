@@ -284,6 +284,10 @@ export function OverlaysSection() {
  * Tooltip is the one that must NOT have a scrollport — it wraps instead, because
  * a scrollport it cannot be focused into is content no keyboard user can reach
  * (see the deviation documented in Tooltip.css).
+ *
+ * RRU-138 adds a fourth: the `Select`, whose panel is bounded like the first two
+ * AND has to be the width of its own trigger, which is the one claim in this
+ * section that CSS alone cannot express.
  */
 function NarrowContentProbe() {
   return (
@@ -338,9 +342,71 @@ function NarrowContentProbe() {
           </Button>
         </Tooltip>
       </Inline>
+
+      <Stack gap="space-2">
+        <Heading as="h4">
+          The listbox is the fourth case, and the only one with a bound of its own
+        </Heading>
+        <Text>
+          A <code>Select</code> panel is <code>position: fixed</code> with no width of its own, so
+          it was shrink-to-fit: one long option opened a panel wider than both the screen and the
+          field it belongs to. It also needs its twelve options, because a listbox is the one
+          bounded panel whose scrollport IS reachable — every option takes the roving tabindex, so{" "}
+          <kbd>ArrowDown</kbd> walks it.
+        </Text>
+        <Select defaultValue="team">
+          <SelectTrigger data-testid="narrow-select-trigger">
+            <SelectValue>Pick a plan…</SelectValue>
+            <SelectIcon />
+          </SelectTrigger>
+          <SelectContent>
+            {NARROW_PLANS.map((plan) => (
+              <SelectItem key={plan.value} value={plan.value}>
+                {plan.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Stack>
     </Stack>
   );
 }
+
+/**
+ * The twelve options the narrow `Select` opens (RRU-138, EPIC-12).
+ *
+ * Two of them are load-bearing and neither is obvious from the markup:
+ *
+ *  - `annual-prorated` is a label of exactly **40 characters** with no unbreakable
+ *    run, which is what the card's DoD names: it is the option whose shrink-to-fit
+ *    width pushed the panel off a 320px screen before the listbox was bounded.
+ *  - the count is **twelve**, because the block claim needs a list that genuinely
+ *    exceeds the clamp. Eleven short options render at ~370px and the clamp at a
+ *    360px-tall viewport is `100dvh - 32px` = 328px, so a shorter list would pass
+ *    every "it scrolls" assertion in `overlays-narrow.spec.ts` in a vacuum. The
+ *    spec re-asserts this with `blockOverflowPx > 0` rather than trusting the
+ *    count.
+ *
+ * `defaultValue="team"` is load-bearing in the same way: with no selection the
+ * listbox opens with focus on the LAST option (the WAI-ARIA "focus the selected
+ * option, or the last one" rule), so an ArrowDown walk would start at the end and
+ * prove nothing. Focusing the second option gives the spec an origin it can walk
+ * *down* out of the scrollport.
+ */
+const NARROW_PLANS = [
+  { value: "starter", label: "Starter" },
+  { value: "team", label: "Team" },
+  { value: "business", label: "Business" },
+  { value: "annual-prorated", label: "Annual billing with prorated seat change" },
+  { value: "enterprise", label: "Enterprise" },
+  { value: "starter-annual", label: "Starter, billed annually" },
+  { value: "team-annual", label: "Team, billed annually" },
+  { value: "business-annual", label: "Business, billed annually" },
+  { value: "enterprise-annual", label: "Enterprise, billed annually" },
+  { value: "payg", label: "Pay as you go" },
+  { value: "unlimited", label: "Annual plan with unlimited seats" },
+  { value: "custom", label: "Custom" },
+] as const;
 
 /**
  * One paragraph of ~500 characters: the width the card's DoD names, and a length

@@ -120,6 +120,44 @@ de viewport.
   `overflow-wrap: anywhere`. Es la desviación documentada de la carta RRU-137, reforzada
   por la gate (que rechaza el scrollport) y no solo por una nota.
 
+## Addendum: el `listbox` de `Select` adopta el ancho de su campo (RRU-138)
+
+El cuarto overlay de la familia necesita una cuarta cosa: no basta con acotarse contra el
+viewport, tiene que **medir lo mismo que el campo al que pertenece**. Es el único cuyo ancla
+no es un botón de acción sino el control que el panel sustituye.
+
+- **`inline-size`, no `min-inline-size`.** `usePopoverPosition` escribe el ancho del ancla
+  como estilo en línea **antes** de medir el panel. La palabra clave importa: el `min-*` de
+  una hoja de authored CSS gana contra el `max-*` del clamp, así que escribir
+  `min-inline-size` habría dejado el panel en 1024px dentro de un viewport de 320 —pegado
+  fuera de la pantalla, y con el scrollport del padre absorbiendo el daño— mientras todas
+  las aserciones de "cabe dentro del viewport" seguían en verde. Con `inline-size` el
+  `max-inline-size` de la hoja sigue mandando sobre el valor en línea, que es exactamente
+  el orden que queremos: el campo manda, el viewport acota.
+- **Es opt-in, y no por descuido.** `Popover`, `DropdownMenu` y `Tooltip` se dimensionan
+  según su contenido (`shrink-to-fit`) y deben seguir así: un popover de 500 caracteres
+  merece 384px aunque su disparador mida 120. Igualar solo el `listbox` deja el resto de la
+  familia intacto, así que la opción (`matchAnchorWidth`) la pide `Select.tsx` y nadie más.
+- **El clamp se queda, y por eso el término durable importa.** A 1280px el campo mide
+  1024px y el panel **no** debe llegar ahí: `min(384px, calc(100vw - 2 * space-4))` resuelve
+  a 384px y esa es la medida final. Sin el tope durable, "igualar al ancla" sería un
+  listbox de 1024px con doce opciones de una línea y el chevron a un kilómetro de las
+  etiquetas que señala. Las dos mitades son necesarias y se necesitan en este orden.
+- **`box-sizing` también en `.rr-select-item`.** No se hereda, así que la declaración de la
+  raíz del panel no cubre a los items: con `width: 100%` y `space-3` de padding cada opción
+  medía 24px más que la caja que debía rellenar, y el listbox desplazaba **en horizontal**
+  para llegar a ellas (`scrollWidth` 336 contra `clientWidth` 312 medido). El eje inline
+  debe ser exacto; el scrollport de esta hoja es trabajo del eje de bloque.
+- **`min-width: 0` en `.rr-select-trigger`.** El disparador es un `<button>` flex, así que
+  su piso natural es `min-content`. La premisa de la carta —que hereda el piso de ~177px de
+  un `<input size=20>`— es **falsa**, y está medido: a 320px el disparador mide 272px, el
+  ancho disponible, y `.rr-select-value` ya declara su propio `min-width: 0`. Aun así la
+  declaración es correcta y se fija en `css-contracts.test.ts`, porque hoy no tiene efecto
+  observable y dentro de seis meses un consumidor con texto crudo dentro del disparador la
+  va a necesitar. Es el mismo criterio que RRU-136 aplicó a los labels largos: lo que no se
+  puede observar hoy se afirma en el CSS escrito, no en un E2E que tendría que adivinar
+  nombres internos de modificadores.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.
