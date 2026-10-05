@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Heading } from "./Heading.js";
 
@@ -74,8 +74,18 @@ export const LongContent: Story = {
 
 export const Responsive: Story = {
   render: () => (
-    <Heading as="h1" style={{ maxWidth: "100%" }}>
-      Responsive heading
-    </Heading>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="long words break instead of overflowing">
+        <Heading as="h1">https://example.com/settings/billing/invoices/2026-10-05/download</Heading>
+      </NarrowContainer>
+      <NarrowContainer label="heading at display size still wraps" width="240px">
+        <Heading as="h2">
+          {["A long heading that must wrap cleanly inside a narrow container without truncation."]}
+        </Heading>
+      </NarrowContainer>
+    </StoryStack>
   ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

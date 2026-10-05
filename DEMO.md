@@ -30,7 +30,7 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Story files                    | 28     |
 | MDX documentation pages        | 17     |
 | Architecture Decision Records  | 8      |
-| Playwright E2E specs           | 13     |
+| Playwright E2E specs           | 14     |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |
@@ -117,16 +117,16 @@ five minutes.
 
 ## What a reviewer can observe
 
-| Observable            | Where                                                                                                                                                                 | Status                                                                                                                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Accessibility         | keyboard tour in `apps/playground/src/overlays-section.tsx`; Tabs, Table and DataTable in `apps/playground/src/a11y-review-section.tsx`                               | Covered — `apps/playground/e2e/`, plus the contrast gate                                                                                                     |
-| Theme switching       | `apps/playground/src/theme-switcher.tsx`                                                                                                                              | Covered — `apps/playground/e2e/theme.spec.ts` reads computed values in three states                                                                          |
-| Component composition | `apps/playground/src/consumer-contract/usage-example.tsx`, and every compound component in Storybook                                                                  | Covered — `docs/decisions/004-component-composition.md`                                                                                                      |
-| States                | `apps/playground/src/a11y-review-section.tsx` — table loading, error and empty; disabled and loading buttons                                                          | Covered — the story matrix per component                                                                                                                     |
-| Overlay behaviour     | `apps/playground/src/overlays-section.tsx` — a Select and a Popover opened from inside a Dialog                                                                       | Covered — `apps/playground/e2e/overlays.spec.ts` and two more overlay specs                                                                                  |
-| Tables                | same section: `Table` in four states, `DataTable` with sorting, filtering, selection and pagination                                                                   | Covered — `apps/playground/e2e/data-table.spec.ts`                                                                                                           |
-| Forms                 | `apps/playground/src/form-section.tsx` — consumer-owned validation, error slot, success toast                                                                         | Covered — `apps/playground/e2e/form.spec.ts`                                                                                                                 |
-| Responsive            | Table, DataTable, Pagination, Tabs and the form family at 320px in `apps/playground/src/navigation-section.tsx` and `apps/playground/src/form-responsive-section.tsx` | Covered — `apps/playground/e2e/table-responsive.spec.ts`, `apps/playground/e2e/navigation-responsive.spec.ts`, `apps/playground/e2e/form-responsive.spec.ts` |
+| Observable            | Where                                                                                                                                                                                                                                       | Status                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Accessibility         | keyboard tour in `apps/playground/src/overlays-section.tsx`; Tabs, Table and DataTable in `apps/playground/src/a11y-review-section.tsx`                                                                                                     | Covered — `apps/playground/e2e/`, plus the contrast gate                                                                                                                                                     |
+| Theme switching       | `apps/playground/src/theme-switcher.tsx`                                                                                                                                                                                                    | Covered — `apps/playground/e2e/theme.spec.ts` reads computed values in three states                                                                                                                          |
+| Component composition | `apps/playground/src/consumer-contract/usage-example.tsx`, and every compound component in Storybook                                                                                                                                        | Covered — `docs/decisions/004-component-composition.md`                                                                                                                                                      |
+| States                | `apps/playground/src/a11y-review-section.tsx` — table loading, error and empty; disabled and loading buttons                                                                                                                                | Covered — the story matrix per component                                                                                                                                                                     |
+| Overlay behaviour     | `apps/playground/src/overlays-section.tsx` — a Select and a Popover opened from inside a Dialog                                                                                                                                             | Covered — `apps/playground/e2e/overlays.spec.ts` and two more overlay specs                                                                                                                                  |
+| Tables                | same section: `Table` in four states, `DataTable` with sorting, filtering, selection and pagination                                                                                                                                         | Covered — `apps/playground/e2e/data-table.spec.ts`                                                                                                                                                           |
+| Forms                 | `apps/playground/src/form-section.tsx` — consumer-owned validation, error slot, success toast                                                                                                                                               | Covered — `apps/playground/e2e/form.spec.ts`                                                                                                                                                                 |
+| Responsive            | Table, DataTable, Pagination, Tabs, the form family and the fluid family at 320px in `apps/playground/src/navigation-section.tsx`, `apps/playground/src/form-responsive-section.tsx` and `apps/playground/src/fluid-responsive-section.tsx` | Covered — `apps/playground/e2e/table-responsive.spec.ts`, `apps/playground/e2e/navigation-responsive.spec.ts`, `apps/playground/e2e/form-responsive.spec.ts`, `apps/playground/e2e/fluid-responsive.spec.ts` |
 
 Two of these deserve a note rather than a row.
 
@@ -139,10 +139,14 @@ compensates for it.
 **Responsive is partially covered.** Table and DataTable react to container width (horizontal
 scroll, density change, sticky header in a bounded scrollport); Pagination collapses to
 previous/current/next; Tabs becomes a horizontal scrollport and keeps keyboard focus visible;
-FormField, Input, Textarea and Radio shrink or wrap inside narrow frames instead of overflowing.
+FormField, Input, Textarea and Radio shrink or wrap inside narrow frames instead of overflowing;
+the fluid family (Checkbox, Switch, Avatar, Badge, Skeleton, Progress, Text, Heading,
+VisuallyHidden and Portal) is proven at 320px, and four of them (`Text`, `Heading`, `Badge` and
+`Switch.label`) needed `overflow-wrap: anywhere` to pass.
 All are asserted at 320px in `apps/playground/e2e/table-responsive.spec.ts`,
-`apps/playground/e2e/navigation-responsive.spec.ts` and
-`apps/playground/e2e/form-responsive.spec.ts`. A playground-wide responsive section with reduced
+`apps/playground/e2e/navigation-responsive.spec.ts`,
+`apps/playground/e2e/form-responsive.spec.ts` and
+`apps/playground/e2e/fluid-responsive.spec.ts`. A playground-wide responsive section with reduced
 shell padding at 320px is still pending RRU-144. The only width-based `@media` rules in the
 component stylesheets remain Dialog and Toast (viewport geometry); everything else uses `@container`
 (ADR-008). Verifying the current state is one command:

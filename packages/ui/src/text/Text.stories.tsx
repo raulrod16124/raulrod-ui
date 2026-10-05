@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Text } from "./Text.js";
 
@@ -130,8 +130,18 @@ export const LongContent: Story = {
 
 export const Responsive: Story = {
   render: () => (
-    <Text size="font.size.lg" style={{ maxWidth: "100%" }}>
-      This text scales by using the DS type scale. Resize the viewport to see it reflow.
-    </Text>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="long words break instead of overflowing">
+        <Text>https://example.com/settings/billing/invoices/2026-10-05/download</Text>
+      </NarrowContainer>
+      <NarrowContainer label="text at a large size still wraps" width="240px">
+        <Text size="font.size.xl">
+          {["This text uses the DS type scale and still wraps cleanly inside a narrow container."]}
+        </Text>
+      </NarrowContainer>
+    </StoryStack>
   ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

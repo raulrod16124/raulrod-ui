@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Progress } from "./Progress.js";
 
@@ -50,5 +50,14 @@ export const LongContent: Story = {
 };
 
 export const Responsive: Story = {
-  render: () => <Progress value={40} label="Responsive" style={{ width: "100%" }} />,
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="progress fills the width of a 200px frame">
+        <Progress value={40} label="Responsive" />
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

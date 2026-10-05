@@ -102,3 +102,13 @@ body {
   padding: var(--rr-space-2);
   width: 200px;
 }
+
+/* Clipped narrow frame for the Portal probe (RRU-143). Portal children render
+   into document.body, so they must escape this overflow:hidden ancestor. */
+.pg-clipped-frame {
+  border: 1px dashed var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  padding: var(--rr-space-2);
+  width: 200px;
+  overflow: hidden;
+}

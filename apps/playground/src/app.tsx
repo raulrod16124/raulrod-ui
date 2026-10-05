@@ -15,6 +15,7 @@ import "./app.css";
 
 import { A11yReviewSection } from "./a11y-review-section.js";
 import { ConsumerContract } from "./consumer-contract/section.js";
+import { FluidResponsiveSection } from "./fluid-responsive-section.js";
 import { FormResponsiveSection } from "./form-responsive-section.js";
 import { FormSection } from "./form-section.js";
 import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
@@ -117,6 +118,19 @@ export function App() {
                 Form responsive
               </Heading>
               <FormResponsiveSection />
+            </section>
+
+            {/* Probe fixture for the fluid family (RRU-143): ten components the
+                board claimed were already fluid, four of which were not. */}
+            <section
+              aria-labelledby="fluid-responsive-title"
+              className="pg-section"
+              id="fluid-responsive"
+            >
+              <Heading as="h2" className="pg-section__title" id="fluid-responsive-title">
+                Fluid responsive
+              </Heading>
+              <FluidResponsiveSection />
             </section>
           </Stack>
         </main>

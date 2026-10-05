@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { StoryInline } from "../storybook-support/index.js";
+import { NarrowContainer, StoryInline, StoryStack } from "../storybook-support/index.js";
 
 import { Avatar } from "./Avatar.js";
 
@@ -61,10 +61,17 @@ export const LongName: Story = {
 
 export const Responsive: Story = {
   render: () => (
-    <StoryInline gap="space-4" style={{ flexWrap: "wrap" }}>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Avatar key={i} name={`User ${i + 1}`} size={i % 2 === 0 ? "md" : "sm"} />
-      ))}
-    </StoryInline>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="avatars stay square and fit inside a 200px frame">
+        <StoryInline gap="space-4" wrap>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Avatar key={i} name={`User ${i + 1}`} size={i % 2 === 0 ? "md" : "sm"} />
+          ))}
+        </StoryInline>
+      </NarrowContainer>
+    </StoryStack>
   ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

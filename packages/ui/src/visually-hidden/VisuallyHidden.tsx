@@ -12,9 +12,9 @@ import { cx } from "../utils/cx.js";
  * FormField, Switch, etc. for accessible labels and skip-link utilities.
  *
  * No polymorphic `as` prop in the MVP (closed decision): for a skip
- * link, wrap the component in the anchor —
- * `<a href="#main"><VisuallyHidden focusable>Skip to main</VisuallyHidden></a>`
- * — the `focusable` variant reveals the text when the anchor is focused
+ * link, wrap the anchor inside the component —
+ * `<VisuallyHidden focusable><a href="#main">Skip to main</a></VisuallyHidden>`
+ * — the `focusable` variant reveals the text when a descendant is focused
  * (`:focus-within`, `VisuallyHidden.css`).
  */
 export const VisuallyHidden = forwardRef<HTMLSpanElement, VisuallyHiddenProps>(

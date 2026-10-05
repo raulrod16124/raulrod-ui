@@ -111,6 +111,8 @@
 }
 
 .rr-switch-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);
   line-height: var(--rr-font-leading-normal);

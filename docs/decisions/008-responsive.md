@@ -262,6 +262,36 @@ La quinta excepción de implementación afecta a `Input`, `Textarea`, `Radio` y 
   artefacto de prueba. Por eso el contrato se pincha con `*.responsive-contract.test.ts` leyendo
   las declaraciones, no asumiendo el efecto visual.
 
+## Addendum: los que ya eran fluidos y los cuatro que no lo eran (RRU-143)
+
+La octava familia de la épica era un inventario: diez componentes que el tablero
+asumía fluidos. Medirlos demostró que cuatro no lo eran (`Text`, `Heading`,
+`Badge` y `Switch.label`) y dejó escrito por qué los otros seis sí lo son.
+
+- **Los elementos reemplazados ya están suelo por `min-width: auto`.** Un
+  `<input type="checkbox">` con `width: var(--rr-space-4)` no necesita
+  `flex-shrink: 0` porque su tamaño mínimo basado en contenido **es** ese ancho
+  explícito. Esa es la distinción real frente a un `<button>` (IconButton), cuyo
+  min-content es `0` y por eso sí necesita `flex-shrink: 0` para no aplastarse.
+  El track de `Switch` es un replaced element con ancho fijo; su label, en cambio,
+  es un flex item con texto y necesita el mismo par (`min-width: 0` +
+  `overflow-wrap: anywhere`) que RRU-142 puso en `.rr-radio-label`.
+- **La tipografía necesita `overflow-wrap: anywhere`.** `Text` y `Heading` no
+  declaran ninguna propiedad de layout, pero un token irrompible (URL, id, hash)
+  desborda un contenedor estrecho igual que el label de un botón. Solo
+  `overflow-wrap: anywhere` realimenta las oportunidades de salto de línea en el
+  min-content; `break-word` no lo hace, y dejaría un suelo que parece desbordamiento.
+- **`min-width: 0` + `overflow-wrap: anywhere` en los flex items que llevan texto.**
+  `Switch.label` y `Badge` son flex items con texto del consumidor; la convención
+  fijada en RRU-136 (`Button`) y RRU-142 (`Radio`) aplica aquí también.
+- **Los seis que sí eran fluidos y por qué:**
+  - `Checkbox`: cuadrado fijo por token, replaced element.
+  - `Avatar`: cuadrado fijo + `flex-shrink: 0` + `overflow: hidden`.
+  - `Skeleton` / `Progress`: `width: 100%` sin padding/border que desborde.
+  - `VisuallyHidden`: `position: absolute` 1×1, fuera de flujo, huella de layout cero.
+  - `Portal`: no renderiza elemento propio; los hijos porteados escapan al
+    `overflow: hidden` de su ancestro React.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.
