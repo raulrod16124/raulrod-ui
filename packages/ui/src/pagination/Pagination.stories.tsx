@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Pagination } from "./Pagination.js";
 
@@ -74,5 +74,17 @@ export const Keyboard: Story = {
 };
 
 export const Responsive: Story = {
-  render: () => <Pagination pageCount={15} defaultPage={8} style={{ width: "100%" }} />,
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="collapsed to previous/current/next at 320px">
+        <Pagination pageCount={15} defaultPage={8} />
+      </NarrowContainer>
+      <NarrowContainer label="full bar inside a 640px container" width="640px">
+        <Pagination pageCount={15} defaultPage={8} />
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

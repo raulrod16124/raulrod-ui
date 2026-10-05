@@ -221,6 +221,23 @@ pantalla.
   Sin ese elemento enfocable por debajo del pliegue, "el stack se desplaza" no tendría nada
   que revelar.
 
+## Addendum: `container-type: inline-size` en componentes compuestos como flex items (RRU-141)
+
+La convención container-first tiene una cuarta excepción de implementación, descubierta al
+componer `Pagination` dentro de `DataTable`:
+
+- **`container-type: inline-size` anula la contribución intrínseca de tamaño.** En un flex item
+  sin `flex-grow`/`flex-basis` positivo, el navegador resuelve el tamaño base contra el contenido;
+  con `contain: inline-size` esa contribución es **0px**, así que el item colapsa aunque su
+  contenido quepa.
+- **El consumidor que compone el componente debe darle una base positiva.** En `.rr-data-table__pagination`
+  bastó `flex: 1 1 auto` para que el paginador llenara el footer y mantuviera su alineación
+  interna. Sin esa línea, el pager desaparecía del árbol de accesibilidad (caja de 0×altura).
+- **La regresión solo se detecta midiendo el consumidor.** La hoja de `Pagination` declaraba el
+  container correctamente; el defecto aparecía en la composición con `DataTable`. El E2E del
+  consumidor es quien debe assertar que el componente compuesto sigue siendo visible y tiene un
+  ancho razonable.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.

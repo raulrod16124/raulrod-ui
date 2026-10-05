@@ -8,6 +8,8 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { breakpoints } from "@raulrod/tokens";
+
 import { auditA11y } from "../test-support/axe.js";
 import { expectTokenLineage, readComponentCss, stripCssComments } from "../test-support/css.js";
 
@@ -98,8 +100,15 @@ describe("Pagination SSR contract (landmark + a11y serialized on the server)", (
     // current page button stays a focusable button — never disabled, never a tabindex
     const currentButton =
       markup.match(/<button[^>]*aria-current="page"[^>]*>(.*?)<\/button>/)?.[0] ?? "";
-    expect(currentButton).toContain('class="rr-pagination__item"');
+    expect(currentButton).toContain('class="rr-pagination__item rr-pagination__item--number"');
     expect(currentButton).not.toMatch(/disabled/);
+  });
+
+  it("controls carry a per-node modifier so CSS can distinguish kinds without naming internals", () => {
+    const markup = page({ pageCount: 5, defaultPage: 3 });
+    expect(markup).toContain('class="rr-pagination__item rr-pagination__item--prev"');
+    expect(markup).toContain('class="rr-pagination__item rr-pagination__item--next"');
+    expect(markup).toContain('class="rr-pagination__item rr-pagination__item--number"');
   });
 
   it("boundaries: previous disabled at page 1, next disabled at pageCount", () => {
@@ -357,12 +366,20 @@ describe("Pagination authored CSS contract", () => {
     expect(ellipsis).toMatch(/min-width:\s*var\(--rr-space-8\)/);
   });
 
-  it("holds the token-only rule: no hex, no pixel design values, no keyframes, no positioning", async () => {
+  it("holds the token-only rule: no hex, and the only px are the focus ring or breakpoints", async () => {
     const css = stripCssComments(await readComponentCss("pagination/Pagination.css"));
-    const withoutFocusRing = css.replace(/outline[^;]*;/g, "");
 
-    expect(withoutFocusRing).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(withoutFocusRing).not.toMatch(/\d+px\b/);
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    // `2px` is the documented focus-ring width; width conditions use the
+    // breakpoint token values (ADR-008). Anything else would be un-tokenized.
+    const allowedPx = new Set([
+      "2",
+      ...Object.values(breakpoints).map((value) => value.replace("px", "")),
+    ]);
+    for (const [, value] of css.matchAll(/\b(\d+(?:\.\d+)?)px\b/g)) {
+      expect(value, "px literal must have a numeric part").toBeDefined();
+      expect(allowedPx.has(value!)).toBe(true);
+    }
     expect(css, "no keyframes → nothing to gate under reduced motion").not.toMatch(/@keyframes/);
     expect(css).not.toMatch(/position:\s*(absolute|fixed)/);
   });

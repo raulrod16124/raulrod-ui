@@ -30,7 +30,7 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Story files                    | 27     |
 | MDX documentation pages        | 17     |
 | Architecture Decision Records  | 8      |
-| Playwright E2E specs           | 11     |
+| Playwright E2E specs           | 12     |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |
@@ -117,16 +117,16 @@ five minutes.
 
 ## What a reviewer can observe
 
-| Observable            | Where                                                                                                                                   | Status                                                                              |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Accessibility         | keyboard tour in `apps/playground/src/overlays-section.tsx`; Tabs, Table and DataTable in `apps/playground/src/a11y-review-section.tsx` | Covered — `apps/playground/e2e/`, plus the contrast gate                            |
-| Theme switching       | `apps/playground/src/theme-switcher.tsx`                                                                                                | Covered — `apps/playground/e2e/theme.spec.ts` reads computed values in three states |
-| Component composition | `apps/playground/src/consumer-contract/usage-example.tsx`, and every compound component in Storybook                                    | Covered — `docs/decisions/004-component-composition.md`                             |
-| States                | `apps/playground/src/a11y-review-section.tsx` — table loading, error and empty; disabled and loading buttons                            | Covered — the story matrix per component                                            |
-| Overlay behaviour     | `apps/playground/src/overlays-section.tsx` — a Select and a Popover opened from inside a Dialog                                         | Covered — `apps/playground/e2e/overlays.spec.ts` and two more overlay specs         |
-| Tables                | same section: `Table` in four states, `DataTable` with sorting, filtering, selection and pagination                                     | Covered — `apps/playground/e2e/data-table.spec.ts`                                  |
-| Forms                 | `apps/playground/src/form-section.tsx` — consumer-owned validation, error slot, success toast                                           | Covered — `apps/playground/e2e/form.spec.ts`                                        |
-| Responsive            | Table and DataTable at 320px in `apps/playground/src/a11y-review-section.tsx`                                                           | Covered — `apps/playground/e2e/table-responsive.spec.ts`                            |
+| Observable            | Where                                                                                                                                            | Status                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Accessibility         | keyboard tour in `apps/playground/src/overlays-section.tsx`; Tabs, Table and DataTable in `apps/playground/src/a11y-review-section.tsx`          | Covered — `apps/playground/e2e/`, plus the contrast gate                                                      |
+| Theme switching       | `apps/playground/src/theme-switcher.tsx`                                                                                                         | Covered — `apps/playground/e2e/theme.spec.ts` reads computed values in three states                           |
+| Component composition | `apps/playground/src/consumer-contract/usage-example.tsx`, and every compound component in Storybook                                             | Covered — `docs/decisions/004-component-composition.md`                                                       |
+| States                | `apps/playground/src/a11y-review-section.tsx` — table loading, error and empty; disabled and loading buttons                                     | Covered — the story matrix per component                                                                      |
+| Overlay behaviour     | `apps/playground/src/overlays-section.tsx` — a Select and a Popover opened from inside a Dialog                                                  | Covered — `apps/playground/e2e/overlays.spec.ts` and two more overlay specs                                   |
+| Tables                | same section: `Table` in four states, `DataTable` with sorting, filtering, selection and pagination                                              | Covered — `apps/playground/e2e/data-table.spec.ts`                                                            |
+| Forms                 | `apps/playground/src/form-section.tsx` — consumer-owned validation, error slot, success toast                                                    | Covered — `apps/playground/e2e/form.spec.ts`                                                                  |
+| Responsive            | Table, DataTable, Pagination and Tabs at 320px in `apps/playground/src/a11y-review-section.tsx` and `apps/playground/src/navigation-section.tsx` | Covered — `apps/playground/e2e/table-responsive.spec.ts`, `apps/playground/e2e/navigation-responsive.spec.ts` |
 
 Two of these deserve a note rather than a row.
 
@@ -136,13 +136,14 @@ Storybook does the same thing in `apps/storybook/.storybook/preview-head.html`. 
 white on every reload is a bug users read as "this page is slow", and no amount of correct CSS
 compensates for it.
 
-**Responsive is partially covered.** Table and DataTable now react to container width (horizontal
-scroll, density change, sticky header in a bounded scrollport) and are asserted at 320px in
-`apps/playground/e2e/table-responsive.spec.ts`. The rest of the component family — Pagination, Tabs,
-FormField, Input, Textarea, Radio, and a playground-wide responsive section — is still pending the
-EPIC-12 cards RRU-141, RRU-142 and RRU-144. The only width-based `@media` rules in the component
-stylesheets remain Dialog and Toast (viewport geometry); everything else uses `@container`
-(ADR-008). Verifying the current state is one command:
+**Responsive is partially covered.** Table and DataTable react to container width (horizontal
+scroll, density change, sticky header in a bounded scrollport); Pagination collapses to
+previous/current/next; Tabs becomes a horizontal scrollport and keeps keyboard focus visible. All
+are asserted at 320px in `apps/playground/e2e/table-responsive.spec.ts` and
+`apps/playground/e2e/navigation-responsive.spec.ts`. FormField, Input, Textarea, Radio and a
+playground-wide responsive section are still pending EPIC-12 cards RRU-142 and RRU-144. The only
+width-based `@media` rules in the component stylesheets remain Dialog and Toast (viewport geometry);
+everything else uses `@container` (ADR-008). Verifying the current state is one command:
 
 ```bash
 git grep -n "@container\|@media" -- "packages/**/*.css"

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn, userEvent, within } from "@storybook/test";
 import { useState } from "react";
 
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
+
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "./index.js";
 
 const meta: Meta<typeof Tabs> = {
@@ -117,5 +119,31 @@ export const Keyboard: Story = {
     const tab = canvas.getByRole("tab", { name: "Account" });
     await userEvent.click(tab);
     await userEvent.keyboard("{arrowright}");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="horizontal scrollport at 320px">
+        <Tabs defaultValue="1">
+          <TabsList>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TabsTrigger key={i} value={`${i + 1}`}>
+                Tab {i + 1}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <TabsPanel key={i} value={`${i + 1}`}>
+              Content of tab {i + 1}
+            </TabsPanel>
+          ))}
+        </Tabs>
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

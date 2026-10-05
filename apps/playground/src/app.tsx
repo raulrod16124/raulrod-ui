@@ -17,6 +17,7 @@ import { A11yReviewSection } from "./a11y-review-section.js";
 import { ConsumerContract } from "./consumer-contract/section.js";
 import { FormSection } from "./form-section.js";
 import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
+import { NavigationSection } from "./navigation-section.js";
 import { OverlaysSection } from "./overlays-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
 
@@ -92,6 +93,16 @@ export function App() {
                 Layout primitives
               </Heading>
               <LayoutPrimitivesSection />
+            </section>
+
+            {/* Probe fixture for the navigation family (RRU-141): Pagination and
+                Tabs are the two horizontal rails of the package, and neither of
+                the existing sections exercises them at a narrow width. */}
+            <section aria-labelledby="navigation-title" className="pg-section" id="navigation">
+              <Heading as="h2" className="pg-section__title" id="navigation-title">
+                Navigation
+              </Heading>
+              <NavigationSection />
             </section>
           </Stack>
         </main>

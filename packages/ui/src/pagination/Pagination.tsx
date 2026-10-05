@@ -85,7 +85,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
             type="button"
             aria-label="Previous page"
             disabled={current <= 1}
-            className="rr-pagination__item"
+            className={cx("rr-pagination__item", "rr-pagination__item--prev")}
             onClick={() => commit(current - 1)}
           >
             <ChevronLeft aria-hidden={true} />
@@ -104,7 +104,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
                 type="button"
                 aria-label={`Go to page ${item}`}
                 aria-current={item === current ? "page" : undefined}
-                className="rr-pagination__item"
+                className={cx("rr-pagination__item", "rr-pagination__item--number")}
                 onClick={() => commit(item)}
               >
                 {item}
@@ -117,7 +117,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
             type="button"
             aria-label="Next page"
             disabled={current >= pageCount}
-            className="rr-pagination__item"
+            className={cx("rr-pagination__item", "rr-pagination__item--next")}
             onClick={() => commit(current + 1)}
           >
             <ChevronRight aria-hidden={true} />
