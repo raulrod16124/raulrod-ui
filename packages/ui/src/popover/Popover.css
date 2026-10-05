@@ -12,7 +12,49 @@
    Layering: `z-index: var(--rr-z-overlay)` (RRU-023, resolveLayerVar) — the
    popover floats at the overlay level, BELOW modals (`z.modal`), matching the
    semantic scale; stacked overlays keep working through the dismissable-layer
-   registry (RRU-052). */
+   registry (RRU-052).
+
+   Narrow viewports (RRU-137, ADR-008): the panel is bounded to the VIEWPORT, in
+   `max-inline-size`/`max-block-size`, and that is the whole reason it uses
+   viewport units instead of `@container`. This root is `position: fixed` and is
+   portalled to `document.body`, so it is not a descendant of anything the
+   consumer draws: a 320px container around it would constrain nothing, and the
+   `@container` mechanism ADR-008 makes primary cannot reach it. A fixed panel's
+   coordinate space IS the viewport, which is the same observation that reserves
+   `@media` for Dialog and Toast — this is that exception's third family, reached
+   through `min()` instead of an at-rule, so the RRU-136 gate needs no widening.
+
+   Two values, both mechanics rather than design values:
+   - `min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))`:
+     the `Toast.css:21` mold. The durable width is 6 space-16 steps (384px) so a
+     long paragraph does not become a 900px-wide sheet on a desktop, and the
+     viewport term keeps `margin` (space-4 = 16px) clear on both edges at 320px.
+   - `100dvh`, not `100vh`: a fixed overlay tracks the VISUAL viewport, so the
+     dynamic one is the honest unit — with the browser UI shown, `vh` would let
+     the scrollport run under it. Recorded in ADR-008 so RRU-139 inherits the
+     decision for Toast instead of re-arguing `dvh` vs `vh`.
+
+   `box-sizing: border-box` is what makes those two bounds mean what they say,
+   and it is MEASURED rather than assumed: the package ships no `box-sizing`
+   reset, so `max-inline-size` resolves against the CONTENT box. With `space-4`
+   padding on both sides, `calc(100vw - 2 * var(--rr-space-4))` produced a panel
+   whose border box was the full 320px — the bound held, and the panel sat flush
+   against both screen edges with the `margin` it claimed to leave nowhere. On
+   desktop the same arithmetic turned the 384px durable width into 416px. Declaring
+   `border-box` on a shrink-to-fit panel changes nothing else (no `width`/`height`
+   is declared anywhere on this root), so the only thing it moves is which box the
+   two clamps measure. `css-contracts.test.ts` pins it: without it, the bound
+   silently returns to being flush with the screen.
+
+   `overflow: auto` is the consequence of a bounded block size, and it carries the
+   a11y consequence worth writing down: the panel is `tabIndex={-1}` and has NO
+   focus trap (Popover.tsx), so a keyboard user cannot Tab through prose that
+   overflows. `computePopoverPosition` still positions a SHORTER panel correctly,
+   because it measures after this CSS applies (use-popover-position.ts measures
+   in a layout effect, and the E2E proves the order) — so the panel is
+   always at most `100dvh - 32px`, and the scrollport is the fallback for content
+   taller than the screen. Making the scrollport focusable would fix it and needs
+   a DOM change, which is out of scope for a CSS-only card. */
 
 .rr-popover-trigger {
   appearance: none;
@@ -40,6 +82,12 @@
   left: -9999px;
   top: -9999px;
   z-index: var(--rr-z-overlay);
+  /* Mechanics, not design: see the header. Without it the two clamps measure
+     the CONTENT box and the panel ends up flush with both screen edges. */
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow: auto;
   padding: var(--rr-space-4);
   background: var(--rr-color-background-surface);
   color: var(--rr-color-text-primary);

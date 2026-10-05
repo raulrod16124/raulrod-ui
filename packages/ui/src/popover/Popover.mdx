@@ -47,3 +47,40 @@ import { Popover } from "@raulrod/ui";
   with `usePopoverPosition`; it flips and clamps to stay inside the viewport.
 - **Trigger is a plain button by default.** Wrap it in `Button`/`IconButton` for
   styled variants.
+
+## Narrow viewports
+
+The panel is `position: fixed` and portaled to `document.body`, so it has no
+containing block to grow inside: its width is shrink-to-fit against the viewport,
+and 500 characters of prose used to open a panel wider than the screen. It is now
+bounded by the viewport itself (RRU-137):
+
+```css
+/* Popover.css — on the panel root */
+box-sizing: border-box;
+max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+overflow: auto;
+```
+
+- **The durable width is 384px** (6 × `space-16`), the same mold `Toast` uses, so
+  a long panel does not become a full-width sheet on a desktop.
+- **The viewport term is what saves a phone.** At 320px the `min()` resolves to
+  288px, leaving `space-4` clear on each edge.
+- **`box-sizing: border-box` is not optional.** The package ships no `box-sizing`
+  reset, so without it both clamps measure the _content_ box: the E2E measured a
+  panel 320px wide and 360px tall at a 320×360 viewport — flush with all four
+  edges — and 416px on desktop instead of 384px, while every "fits the viewport"
+  check still passed.
+- **The block bound scrolls, it does not clip.** Content taller than the screen
+  is reachable through the panel's own scrollport.
+- **`100dvh`, not `100vh`**: a fixed overlay tracks the _visual_ viewport, so the
+  dynamic unit is the honest one (ADR-008).
+
+<Canvas of={PopoverStories.Responsive} />
+
+**Keyboard caveat.** The scrollport is not a focus trap — the panel is
+`tabIndex={-1}` — so a keyboard user cannot Tab through prose that overflows;
+only focusable children inside the panel are reachable. Making the scrollport
+itself focusable would need a DOM change and is out of scope for a CSS-only
+change.

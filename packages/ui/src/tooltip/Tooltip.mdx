@@ -1,0 +1,71 @@
+import { ArgTypes, Canvas, Description, Meta, Title } from "@storybook/blocks";
+import * as TooltipStories from "./Tooltip.stories.tsx";
+
+<Meta of={TooltipStories} />
+
+<Title />
+<Description of={TooltipStories} />
+
+## Usage
+
+`Tooltip` labels its trigger. It shows on hover after a delay, and on keyboard
+focus immediately, with no focus target of its own:
+
+```tsx
+import { Tooltip } from "@raulrod/ui";
+
+<Tooltip content="Copies the share link">
+  <Button>Copy link</Button>
+</Tooltip>;
+```
+
+<Canvas of={TooltipStories.Playground} />
+
+## Props
+
+<ArgTypes of={TooltipStories} />
+
+## Accessibility
+
+- The trigger gets `aria-describedby` pointing at the panel, so the text is
+  announced without moving focus.
+- Keyboard focus opens it **immediately**, skipping the hover delay, and blur
+  closes it. `Escape` dismisses.
+- The panel is `role="tooltip"` and never receives focus itself, so a tooltip can
+  never trap the Tab cycle.
+
+## Narrow viewports
+
+The panel is `position: fixed` and portaled, so a long `content` used to open a
+tooltip wider than the screen. It is now bounded and **wraps** (RRU-137):
+
+```css
+/* Tooltip.css — on .rr-tooltip */
+box-sizing: border-box;
+max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+overflow-wrap: anywhere;
+```
+
+- **No `max-block-size` and no `overflow: auto`, unlike `Popover` and
+  `DropdownMenu`.** This is a deliberate deviation from the card's DoD, not an
+  oversight: the panel is not focusable and is not a focus trap, so a scrollport
+  here would be content no keyboard user could ever reach. Wrapping keeps every
+  word visible. `css-contracts.test.ts` rejects the scrollport as well as the E2E
+  measuring it.
+- **The trade-off is height.** A 500-character tooltip is a tall panel, and the
+  panel only grows downward from its anchor, so keep `content` to a hint. If your
+  content is genuinely long, it is prose: use `Popover` or `Dialog`, which scroll
+  through a reachable focus order.
+- **`box-sizing: border-box` again**, or the `space-2`/`space-3` padding would
+  push the panel past the bound it declares.
+
+<Canvas of={TooltipStories.Responsive} />
+
+## Trade-offs / Limitations
+
+- **Not for essential information.** A tooltip is unavailable on touch and only
+  reachable on focus, so never put the only copy of something there.
+- **Open delay is not applied to focus**, by design: a keyboard user should not
+  wait 500ms for a label.
+- **No arrow.** Unlike Popover and DropdownMenu there is no visual pointer to the
+  trigger.

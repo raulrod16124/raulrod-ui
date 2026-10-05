@@ -32,12 +32,12 @@
 
 | Campo                         | Valor                                                           |
 | ----------------------------- | --------------------------------------------------------------- |
-| Fecha de última actualización | 2026-10-04 |
-| Siguiente tarea | **RRU-136 · Layout primitivos: Inline, Stack, Button e IconButton** — EPIC-12 · P1 · M · **depende de RRU-135 (✅ Done 2026-10-04)**. Tras cerrar RRU-135, quedan desbloqueadas las 8 familias RRU-136–143; la de menor ID es RRU-136. El desempate entre hermanas es por ID. RRU-144 depende de esas, RRU-145 de RRU-144, y EPIC-13 (RRU-146–147) depende de RRU-145. |
+| Fecha de última actualización | 2026-10-05 |
+| Siguiente tarea | **RRU-138 · Select: trigger y listbox** — EPIC-12 · P0 · M · **depende de RRU-135 (✅ Done 2026-10-04)**. RRU-137 quedó `✅ Done` el 2026-10-05 (overlays flotantes: Popover, DropdownMenu, Tooltip acotados al viewport), así que de las 8 familias RRU-136–143 quedan 2 cerradas y 6 ejecutables, y la de menor ID entre las que faltan es RRU-138. El desempate entre hermanas es por ID. RRU-138 es además la **única carta de EPIC 12 con excepción de JS autorizada**: sincronizar el ancho del listbox con el del trigger no se resuelve en CSS (`:has()` no alcanza, `anchor-size()` es demasiado reciente) y se acepta **una línea** en `usePopoverPosition`. RRU-144 depende de las ocho, RRU-145 de RRU-144, y EPIC-13 (RRU-146–147) depende de RRU-145. |
 | Siguiente epic | **EPIC-12 — Responsive (Fase 12)**, con EPIC-13 detrás. Los 12 epics del MVP siguen ✅; EPIC 12 y 13 son **post-MVP** y nacen de una decisión del usuario (2026-10-04), no de la regla. EPIC 12 **no toca la API pública**; EPIC 13 es la única que la cambia, y por eso va con ADR-009 propio y changeset `minor`. |
-| Rama / PR activo | `development` == `origin/development` == `142e4da`, **árbol limpio**. *Corrección de la celda anterior*, que decía `1ac7d69` y «RRU-113 sin commitear»: RRU-113 quedó commiteado en `142e4da` (`add demo script and gate its claims against the repo`). **Pendiente de ti, no mío**: `main` está **6 commits por detrás** de `development`, así que lo publicado en npm (`1.0.0`) **todavía no** incluye RRU-124, RRU-129, RRU-131 ni RRU-113 — entre ellos el fix de contraste de `.rr-table__error` (`text.danger` a 4.26:1 en light al hacer hover, por debajo de AA), que ya tiene un changeset `patch` commiteado y necesita un `pnpm release`. Recuerda que `/docs` está gitignored (RRU-014): **los cambios a este tablero, a la guía y a `color.md` no generan diff de commit** — EPIC 12 y EPIC 13 solo existen en local hasta que RRU-133 escriba `ADR-008`, que **sí** se trackea (`!/docs/decisions/`). |
-| Último cierre | **RRU-133** ✅ **Done** (2026-10-04) — cimientos del responsive (EPIC-12). Se creó **ADR-008** (`docs/decisions/008-responsive.md`, trackeado) fijando estrategia container-first (`@container` como mecanismo principal, `@media` solo para Dialog y Toast). Verificación: lint, typecheck, build (tokens+ui) y tests UI (1063 passed) verdes. No hay cambios en API pública. Antes: **RRU-113** ✅ Done (2026-10-03) — MVP cerrado con `DEMO.md` + gate `pnpm check:demo`. Antes: **RRU-129** + **RRU-124** ✅ Done (2026-10-03). Antes: **RRU-131** ✅ Done (2026-10-03). |
-| Bloqueos / notas | **EPIC 12 y EPIC 13 abiertas el 2026-10-04 por decisión del usuario** (RRU-133 promovida de `📋 Backlog` a `⬜ To Do` como carta 1 de EPIC-12, más 13 tarjetas nuevas: RRU-135…147). EPIC 11 ✅ completo (RRU-110 ✅; RRU-111 ✅; RRU-112 ✅ v1.0.0 en el registro; RRU-113 ✅ `DEMO.md` + gate `check:demo`; RRU-132 ✅ peer verificado en sus dos extremos; RRU-131 ✅ job informativo; RRU-114 📋 y RRU-134 📋 backlog). **RRU-133 salió de EPIC 11** — era la quinta carta de cierre del MVP y ahora es la carta 1 de una épica nueva. EPIC 7 ✅ completo — las 7 tarjetas de a11y de RRU-071 cerradas; registro de defectos de contraste vacío (636 pares, 0 absorbidos). EPIC 0, 1, 2, 3, 4, 6, 8, 9 y 10 ✅ completos. EPIC 5 ✅ con la decisión cerrada de **no** implementar RRU-060 (P2, deuda opcional) en el MVP. **Gobernanza del repo aplazada sin tarjeta** en §0.2 (CODEOWNERS, CONTRIBUTING.md, ruleset de `main` con bypass list vacía, auto-merge off). **Deuda de protocolo** en RRU-134: la regla de §0 paso 1 sigue sin usar la prioridad — EPIC 12 la sortea sin tocarla (sus cartas son hermanas y el desempate es por ID), pero la deuda sigue abierta. |
+| Rama / PR activo | `development` == `origin/development` == `77683b7` (último commit). **Árbol con cambios sin commitear de RRU-137** —el commit queda propuesto al usuario, no hecho—. RRU-136 ✅ en `f60027f` + `77683b7` (dos commits, ver notas de la carta). *Corrección de dos datos de la celda anterior*: el hash era `142e4da` (pre-RRU-136) y la distancia a `main` son **4** commits, no 6 —`main` ya recibió el `1.0.0` (RRU-112) vía `83143a8`—. **Pendiente de ti, no mío**: lo publicado en npm (`1.0.0`) **todavía no** incluye RRU-124, RRU-129, RRU-131 ni RRU-113, que necesitan un `pnpm release` (el fix de contraste de `.rr-table__error` —`text.danger` a 4.26:1 en light al hacer hover— ya tiene changeset `patch` commiteado). **Corrección importante sobre el propio tablero**: `docs/design-system-jira.md` **sí está trackeado** (`git ls-files docs` lo lista: `/docs/*` está en `.gitignore:164`, pero un fichero ya trackeado gana al ignore), así que **los cambios a este tablero SÍ generan diff y viajan en el commit de la tarjeta** —la afirmación contraria de la celda anterior era falsa—. Lo que sí sigue ignorado es `docs/design-system-guide.md`, `docs/color.md`, `docs/typescript.md` y el resto de `/docs/*`; los ADRs sí se trackean (`!/docs/decisions/`), de modo que EPIC 12 tiene su decisión en `008-responsive.md` desde RRU-133. |
+| Último cierre | **RRU-137** ✅ **Done** (2026-10-05) — overlays flotantes (EPIC-12): `Popover`, `DropdownMenu` y `Tooltip` acotados al viewport con `max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))` (el molde de `Toast`), `max-block-size: calc(100dvh - 2 * var(--rr-space-4))` + `overflow: auto` en los dos primeros y `overflow-wrap: anywhere` en el tooltip. **Hallazgo de la carta:** `box-sizing: border-box` no es cosmético, es parte del contrato —sin él los dos clamps miden la caja de contenido y el E2E midió un panel de **320×360 en un viewport de 320×360** (pegado a los cuatro bordes) y **416px** en escritorio en vez de los 384px que declara el término durable, mientras todas las aserciones de "cabe dentro del viewport" seguían pasando—; verificado por mutación (borrar la línea pone en rojo tres tests) y fijado en la gate con sonda propia. E2E geométrico a 320px y 1280px con un panel de 500 caracteres por componente, y la **altura de viewport medida** (360px, porque los 500 caracteres rinden 371.5px a ese ancho) para que las aserciones de scroll no pasen en vacío. Verificación: lint, typecheck, test ui (1117 passed), build, format:check, size-limit (70.84kB/75kB JS, 5.52kB/6kB CSS) y test:e2e (52 passed) verdes; contraste 636 pares, 0 absorbidos. Antes: **RRU-136** ✅ Done (2026-10-05) — layout primitivos (EPIC-12): `min-width: 0` en `Button`/`Inline`/`Stack`, `overflow-wrap: anywhere` como política de label largo (envolver, no truncar), `IconButton` con `size=md` en la clase base —87.59×20 medido sin él, un rectángulo que rompía el cuadrado— y `flex-shrink: 0` en lugar de `min-width: 0`, `NarrowContainer` declarando `container-type`, stories `Responsive` de los cuatro, gate literal↔token de las condiciones de ancho y E2E geométrico a 320px. Verificación: lint, typecheck, test ui (1103 passed), build, format:check y test:e2e (46 passed) verdes. Antes: **RRU-133** ✅ Done (2026-10-04) — cimientos del responsive + ADR-008. Antes: **RRU-113** ✅ Done (2026-10-03) — MVP cerrado con `DEMO.md` + gate `pnpm check:demo`. |
+| Bloqueos / notas | **EPIC 12 y EPIC 13 abiertas el 2026-10-04 por decisión del usuario** (RRU-133 promovida de `📋 Backlog` a `⬜ To Do` como carta 1 de EPIC-12, más 13 tarjetas nuevas: RRU-135…147). EPIC 11 ✅ completo (RRU-110 ✅; RRU-111 ✅; RRU-112 ✅ v1.0.0 en el registro; RRU-113 ✅ `DEMO.md` + gate `check:demo`; RRU-132 ✅ peer verificado en sus dos extremos; RRU-131 ✅ job informativo; RRU-114 📋 y RRU-134 📋 backlog). EPIC 7 ✅ completo — las 7 tarjetas de a11y de RRU-071 cerradas; registro de defectos de contraste vacío (636 pares, 0 absorbidos), que es la condición de salida de EPIC 9. EPIC 0, 1, 2, 3, 4, 6, 8, 9 y 10 ✅ completos. EPIC 5 ✅ con la decisión cerrada de **no** implementar RRU-060 (P2, deuda opcional) en el MVP. **Gobernanza del repo aplazada sin tarjeta** en §0.2 (CODEOWNERS, CONTRIBUTING.md, ruleset de `main` con bypass list vacía, auto-merge off). **Deuda de protocolo** en RRU-134: la regla de §0 paso 1 sigue sin usar la prioridad, y EPIC 12 la sortea sin tocarla —es visible ya: **RRU-136 era P1 y RRU-137 es P0**, y ganó la de menor ID—, pero la deuda sigue abierta. **Higiene de §6 pendiente, anotada aquí sin tarjeta**: RRU-136 se marcó `✅ Done` sin DoD marcado, sin fecha ni notas, con §0.1 y §3.7 desfasados y **sin haber ejecutado el gate tras el commit final**; cerrado en esa sesión. RRU-137 sí cierra con DoD marcado, fecha, notas, §0.1 y §3.7 actualizados y el gate ejecutado antes de proponer el commit —el mismo cierre se hizo en la sesión anterior, y es lo que evita la higiene pendiente—. Lo que lo evita de forma permanente es §0 paso 4, y el sitio donde escribirlo como criterio es RRU-145. |
 
 ---
 
@@ -169,7 +169,7 @@ no-force-push, sin PR obligatorio.
 | EPIC 9 — Packaging + releases      | Fase 9      | RRU-090…095 | ✅ completo (RRU-090 ✅; RRU-091 ✅; RRU-092 ✅; RRU-093 ✅; RRU-094 ✅; RRU-095 ✅) |
 | EPIC 10 — Performance + hardening  | Fase 10     | RRU-100…105 | ✅ completo (RRU-100 ✅; RRU-104 ✅; RRU-105 ✅; RRU-101 ✅; **RRU-102 ✅**; **RRU-103 ✅**) |
 | EPIC 11 — Portfolio / demo         | Fase 11     | RRU-110…114 + RRU-131…134 | ✅ completo (RRU-110 ✅; RRU-111 ✅; **RRU-112 ✅** — v1.0.0 publicada y verificada sobre el registro; **RRU-132 ✅** — el peer `>=18.2.0` verificado en sus dos extremos; **RRU-131 ✅** — job `external-install` en CI, informativo; **RRU-113 ✅** — `DEMO.md` en la raíz + gate `pnpm check:demo`; **RRU-133 📋** — movida a EPIC-12 como su carta 1; RRU-134 📋 — backlog, no ejecutables por la regla de §0. Orden de cierre en §0.2, borrada al cerrar RRU-113) |
-| EPIC 12 — Responsive (Fase 12) | Fase 12 — **nueva**, la añade RRU-133 en `design-system-guide.md` §6 | RRU-133 + RRU-135…145 | 🟡 **abierta, 2 de 12 `✅`** — **RRU-133 ✅ Done (2026-10-04)**; **RRU-135 ✅ Done (2026-10-04)**. Tras cerrar RRU-135, las **8 familias** RRU-136–143 (hermanas independientes, todas dependen solo de RRU-135) pasan a ser ejecutables; el desempate es por ID. Cadena: RRU-135 → RRU-136–143 → RRU-144 → RRU-145. Sin cambios de API pública. Mecanismo `@container` con `@media` solo para Dialog y Toast |
+| EPIC 12 — Responsive (Fase 12) | Fase 12 — **nueva**, la añade RRU-133 en `design-system-guide.md` §6 | RRU-133 + RRU-135…145 | 🟡 **abierta, 4 de 12 `✅`** — **RRU-133 ✅ Done (2026-10-04)**; **RRU-135 ✅ Done (2026-10-04)**; **RRU-136 ✅ Done (2026-10-05)**; **RRU-137 ✅ Done (2026-10-05)**. De las **8 familias** RRU-136–143 (hermanas independientes, todas dependen solo de RRU-135) quedan **2 cerradas** (136, 137) y 6 por ejecutar (138–143); el desempate es por ID → siguiente **RRU-138**. Cadena: RRU-135 → RRU-136–143 → RRU-144 → RRU-145. Sin cambios de API pública. Mecanismo `@container` con `@media` solo para Dialog y Toast. **Precedente fijado por RRU-136** que las familias replican: `min-width: 0` donde el padre lo exige, `overflow-wrap: anywhere` para el contenido sin espacios, `NarrowContainer` con `container-type` declarado en el marco, E2E **geométrico** (nada de nombres `rr-*`), gate literal↔token y **cero props nuevas**. **Dos precedentes más fijados por RRU-137** que las seis familias restantes heredan: (1) un clamp de viewport **exige** `box-sizing: border-box` en la raíz del panel, o el padding se sale del límite —medido: 320×360 en un viewport de 320×360, y 416px en vez de 384px en escritorio, con todas las aserciones de "cabe dentro" pasando igual—; (2) un overlay `position: fixed` se acota con `min()` y unidades de viewport, no con `@container` ni `@media`, porque **su espacio de coordenadas es el viewport** (tercera excepción de ADR-008, documentada en su addendum). Y la lección de método que se repite: **la altura del viewport del E2E se mide, no se elige** —los 500 caracteres rinden 371.5px, así que a 420px de alto el panel cabía y las aserciones de scroll pasaban en vacío |
 | EPIC 13 — Extensibilidad: escape hatch de estilos (Fase 13) | Fase 13 — **nueva**, la añade RRU-146 | RRU-146…147 | ⬜ **planificada, 0 de 2 y ninguna ejecutable** (RRU-146 depende de RRU-145). Única épica que **cambia la API pública** de un `1.0.0` publicado, y por eso va con **ADR-009 propio** (regla 2) y changeset `minor`. Nace de un encargo del usuario (2026-10-04), no de un hallazgo |
 
 > Actualizar la tabla y las tarjetas en cada cierre de tarea. El número de tarjeta nunca se reutiliza.
@@ -1808,16 +1808,51 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
 
 ### RRU-136 · Layout primitivos: Inline, Stack, Button e IconButton
 
-- **Epic:** EPIC-12 · **Estado:** ✅ Done
+- **Epic:** EPIC-12 · **Estado:** ✅ Done · **Fecha:** 2026-10-05
 - **Prioridad:** P1 · **Estimación:** M · **Dependencias:** RRU-135
 - **Labels:** `component` `styling`
 - **Descripción:** Lo más barato que hay, y por eso va primero: establece el patrón que las 7
   familias que siguen replican.
 - **Criterios de aceptación (DoD):**
-  - [ ] `Button`/`IconButton`: `min-width: 0` + política de label largo. Hoy no hay `min-width`, `max-width` ni `white-space`, así que un label largo se sale y `Button.stories.tsx:129-137` ya sondea el caso sin que ningún CSS lo sostenga.
-  - [ ] `Inline`/`Stack`: el contrato de `wrap` queda **documentado, no cambiado** (`.rr-inline--wrap` es opt-in por `wrap`, `Inline.css:99-101`), más `min-width: 0` donde el padre lo exige. El uso sin `wrap` que desborda es una decisión del consumidor y se documenta como tal, con el contraejemplo real al lado.
-  - [ ] Story `Responsive` de los cuatro con el patrón de RRU-135, y E2E geométrico a 320px.
-  - [ ] **Cero props nuevas.** El precedente queda escrito en la carta: *cuando la API ofrece el interruptor, la épica lo demuestra; no lo sustituye*.
+  - [x] `Button`/`IconButton`: `min-width: 0` + política de label largo. Hoy no hay `min-width`, `max-width` ni `white-space`, así que un label largo se sale y `Button.stories.tsx:129-137` ya sondea el caso sin que ningún CSS lo sostenga.
+  - [x] `Inline`/`Stack`: el contrato de `wrap` queda **documentado, no cambiado** (`.rr-inline--wrap` es opt-in por `wrap`, `Inline.css:99-101`), más `min-width: 0` donde el padre lo exige. El uso sin `wrap` que desborda es una decisión del consumidor y se documenta como tal, con el contraejemplo real al lado.
+  - [x] Story `Responsive` de los cuatro con el patrón de RRU-135, y E2E geométrico a 320px.
+  - [x] **Cero props nuevas.** El precedente queda escrito en la carta: *cuando la API ofrece el interruptor, la épica lo demuestra; no lo sustituye*.
+- **Notas de la sesión (2026-10-05 — cierre):** Los cuatro tienen `min-width: 0` salvo `IconButton`, y
+  la excepción es el hallazgo más útil de la carta. `Button` añade además `overflow-wrap: anywhere`
+  —no `break-word`— porque solo `anywhere` mete oportunidades de corte en el **min-content**, y un
+  token sin espacios (un id, una URL) si no pondría un suelo que la primera declaración no cruza. La
+  política de label largo es **envolver, no truncar**: `text-overflow` no aplica a una raíz
+  `inline-flex` y, con el label como item anónimo y `justify-content: center`, recortaría **los dos
+  bordes** sin pintar elipsis. En `IconButton` se midió lo que pasaba sin tamaño explícito: la raíz no
+  declaraba `padding` ni `width`/`height` y caía en el `padding: 1px 6px` del UA — **87.59×20**, un
+  rectángulo que rompía el cuadrado y la alineación de alturas con `Button` que el propio CSS
+  documenta. `size=md` vuelve a la clase base (precedente `Stack.gap`) y un test de paridad ata los dos
+  bloques. `IconButton` **no** lleva `min-width: 0` a propósito: los tamaños fijan `width` **y**
+  `height`, y esa declaración es la que dejaría que un flex item cediera el ancho manteniendo el alto
+  —el cuadrado en rectángulo—. En su lugar `flex-shrink: 0`, y el comentario dice la verdad: hoy el
+  cuadrado está protegido por el suelo de `min-width: auto` (medido: `flex-shrink: 1`, min-content
+  34px, renderizado 34px) y la declaración es **defensa** para cuando ese suelo desaparezca.
+  `NarrowContainer` (`storybook-support/index.tsx`) declara `containerType: inline-size` **en el
+  marco**, no en cada story: un `@container` sin contexto nunca casa, y es el primer riesgo observable
+  que nombra ADR-008. La **gate literal↔token** vive en `css-contracts.test.ts`: toda longitud de una
+  condición de ancho tiene que ser un valor de `breakpoint.*` (derivado de `@raulrod/tokens`, nunca
+  escrito a mano), `@media` de ancho solo en `dialog`/`toast`, y un `@container` exige `container-type`.
+  La puerta es **la primera de la épica que puede ver un rojo**: hoy el paquete tiene cero condiciones
+  de ancho legítimas, y una que las impusiera solo podría ponerse roja el día que RRU-137 escribiera
+  la suya. E2E `layout-primitives.spec.ts` (6 tests) con `boxOf`/`fitsWithin`/`overflowPx`/
+  `expectSquareBoxes` en `helpers.ts`, y **guarda de validez del fixture**: los ocho iconos suman 328px
+  en una fila de ~272px, así que sin `overflowPx > 0` el aserto de "siguen siendo cuadrados" pasaría
+  sobre una fila que cabía, sin demostrar nada.
+- **Notas de la sesión (2026-10-04 — cierre, corrections):** La tarjeta se había marcado `✅ Done` sin
+  completar el cierre de §6 (DoD sin marcar, sin fecha, sin notas, §0.1 y §3.7 sin actualizar) y
+  **el gate no se había ejecutado tras el commit final**: este commit (`77683b7`, 19 ficheros) llega
+  después del que se declaraba final (`f60027f`) y añade 275 líneas de gate y los tests de paridad.
+  Verificado en esta sesión: `pnpm lint`, `pnpm typecheck`, `pnpm test --filter=@raulrod/ui`
+  (**1103 passed**), `pnpm build`, `pnpm format:check` y `pnpm test:e2e` (**46 passed**, los 6 de esta
+  carta incluidos). **Desviación de §5 asumida**: la carta quedó en **dos commits** y el segundo
+  (`stop long button labels and layout primitives from overflowing`) **no sigue Conventional Commits**;
+  decisión del usuario: no se reescribe historial ya publicado en `development`, se anota aquí.
 - **Notas de la sesión (2026-10-04 — creación):** Aquí se decide el **precedente de la épica**, y
   por eso la carta es la primera de las familias. La tentación es hacer `Inline` responsivo por
   defecto; hacerlo sería sustituir una decisión explícita del consumidor por una del DS, y
@@ -1828,16 +1863,50 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
 
 ### RRU-137 · Overlays flotantes: Popover, DropdownMenu y Tooltip
 
-- **Epic:** EPIC-12 · **Estado:** ⬜ To Do
+- **Epic:** EPIC-12 · **Estado:** ✅ Done · **Fecha:** 2026-10-05
 - **Prioridad:** P0 · **Estimación:** M · **Dependencias:** RRU-135
 - **Labels:** `component` `styling` `a11y`
 - **Descripción:** Los tres son `position: fixed` sin `max-width` ni `max-height`: su ancho es
   shrink-to-fit contra el viewport, así que **pueden ser más anchos que la pantalla**.
 - **Criterios de aceptación (DoD):**
-  - [ ] `max-inline-size` con clamp de viewport + `max-block-size` + `overflow: auto` en los tres. El molde ya existe en el repo: `Toast.css:21` (`width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))`).
-  - [ ] **Probado, no asumido**, que el clamp de `utils/popover.ts:196-213` —que solo mueve `left`/`top` y **nunca encoge**— queda suficiente con `max-inline-size`, porque `useLayoutEffect` mide el rect **después** de aplicar el CSS. El caso está documentado hoy como comportamiento aceptado en `popover.test.ts:182-190` ("never leaves the viewport even when the panel is wider than the viewport", que solo asserta `left`): ese test **cambia o se documenta**.
-  - [ ] E2E a 320px con un panel de 500 caracteres: dentro del viewport, con el borde de 3:1 de `color.md §6.2` intacto y el registro de defectos de contraste **vacío**.
-  - [ ] Story `Responsive` de los tres.
+  - [x] `max-inline-size` con clamp de viewport + `max-block-size` + `overflow: auto` en los tres. El molde ya existe en el repo: `Toast.css:21` (`width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))`).
+  - [x] **Probado, no asumido**, que el clamp de `utils/popover.ts:196-213` —que solo mueve `left`/`top` y **nunca encoge**— queda suficiente con `max-inline-size`, porque `useLayoutEffect` mide el rect **después** de aplicar el CSS. El caso está documentado hoy como comportamiento aceptado en `popover.test.ts:182-190` ("never leaves the viewport even when the panel is wider than the viewport", que solo asserta `left`): ese test **cambia o se documenta**.
+  - [x] E2E a 320px con un panel de 500 caracteres: dentro del viewport, con el borde de 3:1 de `color.md §6.2` intacto y el registro de defectos de contraste **vacío**.
+  - [x] Story `Responsive` de los tres.
+- **Notas de la sesión (2026-10-05 — cierre):** El hallazgo que define la carta es que el clamp
+  **no bastaba con declararse**: `box-sizing: border-box` resultó ser parte del contrato. El paquete
+  no trae reset de `box-sizing`, así que `max-inline-size`/`max-block-size` miden la caja de
+  **contenido** y el padding se sale del límite. Medido con el E2E, no supuesto: con ambos clamps
+  correctos pero **sin** `box-sizing`, el panel quedó de **320×360 en un viewport de 320×360** —
+  pegado a los cuatro bordes — y de **416px** en escritorio en vez de los 384px que declara el
+  término durable, mientras **todas** las aserciones de "cabe dentro del viewport" seguían
+  pasando. Se comprobó por mutación (borrar la línea en `Popover.css` pone en rojo tres tests), y la
+  gate `panelBoundsProblems` la fija con una sonda propia. El orden de las operaciones que el DoD
+  pedía demostrar queda **demostrado y con una consecuencia medible**: `usePopoverPosition` mide en
+  `useLayoutEffect`, el CSS ya está aplicado, y el rect que ve es el acotado — sin `max-inline-size`
+  el panel sería de 500 caracteres y el clamp de `left` no lo salvaría. `popover.test.ts` gana tres
+  casos: panel ya acotado que conserva su posición, panel de altura completa dentro del viewport, y
+  el caso defensivo de panel excedido (que es exactamente lo que `left`-only puede arreglar). El
+  segundo hallazgo es de **ejes**: `overflowPx` de RRU-136 mide solo el inline, y estos paneles
+  desbordan en el **block** — el texto envuelve en el clamp, así que el eje inline mide **cero** y
+  habría reportado como "sin recorte" un panel que recorta. De ahí `blockOverflowPx` y
+  `expectNothingClipped` en `helpers.ts`, con el E2E midiendo el eje correcto. La altura de viewport
+  del E2E (360px) está **medida, no elegida**: los 500 caracteres rinden 371.5px a ese ancho, así que
+  a 420px el panel cabía de forma natural y todas las aserciones de "desplaza" pasaban **en vacío**; el gate de
+  validez del fixture de RRU-136 aplicado a un panel. **Desviación del DoD, documentada y reforzada por
+  la gate**: el Tooltip **no** lleva `max-block-size` ni `overflow: auto`. No es enfocable ni focus
+  trap, así que un scrollport ahí sería contenido que ningún usuario de teclado alcanza (mismo motivo
+  por el que RRU-072 descartó el foco en `title`); envuelve con `overflow-wrap: anywhere`. La gate
+  **rechaza** el scrollport del tooltip con sonda negativa, no solo lo documenta. El menú sí
+  desplaza, y su scrollport es alcanzable por teclado porque cada item es un `menuitem` enfocable:
+  <kbd>ArrowDown</kbd> lo recorre y el navegador trae cada item a la vista — la E2E lo prueba con
+  14 items, sin puntero. `100dvh` y no `100vh` queda en el **addendum de ADR-008** para que RRU-139
+  herede la decisión en vez de re-litigar `dvh` vs `vh`. Sin props nuevas, sin cambios de API.
+  Verificación: `pnpm lint`, `pnpm typecheck`, `pnpm test --filter=@raulrod/ui` (**1117 passed**),
+  `pnpm build`, `pnpm format:check`, `pnpm size-limit` (70.84kB/75kB JS, 5.52kB/6kB CSS) y
+  `pnpm test:e2e` (**52 passed**, los 6 de `overlays-narrow.spec.ts` incluidos) verdes. Contraste:
+  **636 pares, 0 absorbidos**, registro de defectos vacío.
+- **Notas de la sesión (2026-10-04 — creación):** Los cuatro overlays con posicionamiento JS
 - **Notas de la sesión (2026-10-04 — creación):** Los cuatro overlays con posicionamiento JS
   comparten patrón (`left/top: -9999px` inicial, `useLayoutPosition` con `resize` + `scroll`, flip y
   clamp). Esta carta cubre los tres sin `max-height`; **Select queda fuera** (RRU-138) porque su

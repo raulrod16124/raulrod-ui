@@ -88,6 +88,39 @@ export async function overflowPx(locator: Locator): Promise<number> {
 }
 
 /**
+ * How many CSS pixels of content stick out past the element's own height.
+ *
+ * Added in RRU-137, and the reason it exists rather than reusing `overflowPx`: that
+ * helper measures the INLINE axis, because RRU-136's documented overflow is a row
+ * of icon buttons that spills sideways. The overlays bounded by this epic overflow
+ * on the OTHER axis instead — prose taller than `max-block-size` scrolls
+ * vertically, and the inline axis measures exactly zero because the text wraps at
+ * the clamp. Reading the wrong axis would have reported "no overflow" for a panel
+ * that was demonstrably clipped, which is the failure mode a helper named
+ * `overflowPx` invites.
+ */
+export async function blockOverflowPx(locator: Locator): Promise<number> {
+  return locator.evaluate((node) => node.scrollHeight - node.clientHeight);
+}
+
+/**
+ * Asserts an element's content is fully rendered: nothing is clipped and there is
+ * no scrollport to reach it through.
+ *
+ * The mirror image of `blockOverflowPx > 0`. RRU-137 needs both claims about the
+ * same panel — the popover MAY scroll, the tooltip MUST NOT — and only the second
+ * one proves the deviation is real: a tooltip with `max-block-size` and
+ * `overflow: auto` would report itself visible and inside the viewport while the
+ * tail of its text sat in a scrollport nothing can focus.
+ */
+export async function expectNothingClipped(locator: Locator): Promise<void> {
+  const overflow = await blockOverflowPx(locator);
+  expect(overflow, "the element's content must be fully rendered, not clipped").toBeLessThanOrEqual(
+    1,
+  );
+}
+
+/**
  * Asserts every element a locator resolves to is as wide as it is tall.
  *
  * Used for the square sizes, where a rectangle is the defect: an icon button that

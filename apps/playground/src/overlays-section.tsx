@@ -25,6 +25,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  Heading,
   IconButton,
   Info,
   Inline,
@@ -257,6 +258,97 @@ export function OverlaysSection() {
           <Settings />
         </IconButton>
       </Inline>
+
+      <NarrowContentProbe />
     </Stack>
   );
 }
+
+/**
+ * The 500-character case, as three real surfaces (RRU-137, EPIC-12).
+ *
+ * A floating panel is `position: fixed` with no intrinsic width, so before this
+ * card its size was shrink-to-fit against the viewport: a paragraph long enough
+ * opened WIDER THAN THE SCREEN, and nothing in the DOM reported it — the panel
+ * stayed present, visible and correctly labelled. Only the geometry was wrong.
+ *
+ * Each control keeps a real accessible name, because the E2E asserts on the name
+ * a user would read and never on an index or an `rr-*` class (`e2e/helpers.ts`
+ * rules 1 and 3). The `data-testid`s are on the triggers, which DO have an
+ * accessible identity of their own.
+ *
+ * The three are deliberately different cases, because they take different paths
+ * through the fix: the Popover is unbounded prose (it needs the block scrollport),
+ * the menu is a bounded set of labels plus enough items to exceed a 320px screen
+ * (its items are focusable, so the scrollport is reachable by keyboard), and the
+ * Tooltip is the one that must NOT have a scrollport — it wraps instead, because
+ * a scrollport it cannot be focused into is content no keyboard user can reach
+ * (see the deviation documented in Tooltip.css).
+ */
+function NarrowContentProbe() {
+  return (
+    <Stack gap="space-4">
+      <Heading as="h3">Narrow-viewport overlays</Heading>
+      <Text>
+        Three floating panels carrying content that does not fit a 320px screen. Each one is bounded
+        by the viewport: the prose scrolls, the menu scrolls through its own focus order, and the
+        tooltip wraps.
+      </Text>
+
+      <Inline className="pg-row" wrap>
+        <Popover>
+          <PopoverTrigger data-testid="narrow-popover-trigger">Filter details</PopoverTrigger>
+          <PopoverContent>
+            <PopoverTitle>Filter details</PopoverTitle>
+            <Text>{LONG_OVERLAY_CONTENT}</Text>
+            <Button data-testid="narrow-popover-action" type="button" variant="outline">
+              Apply filters
+            </Button>
+          </PopoverContent>
+        </Popover>
+      </Inline>
+
+      <Inline className="pg-row" wrap>
+        <DropdownMenu>
+          <DropdownMenuTrigger data-testid="narrow-menu-trigger">Bulk actions</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Move to archive</DropdownMenuItem>
+            <DropdownMenuItem>Export as CSV with every visible column included</DropdownMenuItem>
+            <DropdownMenuItem>Duplicate</DropdownMenuItem>
+            <DropdownMenuItem>Transfer ownership</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Delete permanently</DropdownMenuItem>
+            <DropdownMenuItem>Delete and empty the recycle bin afterwards</DropdownMenuItem>
+            <DropdownMenuItem>Cancel and keep every change</DropdownMenuItem>
+            <DropdownMenuItem>Print the selected rows</DropdownMenuItem>
+            <DropdownMenuItem>Share a read-only link</DropdownMenuItem>
+            <DropdownMenuItem>Watch this item</DropdownMenuItem>
+            <DropdownMenuItem>Report as incorrect</DropdownMenuItem>
+            <DropdownMenuItem>Pin to the top of the list</DropdownMenuItem>
+            <DropdownMenuItem>Add to a collection</DropdownMenuItem>
+            <DropdownMenuItem>Restore the previous version</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Inline>
+
+      <Inline className="pg-row" wrap>
+        <Tooltip content={LONG_OVERLAY_CONTENT}>
+          <Button data-testid="narrow-tooltip-trigger" type="button" variant="outline">
+            What does this do?
+          </Button>
+        </Tooltip>
+      </Inline>
+    </Stack>
+  );
+}
+
+/**
+ * One paragraph of ~500 characters: the width the card's DoD names, and a length
+ * no consumer writes on purpose. At 320px it is what makes every one of the three
+ * panels exceed the screen if the bound is missing.
+ */
+const LONG_OVERLAY_CONTENT =
+  "Billing runs on the first of every month and charges the workspace owner for each active seat. " +
+  "Changing the plan mid-cycle takes effect at the next renewal rather than immediately, so the " +
+  "current invoice is never repriced: the proration appears as a credit on the following one, and " +
+  "seats added after the invoice was issued are billed pro rata for the days remaining in the period.";

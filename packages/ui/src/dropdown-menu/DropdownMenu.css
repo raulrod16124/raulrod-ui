@@ -9,7 +9,31 @@
      (2px focus ring is the color.md §6.3 contract).
    Layering: `z-index: var(--rr-z-overlay)` — the menu floats at the overlay
    level, BELOW modals (`z.modal`); stacked submenus keep working through the
-   dismissable-layer registry (RRU-052), one level per interaction. */
+   dismissable-layer registry (RRU-052), one level per interaction.
+
+   Narrow viewports (RRU-137, ADR-008): `max-inline-size`/`max-block-size` bound
+   the panel to the VIEWPORT, in viewport units and not `@container`, because this
+   root is `position: fixed` and portalled to `document.body` — it is not a
+   descendant of anything the consumer draws, so a container query cannot reach
+   it and a `@container` context would have to be invented on a node outside the
+   component. Same reasoning as `Popover.css`, and it is why the `@media`
+   exception ADR-008 reserves for viewport geometry (Dialog, Toast) does not need
+   to grow: `min()` against `100vw` expresses the same bound without an at-rule,
+   so the RRU-136 gate still sees zero width conditions here.
+
+   `min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))` is the
+   `Toast.css:21` mold; at 320px it resolves to 288px and leaves `space-4` clear on
+   both edges. `100dvh` rather than `100vh` because a fixed overlay tracks the
+   visual viewport (recorded in ADR-008 for RRU-139 to inherit for Toast).
+
+   `overflow: auto` is what makes `max-block-size` usable — a menu taller than the
+   screen has to scroll somewhere. Unlike Popover, this one is keyboard-safe by
+   construction: every item is a `[role="menuitem"]` button with roving tabindex,
+   so arrow-key navigation moves focus into view and the browser scrolls the
+   focused item through the scrollport. That is why the two sibling panels share
+   the mechanism but not the risk. The clamp lives on `.rr-dropdown-menu`, which
+   both `role="menu"` panels share, so a submenu is bounded by the same rule with
+   no second declaration. */
 
 .rr-dropdown-trigger {
   appearance: none;
@@ -41,6 +65,13 @@
   left: -9999px;
   top: -9999px;
   z-index: var(--rr-z-overlay);
+  /* Mechanics, not design: the clamp has to measure the border box, or the
+     space-1 padding turns `100vw - 32px` into a panel flush with both edges. See
+     Popover.css's header for the measurement. */
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow: auto;
   padding: var(--rr-space-1);
   background: var(--rr-color-background-surface);
   color: var(--rr-color-text-primary);

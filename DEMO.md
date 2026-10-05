@@ -28,9 +28,9 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Runtime exports of @raulrod/ui | 72     |
 | Components                     | 28     |
 | Story files                    | 27     |
-| MDX documentation pages        | 16     |
-| Architecture Decision Records  | 7      |
-| Playwright E2E specs           | 7      |
+| MDX documentation pages        | 17     |
+| Architecture Decision Records  | 8      |
+| Playwright E2E specs           | 9      |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |
@@ -81,8 +81,8 @@ and the alternative that was rejected, is `docs/decisions/004-component-composit
 
 ### 3. Documentation
 
-Seven Architecture Decision Records in `docs/decisions/`, and MDX pages shipped inside the package
-so they cannot drift from the components they describe — sixteen of them, including a Spanish
+Eight Architecture Decision Records in `docs/decisions/`, and MDX pages shipped inside the package
+so they cannot drift from the components they describe — seventeen of them, including a Spanish
 translation of the setup guide. Decisions are numbered and never edited after publication; a change
 of mind is a new record.
 

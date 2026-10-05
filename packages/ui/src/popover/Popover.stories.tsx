@@ -107,3 +107,34 @@ export const Keyboard: Story = {
     await userEvent.keyboard("{escape}");
   },
 };
+
+/**
+ * The 320px case, open on load (RRU-137).
+ *
+ * `defaultOpen` because the defect is only visible once the panel is measured,
+ * and a Storybook viewport is 320×568 — taller than the 500-character content
+ * renders, so this story proves the INLINE bound (the panel stops at 288px with
+ * `space-4` clear on each edge) and leaves the block scrollport to the E2E, which
+ * drives a shorter viewport on purpose. See `apps/playground/e2e/overlays-narrow.spec.ts`.
+ */
+export const Responsive: Story = {
+  render: () => (
+    <Popover defaultOpen>
+      <PopoverTrigger>Open popover</PopoverTrigger>
+      <PopoverContent>
+        <PopoverTitle>Billing details</PopoverTitle>
+        <StoryStack>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <p key={i}>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua.
+            </p>
+          ))}
+        </StoryStack>
+      </PopoverContent>
+    </Popover>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};

@@ -105,3 +105,27 @@ export const Keyboard: Story = {
     await userEvent.tab();
   },
 };
+
+/**
+ * The 320px case (RRU-137), and the one panel that WRAPS instead of scrolling.
+ *
+ * Left closed rather than forced open with `defaultOpen`: the reader is meant to
+ * reach this tooltip the way a keyboard user does, by focusing the trigger, which
+ * is also the path that shows the deviation is safe — the panel is taller than a
+ * hint should be, and every word of it is still reachable because it wraps and
+ * nothing is clipped. A story that rendered open would hide exactly that.
+ */
+export const Responsive: Story = {
+  args: {
+    content:
+      "Billing runs on the first of every month and charges the workspace owner for each active seat. Changing the plan mid-cycle takes effect at the next renewal rather than immediately, so the current invoice is never repriced.",
+  },
+  render: (args) => (
+    <Tooltip {...args}>
+      <Button>What does this do?</Button>
+    </Tooltip>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};

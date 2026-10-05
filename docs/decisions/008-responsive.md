@@ -87,6 +87,39 @@ RRU-133 establece la **estrategia** y los **cimientos base** para que EPIC-12 la
 - **Aplicación por familias (RRU-136–143):** cada familia aplica container-first donde tenga sentido; Dialog/Toast mantienen `@media` si fuera necesario (ya los tienen mayormente enfocados a viewport en su lógica).
 - **Verificación:** lint/typecheck/test/build obligatorios (§0 paso 4). No se espera cambio en tests existentes (EPIC-12 no toca API pública). Verificar coherencia: `git grep "@media"` puede incluir media queries existentes (`prefers-reduced-motion`, `prefers-color-scheme` en tokens) y, cuando se añadan en componentes, **solo** los justificados (Dialog/Toast) según ADR-008. La comprobación de que "no hay breakpoints de ancho" antes de RRU-133 se resuelve con la estrategia establecida; la demo podrá observar responsive a partir de las tarjetas de aplicación.
 
+## Addendum: overlays `position: fixed` se acotan contra el viewport (RRU-137)
+
+La convención "container-first" tiene una tercera excepción, que no es un at-rule: los
+overlays flotantes (`Popover`, `DropdownMenu`, `Tooltip`) se acotan con `min()` y unidades
+de viewport.
+
+- **Por qué no alcanza ningún otro mecanismo.** Son `position: fixed` portalled a
+  `document.body`: no son descendientes de nada que el consumidor dibuje, así que un
+  contenedor de 320px alrededor no los acotaría, y su espacio de coordenadas **es** el
+  viewport. Es la misma observación que reserva `@media` para Dialog y Toast, alcanzada
+  por `min()` en vez de por una regla.
+- **`min(<duradero>, calc(100vw - 2 * var(--rr-space-4)))`.** El molde ya existía en
+  `Toast.css`; RRU-137 lo replica. El término durable (6 × `space-16` = 384px) evita que
+  un párrafo largo sea una hoja de 900px en escritorio; el término de viewport es el que
+  salva al móvil (288px a 320px de ancho).
+- **`100dvh`, no `100vh`.** Un overlay fijo sigue el viewport _visual_, así que la unidad
+  dinámica es la honesta: con la interfaz del navegador visible, `vh` dejaría que el
+  scrollport se metiera debajo. Queda registrado aquí para que RRU-139 (Dialog/Toast)
+  herede la decisión en vez de volver a discutir `dvh` vs `vh`.
+- **`box-sizing: border-box` es parte del contrato, no un extra.** El paquete no trae
+  reset de `box-sizing`, así que sin esta declaración los `max-*` miden la caja de
+  **contenido**: el E2E midió un panel de 320px de ancho y 360px de alto en un viewport
+  de 320×360 —pegado a los cuatro bordes— y 416px en escritorio en vez de 384px, mientras
+  todas las aserciones de "cabe dentro del viewport" seguían pasando. `css-contracts.test.ts`
+  lo fija.
+- **El tooltip envuelve; los otros dos desplazan.** `Popover` y `DropdownMenu` declaran
+  `max-block-size` + `overflow: auto`, y el menú además es alcanzable por teclado porque
+  cada item es un `menuitem` enfocable: <kbd>ArrowDown</kbd> recorre el scrollport. El
+  tooltip **no** declara scrollport —no es enfocable ni es focus trap, así que un
+  scrollport ahí sería contenido que ningún usuario de teclado alcanza— y usa
+  `overflow-wrap: anywhere`. Es la desviación documentada de la carta RRU-137, reforzada
+  por la gate (que rechaza el scrollport) y no solo por una nota.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.

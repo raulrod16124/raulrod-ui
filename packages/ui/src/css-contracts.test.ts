@@ -1392,6 +1392,264 @@ describe("the responsive contract is not a no-op (negative probes, RRU-136)", ()
   });
 });
 
+// --- Floating overlays: the viewport bound (RRU-137, ADR-008) -----------------
+//
+// RRU-136 judged the at-rules. This one judges the DECLARATIONS, and it exists
+// because the defect it guards is invisible to every other gate in the repo: a
+// floating panel is `position: fixed` with no intrinsic width, so its size is
+// shrink-to-fit against the viewport. A 500-character panel therefore opens
+// WIDER THAN THE SCREEN, and nothing in the DOM reports it — the panel is
+// present, visible, correctly labelled and fully readable by a screen reader. It
+// is only wrong to the eye, and only at a width nobody on a laptop will ever
+// open.
+//
+// The bound is the `Toast.css` mold, and this gate pins the three properties that
+// make it load-bearing rather than decorative:
+//   - `max-inline-size` on all three panels, so no panel can be wider than the
+//     viewport minus `space-4` on each side;
+//   - `max-block-size` + `overflow: auto` where the panel is keyboard-reachable
+//     through its scrollport (Popover, DropdownMenu);
+//   - and, deliberately, the ABSENCE of a scrollport on Tooltip (see below), so a
+//     later change cannot re-add an overflow a keyboard user cannot reach.
+
+/** The panels RRU-137 bounded, with the class each one renders. */
+const BOUNDED_PANELS: readonly {
+  readonly selector: string;
+  readonly file: string;
+  /** Whether the panel's scrollport is reachable by keyboard. */
+  readonly scrollable: boolean;
+}[] = [
+  { selector: ".rr-popover-content", file: "popover/Popover.css", scrollable: true },
+  { selector: ".rr-dropdown-menu", file: "dropdown-menu/DropdownMenu.css", scrollable: true },
+  { selector: ".rr-tooltip", file: "tooltip/Tooltip.css", scrollable: false },
+];
+
+/** The last declaration of `property` in the base rule for `selector`. */
+function panelDeclaration(
+  rules: readonly CssRule[],
+  selector: string,
+  property: string,
+): { readonly value: string; readonly line: number } | undefined {
+  const rule = rules.find(
+    (entry) => entry.keyframes === null && entry.selectors.includes(selector),
+  );
+  const found = rule === undefined ? undefined : lastDeclaration(rule, property);
+  return found === undefined ? undefined : { value: found.value, line: found.line };
+}
+
+/**
+ * Why a bounded panel is not bounded, as human-readable lines. `path` is the
+ * `src/`-relative name a failure points at.
+ */
+function panelBoundsProblems(path: string, rules: readonly CssRule[]): readonly string[] {
+  const problems: string[] = [];
+  const panel = BOUNDED_PANELS.find((entry) => entry.file === path);
+  if (panel === undefined) return problems;
+
+  // Checked before the clamps themselves, because it decides what they mean. The
+  // package ships no `box-sizing` reset, so without this declaration both
+  // `max-*` values resolve against the CONTENT box: the E2E measured a popover
+  // 320px wide and 360px tall at a 320×360 viewport (flush with all four edges,
+  // past the bound it appeared to declare) and a 416px-wide panel on desktop
+  // instead of 384px. Every "fits the viewport" assertion kept passing, which is
+  // why this is pinned here rather than left to a comment.
+  const boxSizing = panelDeclaration(rules, panel.selector, "box-sizing");
+  if (boxSizing?.value !== "border-box") {
+    problems.push(
+      `${path}: ${panel.selector} declares box-sizing: ${boxSizing?.value ?? "nothing"}, so its max-* clamps measure the content box and the panel ends up flush with the screen edges. Declare "border-box" on the panel root (RRU-137).`,
+    );
+  }
+
+  const inline = panelDeclaration(rules, panel.selector, "max-inline-size");
+  if (inline === undefined) {
+    problems.push(
+      `${path}: ${panel.selector} has no max-inline-size, so its width is shrink-to-fit against the viewport and a long panel opens wider than the screen (RRU-137).`,
+    );
+  } else if (!inline.value.includes("100vw")) {
+    // Not "any bound is fine": a `max-inline-size: 100%` would resolve against a
+    // containing block that a fixed panel does not have, and a fixed `20rem`
+    // would still overflow a 320px viewport.
+    problems.push(
+      `${path}:${inline.line}: max-inline-size is "${inline.value}", which does not clamp against the viewport. A position: fixed panel's containing block is the viewport, so the bound has to name it: min(<durable>, calc(100vw - 2 * var(--rr-space-4))).`,
+    );
+  }
+
+  const block = panelDeclaration(rules, panel.selector, "max-block-size");
+  const overflow = panelDeclaration(rules, panel.selector, "overflow");
+
+  if (panel.scrollable) {
+    if (block === undefined) {
+      problems.push(
+        `${path}: ${panel.selector} has no max-block-size, so a panel taller than the screen cannot scroll (RRU-137).`,
+      );
+    }
+    if (overflow?.value !== "auto") {
+      problems.push(
+        `${path}: ${panel.selector} declares overflow: ${overflow?.value ?? "nothing"}, so its max-block-size clips the content instead of scrolling it. A bounded block size needs "auto" (RRU-137).`,
+      );
+    }
+  } else if (overflow?.value === "auto") {
+    // The deviation, enforced rather than merely documented: this panel is not
+    // focusable, so a scrollport here is content no keyboard user can reach.
+    problems.push(
+      `${path}: ${panel.selector} declares overflow: auto. It is not focusable and not a focus trap, so this scrollport is unreachable by keyboard — the documented deviation is to wrap instead (RRU-137).`,
+    );
+  }
+
+  return problems;
+}
+
+describe("floating overlays: every panel is bounded by the viewport (RRU-137)", () => {
+  it.each(BOUNDED_PANELS)("bounds $selector in $file", async ({ file }) => {
+    expect(await panelBoundsProblems(file, await parseCssRules(file))).toEqual([]);
+  });
+
+  it("judges every panel it claims, and every one it lists really exists", async () => {
+    // The coverage proof, so the block above cannot pass by finding nothing: each
+    // declared panel is resolved as a real rule that really is fixed-positioned.
+    for (const panel of BOUNDED_PANELS) {
+      const rules = await parseCssRules(panel.file);
+      const rule = rules.find(
+        (entry) => entry.keyframes === null && entry.selectors.includes(panel.selector),
+      );
+      expect(rule, `${panel.file} has no rule for ${panel.selector}`).toBeDefined();
+      expect(declaration(rule!, "position")?.value).toBe("fixed");
+    }
+  });
+
+  it("claims three panels and three panels, no more", () => {
+    // The scope floor, so this cannot quietly grow into a repo-wide style rule.
+    // Dialog and Toast measure the viewport too, but they are RRU-139's card and
+    // they carry their own bounds, and a contract written in two places is a
+    // contract that ends up honoured in one.
+    const claimed = new Set(BOUNDED_PANELS.map((entry) => entry.file));
+    expect(stylesheets.filter((file) => claimed.has(file))).toHaveLength(BOUNDED_PANELS.length);
+  });
+});
+
+describe("the overlay bound is not a no-op (negative probes, RRU-137)", () => {
+  /** Writes a probe stylesheet and judges it the way `file` is judged. */
+  const probe = async (name: string, file: string, css: string): Promise<readonly string[]> => {
+    const path = join(probeDirectory, name);
+    await writeFile(path, css, "utf8");
+    return panelBoundsProblems(file, await parseCssRules(path));
+  };
+
+  it("flags a panel with no width bound at all", async () => {
+    const problems = await probe(
+      "unbounded-panel.css",
+      "tooltip/Tooltip.css",
+      `.rr-tooltip {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  box-sizing: border-box;
+  padding: var(--rr-space-2) var(--rr-space-3);
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("no max-inline-size");
+  });
+
+  it("flags a width bound that does not name the viewport", async () => {
+    const problems = await probe(
+      "percent-panel.css",
+      "tooltip/Tooltip.css",
+      `.rr-tooltip {
+  position: fixed;
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("does not clamp against the viewport");
+  });
+
+  it("flags a max-block-size that clips instead of scrolling", async () => {
+    const problems = await probe(
+      "clipping-panel.css",
+      "popover/Popover.css",
+      `.rr-popover-content {
+  position: fixed;
+  box-sizing: border-box;
+  max-inline-size: calc(100vw - 2 * var(--rr-space-4));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow: hidden;
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("declares overflow: hidden");
+  });
+
+  it("flags a scrollable panel with no block bound to scroll", async () => {
+    const problems = await probe(
+      "unbounded-block.css",
+      "dropdown-menu/DropdownMenu.css",
+      `.rr-dropdown-menu {
+  position: fixed;
+  box-sizing: border-box;
+  max-inline-size: calc(100vw - 2 * var(--rr-space-4));
+  overflow: auto;
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("no max-block-size");
+  });
+
+  it("flags a clamp that would measure the content box instead of the panel", async () => {
+    // The one that is not visible in the stylesheet's own arithmetic: this panel
+    // declares both clamps exactly as the tooltip does, and still ends up wider
+    // than the bound by its own padding. Only the E2E found it, by measuring the
+    // border box.
+    const problems = await probe(
+      "content-box-panel.css",
+      "popover/Popover.css",
+      `.rr-popover-content {
+  position: fixed;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow: auto;
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("measure the content box");
+  });
+
+  it("rejects the scrollport the tooltip must not have", async () => {
+    // Judged as `tooltip/Tooltip.css` on purpose, and the compliant stylesheet in
+    // the same test is the same CSS minus the scrollport: without both halves the
+    // documented deviation would be indistinguishable from an oversight.
+    const withScrollport = await probe(
+      "scrolling-tooltip.css",
+      "tooltip/Tooltip.css",
+      `.rr-tooltip {
+  position: fixed;
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow: auto;
+}
+`,
+    );
+    expect(withScrollport.join("\n")).toContain("unreachable by keyboard");
+
+    expect(
+      await probe(
+        "wrapping-tooltip.css",
+        "tooltip/Tooltip.css",
+        `.rr-tooltip {
+  position: fixed;
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  overflow-wrap: anywhere;
+}
+`,
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe("contrast report (the DoD artefact, not a gate)", () => {
   it("summarises what it judged", () => {
     // The full 600+ row table lives in `docs/accessibility/manual-review.md`,
