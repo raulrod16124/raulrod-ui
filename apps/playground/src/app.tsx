@@ -16,6 +16,7 @@ import "./app.css";
 import { A11yReviewSection } from "./a11y-review-section.js";
 import { ConsumerContract } from "./consumer-contract/section.js";
 import { FormSection } from "./form-section.js";
+import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
 import { OverlaysSection } from "./overlays-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
 
@@ -76,6 +77,21 @@ export function App() {
                 Consumer contract
               </Heading>
               <ConsumerContract />
+            </section>
+
+            {/* Probe fixture, not a showcase: the subject the narrow-width E2E
+                measures (RRU-136). RRU-144 owns the responsive section of the
+                playground; this stays here so the measurement has something to
+                measure. */}
+            <section
+              aria-labelledby="layout-primitives-title"
+              className="pg-section"
+              id="layout-primitives"
+            >
+              <Heading as="h2" className="pg-section__title" id="layout-primitives-title">
+                Layout primitives
+              </Heading>
+              <LayoutPrimitivesSection />
             </section>
           </Stack>
         </main>

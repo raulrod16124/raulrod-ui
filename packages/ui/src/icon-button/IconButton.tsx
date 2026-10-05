@@ -41,9 +41,12 @@ const iconButtonClasses = createVariants(iconButtonModifiers);
  *
  * `loading` swaps the icon for the spinner and disables the control natively,
  * keeping `aria-label` intact (state announced via `aria-busy`). `variant`
- * defaults to `primary` in JS (Heading `as` precedent); `size` defaults to
- * `md` in CSS, and every size squares the control to Button's height so both
- * kinds of action align in a toolbar (IconButton.css sizing note).
+ * defaults to `primary` in JS (Heading `as` precedent); `size` defaults to `md`
+ * in the CSS base class (IconButton.css sizing note), which is why the md
+ * geometry has to be written there and not only under `--size-md`: with no `size`
+ * prop the control once fell through to the UA stylesheet and rendered as a
+ * non-square, non-aligned rectangle. Every size squares the control to Button's
+ * height so both kinds of action align in a toolbar.
  */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
   { label, variant = "primary", size, loading = false, disabled, className, children, ...props },

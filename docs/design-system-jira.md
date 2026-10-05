@@ -1808,7 +1808,7 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
 
 ### RRU-136 · Layout primitivos: Inline, Stack, Button e IconButton
 
-- **Epic:** EPIC-12 · **Estado:** ⬜ To Do
+- **Epic:** EPIC-12 · **Estado:** ✅ Done
 - **Prioridad:** P1 · **Estimación:** M · **Dependencias:** RRU-135
 - **Labels:** `component` `styling`
 - **Descripción:** Lo más barato que hay, y por eso va primero: establece el patrón que las 7

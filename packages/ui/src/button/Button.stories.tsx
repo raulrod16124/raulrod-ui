@@ -4,7 +4,8 @@ import { fn, userEvent, within } from "@storybook/test";
 
 import { ChevronDown, Loader2 } from "@raulrod/icons";
 
-import { StoryInline, StoryStack } from "../storybook-support/index.js";
+import { Inline } from "../inline/index.js";
+import { NarrowContainer, StoryInline, StoryStack } from "../storybook-support/index.js";
 
 import { Button } from "./Button.js";
 
@@ -136,14 +137,46 @@ export const LongContent: Story = {
   ),
 };
 
+/**
+ * RRU-136, ADR-008. The previous version of this story set `flex: 1 1 120px` on
+ * every button, so it demonstrated the CONSUMER's CSS, not the component's.
+ *
+ * What is worth seeing at a narrow width is the long-label policy, and the case
+ * that makes it necessary is a label with NO SPACES — a URL, an id, an email.
+ * `min-width: 0` lets the control shrink as a flex item, and
+ * `overflow-wrap: anywhere` is the value that feeds soft wrap opportunities into
+ * the min-content size (`break-word` would not, so the floor would survive).
+ * The label WRAPS: it is never truncated, because `text-overflow` does not apply
+ * to this `inline-flex` root and clipping a centred label would cut it on both
+ * edges. `LongContent` above is the prose version of the same case.
+ */
 export const Responsive: Story = {
   render: () => (
-    <StoryInline gap="space-4" style={{ flexWrap: "wrap" }}>
-      <Button style={{ flex: "1 1 120px" }}>Adaptive</Button>
-      <Button style={{ flex: "1 1 120px" }}>Adaptive</Button>
-      <Button style={{ flex: "1 1 120px" }}>Adaptive</Button>
-    </StoryInline>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="unbreakable labels wrap inside a 320px container">
+        <StoryStack gap="space-3">
+          <Button>Cancel-the-subscription-and-refund-the-current-period</Button>
+          <Button size="sm">
+            https://example.com/settings/billing/invoices/2026-10-05/download
+          </Button>
+          <Button size="lg">rr-7f3a91c2e5b84d0f6a1b2c3d4e5f60718</Button>
+        </StoryStack>
+      </NarrowContainer>
+      <NarrowContainer label="a row of buttons wraps with Inline's wrap, not by overflowing">
+        <Inline wrap gap="space-2">
+          <Button variant="outline">Save draft</Button>
+          <Button variant="outline">Discard</Button>
+          <Button variant="outline">Duplicate workspace and invite teammates</Button>
+        </Inline>
+      </NarrowContainer>
+    </StoryStack>
   ),
+  parameters: {
+    // The narrow viewport EPIC-12 measures at, from the Dialog precedent. The
+    // frames above are containers, so they behave the same at any window size;
+    // this only keeps the story honest about the width it was reviewed at.
+    viewport: { defaultViewport: "mobile1" },
+  },
 };
 
 export const CustomSpinner: Story = {

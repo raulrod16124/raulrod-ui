@@ -22,6 +22,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import {
   authorizedThemes,
+  breakpoints,
   component,
   contrastRatio,
   findAuthorizedPair,
@@ -35,6 +36,7 @@ import {
   declaration,
   isReducedMotion,
   lastDeclaration,
+  mediaFeatures,
   parseCssRules,
   tokenNames,
 } from "./test-support/css-rules.js";
@@ -1114,6 +1116,279 @@ describe("the contract is not a no-op (negative probes, ADR-005)", () => {
       "utf8",
     );
     expect(await reducedMotionProblems(path)).toEqual([]);
+  });
+});
+
+// --- Responsive contract (RRU-136, ADR-008) ------------------------------------
+//
+// The gap this closes: `--rr-breakpoint-*` is DOCUMENTARY. CSS custom properties
+// cannot be used inside `@media` or `@container`, so the conditions carry px
+// literals while the tokens stay the source of truth (theming.md §8). Until this
+// gate, nothing connected the two: a `768px` typed by hand would look exactly
+// like a `768px` that came from `breakpoint.md`, and the two would drift apart
+// silently. EPIC-12's own preamble names this gate as the epic's first
+// deliverable; RRU-133 deferred it and RRU-135 did not need it, so RRU-136 is the
+// first card that can write a width condition and the first that can enforce one.
+//
+// Three promises, all decidable by reading the source:
+//
+//  1. EVERY length in a width condition is a `breakpoint.*` value. The allowed set
+//     is derived from `@raulrod/tokens`, never written out here, so adding a
+//     breakpoint to the tokens opens the gate without touching this file.
+//  2. `@media` for width stays Dialog and Toast only (ADR-008:28). Those two
+//     measure the VIEWPORT — a dialog's max height and a toast's offset are
+//     viewport geometry — so they are the documented exception. Everything else
+//     uses `@container`.
+//  3. A `@container` query in a stylesheet that declares no `container-type` never
+//     matches. ADR-008:77 names "forgetting the container context" as the epic's
+//     first observable risk, and a silent no-op query is the hardest kind of CSS
+//     defect to notice: nothing fails, the layout just never changes.
+
+/** The px literals a width condition may use, derived from the tokens themselves. */
+const ALLOWED_WIDTH_LITERALS = new Set<string>(Object.values(breakpoints));
+
+/**
+ * The two components allowed a width `@media` (ADR-008:28). Matched against the
+ * component FOLDER, which is the unit `listComponentStylePaths` yields.
+ */
+const VIEWPORT_MEDIA_COMPONENTS: ReadonlySet<string> = new Set(["dialog", "toast"]);
+
+/** Features that make a condition a statement about WIDTH rather than about user preference. */
+const WIDTH_FEATURES: ReadonlySet<string> = new Set(["min-width", "max-width", "width"]);
+
+/**
+ * The at-rule a prelude opens with, e.g. `@container` or `@media`.
+ */
+function atRuleOf(prelude: string): string {
+  return /^@[a-z-]+/.exec(prelude)?.[0] ?? "";
+}
+
+/**
+ * Every length authored in a condition, with its unit. `min-width: 768px` gives
+ * `768px`; `min-width: 48rem` gives `48rem`, which is a different unit and is
+ * rejected for the same reason an invented px is — a breakpoint is px here
+ * because the tokens are px.
+ */
+function lengthsIn(prelude: string): readonly string[] {
+  return [...prelude.matchAll(/(\d*\.?\d+)(px|em|rem|ch|ex|vw|vh|vmin|vmax|%)/g)].map(
+    (match) => `${match[1]}${match[2]}`,
+  );
+}
+
+/**
+ * The width conditions of a stylesheet, one entry per DISTINCT prelude, each with
+ * the line of the first rule inside it. A `@container` block repeats its prelude
+ * on every child rule, and the gate has to say it once.
+ */
+function widthConditions(
+  rules: readonly CssRule[],
+): readonly { readonly prelude: string; readonly line: number }[] {
+  const seen = new Map<string, number>();
+
+  for (const rule of rules) {
+    const prelude = rule.media;
+    if (prelude === null) continue;
+    if (!mediaFeatures(prelude).some((feature) => WIDTH_FEATURES.has(feature))) continue;
+
+    const line = rule.declarations[0]?.line ?? 1;
+    if (!seen.has(prelude)) seen.set(prelude, line);
+  }
+
+  return [...seen].map(([prelude, line]) => ({ prelude, line }));
+}
+
+/**
+ * What a stylesheet gets wrong about responsive layout, as human-readable lines.
+ * `path` is the `src/`-relative name the failure message points at.
+ */
+function responsiveProblems(path: string, rules: readonly CssRule[]): readonly string[] {
+  const problems: string[] = [];
+  const folder = path.split("/")[0] ?? path;
+  const declaresContainerType = rules.some((rule) =>
+    rule.declarations.some((entry) => entry.property === "container-type"),
+  );
+
+  for (const { prelude, line } of widthConditions(rules)) {
+    const where = `${path}:${line}`;
+    const rule = atRuleOf(prelude);
+
+    for (const length of lengthsIn(prelude)) {
+      if (!ALLOWED_WIDTH_LITERALS.has(length)) {
+        problems.push(
+          `${where}: "${prelude}" uses ${length}, which is not a breakpoint token. The width conditions of ${rule} may only use ${[...ALLOWED_WIDTH_LITERALS].join(", ")} (breakpoint.sm/md/lg/xl); CSS variables cannot be read inside a condition (theming.md §8).`,
+        );
+      }
+    }
+
+    if (rule === "@media" && !VIEWPORT_MEDIA_COMPONENTS.has(folder)) {
+      problems.push(
+        `${where}: ${folder} uses "${prelude}" for width. @media is reserved for ${[...VIEWPORT_MEDIA_COMPONENTS].join(" and ")}, which measure the viewport (ADR-008); everything else reacts to its container with @container.`,
+      );
+    }
+
+    if (rule === "@container" && !declaresContainerType) {
+      problems.push(
+        `${where}: "${prelude}" can never match, because ${path} declares no container-type. An element queries its ANCESTORS' containers, so the context has to be established by this stylesheet.`,
+      );
+    }
+  }
+
+  return problems;
+}
+
+/** `responsiveProblems` for a file the probes write to disk. */
+async function responsiveProblemsIn(path: string): Promise<readonly string[]> {
+  return responsiveProblems(path.split("/").pop() ?? path, await parseCssRules(path));
+}
+
+describe("responsive: width conditions come from the tokens (RRU-136, ADR-008)", () => {
+  it.each(stylesheets)("%s", async (file) => {
+    expect(await responsiveProblemsIn(file)).toEqual([]);
+  });
+
+  it("reads the at-rules it is judging, and discriminates width from preference", async () => {
+    // The coverage proof, and the reason it is not "there is at least one width
+    // condition somewhere": as of RRU-136 the package legitimately has ZERO, so
+    // a floor on the real stylesheets would be a gate that can only go red — and
+    // it would go red the moment RRU-137 adds its first `@container`, which is
+    // this epic succeeding. What has to hold forever is that the reader SEES
+    // at-rules and tells a statement about width apart from a statement about a
+    // user preference, so both halves are proven on a stylesheet that has one of
+    // each rather than on whatever the repo happens to contain today.
+    const seen = new Set<string>();
+    for (const file of stylesheets) {
+      for (const rule of await parseCssRules(file)) {
+        if (rule.media !== null) seen.add(rule.media);
+      }
+    }
+    expect(seen.size).toBeGreaterThan(0);
+
+    const path = join(probeDirectory, "both-kinds.css");
+    await writeFile(
+      path,
+      `@media (prefers-reduced-motion: reduce) {
+  .rr-probe {
+    gap: var(--rr-space-2);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .rr-probe {
+    gap: var(--rr-space-2);
+  }
+}
+@container (min-width: ${breakpoints.sm}) {
+  .rr-probe__item {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+      "utf8",
+    );
+
+    const judged = widthConditions(await parseCssRules(path)).map((entry) => entry.prelude);
+    expect(judged).toEqual([`@container (min-width: ${breakpoints.sm})`]);
+  });
+
+  it("would accept a width condition written from a token value", async () => {
+    const path = join(probeDirectory, "token-width.css");
+    await writeFile(
+      path,
+      `.rr-probe {
+  container-type: inline-size;
+}
+@container (min-width: ${breakpoints.md}) {
+  .rr-probe__item {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+      "utf8",
+    );
+    expect(await responsiveProblemsIn(path)).toEqual([]);
+  });
+});
+
+describe("the responsive contract is not a no-op (negative probes, RRU-136)", () => {
+  const probe = async (name: string, css: string): Promise<readonly string[]> => {
+    const path = join(probeDirectory, name);
+    await writeFile(path, css, "utf8");
+    return responsiveProblemsIn(path);
+  };
+
+  it("flags a width literal that is not a breakpoint", async () => {
+    const problems = await probe(
+      "invented-width.css",
+      `@container (min-width: 700px) {
+  .rr-probe {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("700px, which is not a breakpoint token");
+  });
+
+  it("flags a width condition authored in a unit the tokens do not use", async () => {
+    const problems = await probe(
+      "rem-width.css",
+      `.rr-probe {
+  container-type: inline-size;
+}
+@container (min-width: 48rem) {
+  .rr-probe__item {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("48rem, which is not a breakpoint token");
+  });
+
+  it("flags a width @media outside Dialog and Toast", async () => {
+    const problems = await probe(
+      "viewport-media.css",
+      `@media (min-width: ${breakpoints.md}) {
+  .rr-probe {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("@media is reserved for dialog and toast");
+  });
+
+  it("accepts the documented @media exception for Dialog and Toast", async () => {
+    const problems = await probe(
+      "dialog-viewport-media.css",
+      `@media (min-width: ${breakpoints.md}) {
+  .rr-probe {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+    );
+    // Same stylesheet, read as the component it is named after. Without this
+    // probe, a gate that flagged every width @media would pass this block.
+    expect(
+      responsiveProblems(
+        "dialog/Dialog.css",
+        await parseCssRules(join(probeDirectory, "dialog-viewport-media.css")),
+      ),
+    ).toEqual([]);
+    expect(problems.length).toBeGreaterThan(0);
+  });
+
+  it("flags a @container with no container context to match", async () => {
+    const problems = await probe(
+      "contextless-container.css",
+      `@container (min-width: ${breakpoints.lg}) {
+  .rr-probe__item {
+    gap: var(--rr-space-2);
+  }
+}
+`,
+    );
+    expect(problems.join("\n")).toContain("declares no container-type");
   });
 });
 

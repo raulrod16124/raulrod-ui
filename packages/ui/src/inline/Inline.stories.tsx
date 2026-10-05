@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { Placeholder, StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, Placeholder, StoryStack } from "../storybook-support/index.js";
 
 import { Inline } from "./Inline.js";
 
@@ -108,14 +108,41 @@ export const Justify: Story = {
   ),
 };
 
+/**
+ * RRU-136, ADR-008. The contract this story demonstrates is `wrap`, and both
+ * halves of it are on screen at once:
+ *
+ *  - `wrap` reflows onto new lines inside a 320px CONTAINER. Resize the browser
+ *    window and the frame does not change, which is the point: the row reacts to
+ *    the width it was given, not to the viewport.
+ *  - `wrap={false}` overflows the same container. That is the documented
+ *    consequence of an explicit consumer decision, not a defect: the DS does not
+ *    make `wrap` responsive by default, because doing so would replace the
+ *    consumer's decision with its own and `wrap={false}` would stop existing.
+ *    The real counterexample lives in the playground (`form-section.tsx`) and is
+ *    fixed there as consumer misuse in RRU-144.
+ *
+ * Nothing here sets a `flex` value on the children: the previous version of this
+ * story delegated the whole behaviour to consumer CSS, so it proved nothing about
+ * the component.
+ */
 export const Responsive: Story = {
   render: () => (
-    <Inline wrap gap="space-4" style={{ width: "100%" }}>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <Placeholder key={i} style={{ flex: "1 1 120px" }}>
-          {i + 1}
-        </Placeholder>
-      ))}
-    </Inline>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="wrap — reflows inside a 320px container">
+        <Inline wrap gap="space-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Placeholder key={i}>{i + 1}</Placeholder>
+          ))}
+        </Inline>
+      </NarrowContainer>
+      <NarrowContainer label="no wrap — overflows the same 320px container (consumer decision)">
+        <Inline gap="space-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Placeholder key={i}>{i + 1}</Placeholder>
+          ))}
+        </Inline>
+      </NarrowContainer>
+    </StoryStack>
   ),
 };

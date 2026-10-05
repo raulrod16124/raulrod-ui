@@ -9,9 +9,10 @@
 
 ## Context
 
-RRU-113 (cierre MVP) identificó que la demo exigía mostrar comportamiento *responsive* y el repositorio no tenía **ni un breakpoint de ancho**: `git grep "@media"` devolvía únicamente `prefers-reduced-motion`. EPIC-12 se abre (post-MVP) con RRU-133 como carta 1 para establecer los **cimientos del responsive**.
+RRU-113 (cierre MVP) identificó que la demo exigía mostrar comportamiento _responsive_ y el repositorio no tenía **ni un breakpoint de ancho**: `git grep "@media"` devolvía únicamente `prefers-reduced-motion`. EPIC-12 se abre (post-MVP) con RRU-133 como carta 1 para establecer los **cimientos del responsive**.
 
 El problema es definir **qué mecanismo responsive usar por defecto** en un Design System que:
+
 1. Sigue ADR-003: CSS plano + CSS custom properties, sin CSS-in-JS, clases `rr-*`, sin valores arbitrarios (consume tokens).
 2. Emite tokens `breakpoint.*` (sm=640, md=768, lg=1024, xl=1280) en `@raulrod/tokens` (RRU-023/024) y los expone como tipos (`Breakpoint` en `derived.ts`). Esos valores son px literales en CSS porque `@media` no evalúa CSS variables (theming.md §8).
 3. Debe funcionar sin depender del host (Vite/Next/CDN), SSR-safe, con dark theme y respetando `prefers-reduced-motion`.
@@ -34,6 +35,7 @@ Adoptar **container queries (`@container`) como mecanismo principal** para layou
 ### Alcance de RRU-133 (cimientos)
 
 RRU-133 establece la **estrategia** y los **cimientos base** para que EPIC-12 la aplique consistentemente:
+
 - Este ADR (trackeado en `docs/decisions/008-responsive.md`, `!/docs/decisions/`).
 - Base CSS/utilidades o convenciones para `@container` (sin cambiar API pública). No añade componentes. No modifica comportamiento existente salvo sentar convención.
 - Verifica que la demo pueda observar responsive en el futuro (cerrando el hallazgo de RRU-113), dejando el trabajo de aplicación a RRU-135+.

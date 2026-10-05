@@ -1,10 +1,28 @@
 /* Inline — horizontal flex layout primitive (RRU-031, ADR-003).
    Only tokens for design values (`var(--rr-space-*)`); `align`/`justify`
-   values are CSS layout keywords and have no token counterpart. */
+   values are CSS layout keywords and have no token counterpart.
+
+   Narrow widths (RRU-136, ADR-008): `min-width: 0` in the base class, and the
+   `wrap` contract is DOCUMENTED, not changed. Two facts, in this order:
+   1. A layout primitive nested in a flex or grid parent is a flex/grid item
+      whose automatic minimum is its min-content size. Without this
+      declaration the row can never be narrower than its widest child, so the
+      `overflow: hidden` + `text-overflow: ellipsis` this system documents as
+      the consumer's truncation pattern (Select.css, the value cell) can never
+      engage. This is the `Select.css` pattern applied to the primitive.
+   2. `wrap` stays OPT-IN. Making it responsive by default would replace an
+      explicit consumer decision with a DS one, and would make `wrap={false}`
+      inexpressible. A row of `wrap={false}` overflowing its container is the
+      documented consequence of that choice, not a defect — the fix belongs to
+      the consumer (`apps/playground/src/form-section.tsx`, real counterexample
+      of a row that overflows at 320px, is fixed in RRU-144 as consumer misuse).
+      Both facts are pinned by the "wraps only when asked, and can shrink"
+      contract test, not by this comment. */
 
 .rr-inline {
   display: flex;
   flex-direction: row;
+  min-width: 0;
   gap: var(--rr-space-4);
 }
 
