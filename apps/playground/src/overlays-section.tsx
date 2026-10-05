@@ -44,6 +44,7 @@ import {
   Text,
   Tooltip,
   Trash2,
+  useToast,
 } from "@raulrod/ui";
 
 // `disabled` is part of the data on purpose: the keyboard contract of a listbox
@@ -368,6 +369,114 @@ function NarrowContentProbe() {
           </SelectContent>
         </Select>
       </Stack>
+
+      <NarrowViewportPanels />
+    </Stack>
+  );
+}
+
+/**
+ * The two surfaces that measure the VIEWPORT instead of their container
+ * (RRU-139, EPIC-12): a modal `Dialog` and the `Toast` stack.
+ *
+ * These two are the documented exception of ADR-008 — `@media` is reserved for
+ * them precisely because their coordinate space IS the viewport — so they are
+ * also the two where a width defect is not a "responsive" question at all but a
+ * plain bug that only shows up when the window is narrow. Each fixture below
+ * reproduces one:
+ *
+ *  - the Dialog carries **three footer buttons with long labels**, which is the
+ *    case a `flex` footer without `wrap` cannot lay out at 320px;
+ *  - the same Dialog carries **more content than the viewport is tall**, which
+ *    is the case where a height cap and the overlay's own padding have to agree
+ *    — before the card they did not, and part of the panel sat off the screen;
+ *  - the Toast carries a **long title and description**, because the stack is a
+ *    fixed column whose height nothing bounded before this section, and a single
+ *    long toast was measured rendering 422px tall in a 360px viewport — with no
+ *    scrollport, so the tail of the description was simply unreachable.
+ *
+ * It raises **two** long toasts, and the second one is load-bearing for a claim
+ * the first cannot carry. The stack orders newest-first, so the toast raised
+ * FIRST ends up at the BOTTOM of the column — far enough down that its dismiss
+ * button opens outside the viewport entirely. That control is what
+ * `viewport-panels.spec.ts` tabs to: "the stack scrolls" would otherwise have
+ * nothing below the fold to reveal, and the reachability claim the DoD asks for
+ * has to be made against a focusable element that starts off-screen.
+ *
+ * The content length is load-bearing and is not taste: `viewport-panels.spec.ts`
+ * re-asserts it with `blockOverflowPx > 0`, the fixture-validity guard RRU-136
+ * introduced, so a viewport tall enough for the content to fit naturally cannot
+ * make every "it scrolls" assertion pass in a vacuum.
+ */
+function NarrowViewportPanels() {
+  const { toast } = useToast();
+  return (
+    <Stack gap="space-4">
+      <Heading as="h3">Dialog and Toast at a narrow viewport</Heading>
+      <Text>
+        The two components whose geometry is the viewport itself. The dialog below carries three
+        long-labelled actions and more text than a 360px-tall screen is tall, which are the two
+        cases that put content outside the screen before this section existed.
+      </Text>
+
+      <Inline className="pg-row" wrap>
+        <Dialog>
+          <DialogTrigger data-testid="narrow-dialog-trigger">Open the narrow dialog</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Review the billing change</DialogTitle>
+              <DialogDescription>
+                This dialog is deliberately taller than a narrow viewport and carries three actions,
+                so the height cap and the footer have to cope with a phone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Stack gap="space-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Text key={index}>{LONG_OVERLAY_CONTENT}</Text>
+              ))}
+            </Stack>
+
+            <DialogFooter>
+              <Button data-testid="narrow-dialog-cancel" type="button" variant="outline">
+                Keep the current plan
+              </Button>
+              <Button data-testid="narrow-dialog-schedule" type="button" variant="secondary">
+                Schedule for later
+              </Button>
+              <Button data-testid="narrow-dialog-confirm" type="button" variant="destructive">
+                Change the plan now
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Button
+          data-testid="narrow-toast-trigger"
+          type="button"
+          variant="outline"
+          onClick={() => {
+            // Raised first, so it renders LAST: the stack is newest-first, and
+            // `viewport-panels.spec.ts` needs this card's dismiss button to open
+            // below the stack's block bound to show the scrollport being reached by
+            // focus. `duration: null` keeps both on screen long enough to measure.
+            toast({
+              title: "Card details still need a review",
+              description: LONG_OVERLAY_CONTENT,
+              tone: "warning",
+              duration: null,
+            });
+            toast({
+              title: "Your billing details were updated",
+              description: LONG_OVERLAY_CONTENT,
+              tone: "info",
+              duration: null,
+            });
+          }}
+        >
+          Raise a long toast
+        </Button>
+      </Inline>
     </Stack>
   );
 }

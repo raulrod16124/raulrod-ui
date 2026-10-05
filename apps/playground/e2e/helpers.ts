@@ -121,6 +121,36 @@ export async function expectNothingClipped(locator: Locator): Promise<void> {
 }
 
 /**
+ * Waits until every animation inside an element has finished.
+ *
+ * Added in RRU-139, and the reason it exists is that `getBoundingClientRect()`
+ * reports the TRANSFORMED box, so a measurement taken during an entry animation
+ * reads the animation rather than the layout. Measured on the tall Dialog
+ * fixture: `312 × 0.98 = 305.76` — the panel reported 305.76px tall while its
+ * layout height was exactly 312px, and the same 2% under-reported its width
+ * (441.4 against a 448px cap). A one-pixel tolerance would not have hidden it,
+ * and neither would re-reading the value: `expect(value).toBeCloseTo(312)` is
+ * given an already-awaited NUMBER, so unlike a locator matcher it is evaluated
+ * exactly once and no retry window can catch the animation ending.
+ *
+ * `animation.finished` is a CONDITION, not a sleep — rule 2 above applies to this
+ * file too, and a fixed timeout would be either too short on a slow machine or
+ * wasted on every fast one. `subtree: true` because the panels that need this are
+ * the ones whose CHILDREN animate: the Toast stack bounds the box while each card
+ * inside it slides in. A cancelled animation rejects `finished`, which is not a
+ * failure here — the end state is the same either way.
+ */
+export async function animationsSettled(locator: Locator): Promise<void> {
+  await locator.evaluate(async (node) => {
+    await Promise.all(
+      node
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
+}
+
+/**
  * Asserts every element a locator resolves to is as wide as it is tall.
  *
  * Used for the square sizes, where a rectangle is the defect: an icon button that

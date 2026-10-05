@@ -158,6 +158,69 @@ no es un botón de acción sino el control que el panel sustituye.
   puede observar hoy se afirma en el CSS escrito, no en un E2E que tendría que adivinar
   nombres internos de modificadores.
 
+## Addendum: Dialog y Toast, los dos cuyo eje de bloque es el viewport (RRU-139)
+
+El addendum anterior resolvió el eje **inline** de los cuatro overlays flotantes. Dialog y
+Toast son la excepción que reserva `@media` —su espacio de coordenadas es el viewport— y
+tenían un problema en el eje de bloque que nadie podía ver, porque los dos seguían
+reportándose "dentro del viewport" mientras parte de su contenido estaba fuera de la
+pantalla.
+
+- **El tope tiene que restar el margen que el panel tiene reservado, y son el mismo
+  token.** El overlay de Dialog reserva `padding: var(--rr-space-6)` en los cuatro lados,
+  así que la altura a la que un panel tiene derecho es `100dvh - 2 × space-6` = 312px a
+  360px de alto. El tope decía `calc(100vh - var(--rr-space-8))`: la misma aritmética con
+  **otro token** (32px contra 24px) y con un solo lado restado. Medido antes del arreglo:
+  un panel cuyo contenido superaba el tope renderizaba **376px dentro de una caja de
+  contenido de 312px** —32px de esquina redondeada arriba y 32px abajo, más el título—
+  porque el overlay centra su contenido con `justify-content: center` y un ítem más alto
+  que la línea desborda **por igual a ambos lados**. No encogía, y `toBeVisible()` no lo
+  detecta. Este es el motivo por el que la gate compara las dos declaraciones en vez de
+  buscar un patrón en cada una: las dos se leen razonables por separado.
+- **`100dvh`, no `100vh`.** Heredado del addendum de RRU-137, que dejó la decisión escrita
+  precisamente para no volver a discutirla. Un overlay fijo sigue el viewport _visual_, así
+  que `vh` dejaría que el panel se metiera bajo la interfaz del navegador. Es la única
+  diferencia entre las dos formas y no se puede observar en un E2E: no hay barra de
+  navegador en un viewport headless, así que la gate la sostiene.
+- **`box-sizing: border-box` es parte del contrato donde hay padding, y solo donde lo
+  hay.** El panel de Dialog trae `space-6` de padding propio, así que sin la declaración
+  el `max-block-size` mide la caja de contenido, el padding queda fuera del tope y la caja
+  de borde sale a `100dvh`: pegada a los bordes, justo lo contrario de lo que existe para
+  impedir. El stack de Toast **no** declara padding ni `width`, así que su caja de borde y
+  la de contenido miden lo mismo y la línea no cambia nada; exigirla ahí sería una regla
+  sin motivo medido detrás, que es la clase de regla que este archivo no lleva.
+- **Toast resuelve el eje inline con `inset`, no con `width`.** `width` lo dimensionaba
+  contra una caja que **incluye** el scrollbar mientras que el `inset-inline-end` contra el
+  que se posicionaba **no** lo incluye: por debajo de 416px los dos discrepaban ~15px. Con
+  `inset` en los dos bordes inline más un `max-inline-size` durable (6 × `space-16` =
+  384px) la caja se llena entre los bordes y el tope la recorta. **Este defecto no es
+  reproducible en el E2E**: headless Chromium informa `innerWidth === clientWidth`, no
+  reserva scrollbar, y `100vw` coincide con el ancho del viewport —revertir el arrangement a
+  `width` deja los siete specs en verde—, así que lo sostiene la gate leyendo la
+  declaración. Dos clases de evidencia para dos clases de afirmación, ninguna sustituyendo a
+  la otra.
+- **`margin-inline-start: auto` es lo que mantiene el stack pegado al borde final.** Con los
+  dos `inset` puestos y `width: auto` la caja llena el espacio, y al recortarla el
+  `max-inline-size` el sobrante **se va a la izquierda** en LTR: el panel quedaría a
+  `space-4` del borde inicial, que no es donde vive una región de notificaciones. Una línea
+  sola, y su ausencia mueve la tarjeta de 384px de x=880 a x=16 a 1280px.
+- **El footer envuelve, y la premisa de la carta era falsa.** La carta decía que las
+  acciones largas "se salen" a 320px. Medido: **no** se salen —`overflowPx` era exactamente
+  0—, porque con `flex-wrap: nowrap` y el `min-width: 0` + `overflow-wrap: anywhere` que
+  RRU-136 dio a `Button` **se encogen**: tres botones a ~65px de ancho y 96–114px de alto,
+  etiquetas partidas en tres y cuatro líneas, en una sola fila alta como un párrafo. El
+  defecto es distinto del escrito y peor: no desborda, se destroza. Con `flex-wrap: wrap`
+  los mismos tres botones salen a 161–193px, una línea cada uno, en tres filas. Por eso el
+  E2E afirma **número de filas** y no desbordamiento.
+- **El scrollport del stack es alcanzable por teclado, y por eso puede desplazarse.** Cada
+  toast lleva su propio botón de descarte enfocable, así que tabular mueve el foco a través
+  del scrollport y el navegador trae cada control enfocado a la vista dentro de su ancestro
+  desplazable —el mismo argumento que sostiene el del `DropdownMenu` en RRU-137. El fixture
+  sube **dos** notificaciones largas a propósito: el stack ordena la más reciente primero,
+  así que la más antigua acaba abajo, y su botón de descarte abre **fuera del viewport**.
+  Sin ese elemento enfocable por debajo del pliegue, "el stack se desplaza" no tendría nada
+  que revelar.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.

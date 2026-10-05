@@ -143,3 +143,50 @@ export const Keyboard: Story = {
     await userEvent.keyboard("{enter}");
   },
 };
+
+/**
+ * The stack at a width and height where it is genuinely over its block bound
+ * (RRU-139).
+ *
+ * `parameters.viewport`, never a wrapper: the stack is `position: fixed` in the
+ * top-right corner of the screen, so a narrow container would constrain the
+ * STORY and not the toast. This is the ADR-008 exception, and `mobile1` is the
+ * only preset narrow enough to matter — the card's own `space-4` gutter leaves
+ * 288px of column at 320px, which a 500-character description cannot fit in
+ * vertically.
+ *
+ * `duration: null` because the defect was a screenshot, not a flash: with the
+ * default timeout the stack empties before the card scrolls into view.
+ */
+export const Responsive: Story = {
+  render: () => (
+    <ToastProvider>
+      <Button
+        onClick={() => {
+          const { toast } = useToast();
+          // Raised first, so it renders last. The stack is newest-first, and the
+          // older card is the one that ends up below the bound.
+          toast({
+            title: "Card details still need a review",
+            description:
+              "Billing runs on the first of every month and charges the workspace owner for each active seat. Changing the plan mid-cycle takes effect at the next renewal rather than immediately, so the current invoice is never repriced: the proration appears as a credit on the following one.",
+            tone: "warning",
+            duration: null,
+          });
+          toast({
+            title: "Your billing details were updated",
+            description:
+              "Billing runs on the first of every month and charges the workspace owner for each active seat. Changing the plan mid-cycle takes effect at the next renewal rather than immediately, so the current invoice is never repriced: the proration appears as a credit on the following one.",
+            tone: "info",
+            duration: null,
+          });
+        }}
+      >
+        Raise long notifications
+      </Button>
+    </ToastProvider>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};

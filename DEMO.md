@@ -30,7 +30,7 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Story files                    | 27     |
 | MDX documentation pages        | 17     |
 | Architecture Decision Records  | 8      |
-| Playwright E2E specs           | 9      |
+| Playwright E2E specs           | 10     |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
 | React peer floor               | 18.2.0 |

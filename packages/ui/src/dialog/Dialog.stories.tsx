@@ -131,8 +131,50 @@ export const Keyboard: Story = {
   },
 };
 
+/**
+ * The fixture that made the defect visible (RRU-139).
+ *
+ * Two things about it are load-bearing, and neither is about looking like a real
+ * screen: the body is LONGER than any phone is tall, and the footer carries three
+ * long-labelled actions. The first is the height cap; the second is the footer.
+ * Both were reachable in the storybook before this card and neither was visible,
+ * because `ExampleDialog` fits inside any viewport Storybook picks — which is
+ * what a responsive story that never overflows actually proves.
+ */
+function TallDialog() {
+  return (
+    <Dialog defaultOpen>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Review the billing change</DialogTitle>
+          <DialogDescription>
+            This dialog is taller than a phone screen on purpose. The height cap and the overlay's
+            own padding have to agree, or the panel renders taller than the space it is centred in.
+          </DialogDescription>
+        </DialogHeader>
+        {Array.from({ length: 4 }, (_, index) => (
+          <p key={index}>
+            Billing runs on the first of every month and charges the workspace owner for each active
+            seat. Changing the plan mid-cycle takes effect at the next renewal rather than
+            immediately, so the current invoice is never repriced.
+          </p>
+        ))}
+        <DialogFooter>
+          <Button variant="outline">Keep the current plan</Button>
+          <Button variant="secondary">Schedule for later</Button>
+          <Button variant="destructive">Change the plan now</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export const Responsive: Story = {
-  render: () => <ExampleDialog defaultOpen />,
+  // `parameters.viewport`, never a wrapper: the Dialog overlay is `position: fixed`
+  // over the whole screen, so a container narrow enough to reproduce the defect
+  // would not reproduce it at all. This is the ADR-008 exception, and it is the
+  // one place in the storybook where the viewport is the only honest knob.
+  render: () => <TallDialog />,
   parameters: {
     viewport: { defaultViewport: "mobile1" },
   },

@@ -41,6 +41,27 @@ function App() {
 
 <Canvas of={ToastProviderStories.Playground} />
 
+### Placement and size: the stack is bounded by the viewport
+
+The stack is `position: fixed` in the **top-right corner of the screen**, so its
+geometry comes from the viewport and not from your layout — a narrow container
+around your app changes nothing about where notifications land. It is inset 16px
+from the top and from both inline edges, and capped at 384px (6 × `space-16`), so on
+a wide screen notifications are a card rather than a column, and on a 320px phone the
+column is 288px with the same 16px gutter on each side.
+
+The stack is also bounded in the **block** direction: at most the viewport height
+minus 16px top and bottom, and it scrolls vertically when there are more
+notifications than fit. That bound is why a long description stays reachable —
+before it, a single long notification rendered taller than a short screen and the
+bottom of its text simply left the viewport with nothing to scroll through. Every
+toast carries its own dismiss button, so <kbd>Tab</kbd> reaches notifications inside
+the scrollport and the browser brings each focused one into view.
+
+Order is newest-first, so the notification you raise first is the one at the bottom.
+
+<Canvas of={ToastProviderStories.Responsive} />
+
 ## Props
 
 <ArgTypes of={ToastProviderStories} />
@@ -51,6 +72,11 @@ function App() {
   `warning`/`destructive` → `role="alert"` (assertive).
 - `title` is required so the screen reader has content to announce.
 - Toasts are rendered through a portal into a viewport region.
+- The stack's scrollport is keyboard-reachable: every toast carries a focusable
+  dismiss button, so `Tab` moves focus through the notifications that are scrolled
+  out of view and the browser scrolls each focused one into view.
+- The fixed region is `pointer-events: none`, so it never blocks clicks on the page
+  underneath; each toast re-enables pointer events on itself.
 
 ## Trade-offs / Limitations
 
@@ -65,3 +91,11 @@ function App() {
 - **Provider must be mounted once.** Calling `useToast` outside the provider
   throws at runtime; the TypeScript contract cannot enforce this at compile
   time.
+- **Placement and size are not configurable.** The stack is always top-right,
+  16px from the edges, at most 384px wide, and bounded to the viewport height. A
+  bottom-left notification rail or a wider column would each need a placement
+  decision for the whole system, not a prop.
+- **A very tall toast scrolls rather than truncating.** The bound keeps the stack on
+  screen; it does not make a 500-character description fit in 288 × 328px. Shorten
+  the copy if the whole message matters — a notification is a summary, and the
+  durable place for the detail is wherever the action leads.

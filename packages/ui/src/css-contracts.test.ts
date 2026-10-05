@@ -26,6 +26,7 @@ import {
   component,
   contrastRatio,
   findAuthorizedPair,
+  primitives,
   requiredContrast,
   semantic,
 } from "@raulrod/tokens";
@@ -1842,6 +1843,463 @@ ${compliant}`,
 ${compliant}`,
       ),
     ).toEqual([]);
+  });
+});
+
+// --- The panels whose coordinate space IS the viewport (RRU-139) ----------------
+//
+// `panelBoundsProblems` above deliberately stops at four panels and says so: its
+// two shared assertions (`box-sizing` on the root, a `100vw` term in
+// `max-inline-size`) are written for a panel that has NO width of its own, because
+// a popover or a listbox is shrink-to-fit. Dialog and Toast are not that shape,
+// and copying the gate onto them would have been wrong twice over:
+//
+//  - Dialog's width is never `100vw`-derived. It is a centred grid item inside a
+//    full-bleed overlay whose `padding` is the gutter, so `width: 100%` resolves
+//    against the overlay's content box and is already viewport-bounded. A
+//    `100vw` term in its `max-inline-size` would be a second, redundant bound that
+//    disagrees with the first by the scrollbar.
+//  - Toast is bounded with `inset` on BOTH inline edges plus a durable
+//    `max-inline-size`, which is the shape `panelBoundsProblems` would reject for
+//    lacking `100vw`.
+//
+// So this is a second contract rather than a fifth entry, and it is a DIFFERENT
+// one: these two are bounded by an ARITHMETIC IDENTITY between two declarations
+// that live in the same stylesheet, and by the two bugs no width assertion can
+// reach.
+
+/** The two viewport-positioned panels, and the gutter each one must reserve. */
+const VIEWPORT_PANELS: readonly {
+  readonly selector: string;
+  readonly file: string;
+  /** The selector whose padding (or `top`) defines the gutter the cap owes. */
+  readonly gutterFrom: string;
+  /** The property on `gutterFrom` the gutter is read from. */
+  readonly gutterProperty: "padding" | "top";
+  /** The panel's own footer/action row, when it has one. */
+  readonly footer: string | undefined;
+}[] = [
+  {
+    selector: ".rr-dialog-content",
+    file: "dialog/Dialog.css",
+    gutterFrom: ".rr-dialog",
+    gutterProperty: "padding",
+    footer: ".rr-dialog-footer",
+  },
+  {
+    selector: ".rr-toast-viewport",
+    file: "toast/Toast.css",
+    gutterFrom: ".rr-toast-viewport",
+    gutterProperty: "top",
+    footer: undefined,
+  },
+];
+
+/**
+ * `calc(100dvh - 2 * var(--rr-space-N))` → `--rr-space-N`, or `undefined`.
+ *
+ * Deliberately strict about the shape as well as the token. A cap of
+ * `calc(100dvh - var(--rr-space-8))` is the pre-RRU-139 defect verbatim — it is
+ * the same arithmetic with one side dropped — and a regex loose enough to accept
+ * it would accept the bug it exists to prevent.
+ */
+const VIEWPORT_CAP = /^calc\(\s*100dvh\s*-\s*2\s*\*\s*var\((--rr-space-\d+)\)\s*\)$/;
+
+/** The one token a declaration names, if it names exactly one. */
+function soleToken(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const found = value.match(/var\((--rr-[a-z0-9-]+)\)/g);
+  return found?.length === 1 ? found[0].slice(4, -1) : undefined;
+}
+
+/**
+ * A primitive as a failure message reads it: `space-6 (24px)`.
+ *
+ * Resolved through the token package rather than written out, so the message
+ * cannot go stale if the scale is renumbered — and so the gate is judged against
+ * the same values the stylesheet resolves to at runtime.
+ */
+function describeToken(token: string | undefined): string {
+  if (token === undefined) return "nothing";
+  const name = token.replace("--rr-", "");
+  const px = (primitives as Readonly<Record<string, string>>)[name];
+  return px === undefined ? name : `${name} (${px})`;
+}
+
+/**
+ * What a viewport-positioned panel is getting wrong, as readable lines.
+ *
+ * Every check below exists because a measurement found it. The measured numbers
+ * are in `apps/playground/e2e/viewport-panels.spec.ts`; what they add up to is
+ * that neither of these panels can be verified by asserting "inside the
+ * viewport", because both defects left the panel's box passing that test while
+ * part of it sat outside the screen.
+ */
+function viewportBoundsProblems(path: string, rules: readonly CssRule[]): readonly string[] {
+  const problems: string[] = [];
+  const panel = VIEWPORT_PANELS.find((entry) => entry.file === path);
+  if (panel === undefined) return problems;
+
+  // Checked before the cap, because it decides what the cap means — but only for
+  // the panel it is load-bearing on, which is the one that has padding of its own.
+  // The package ships no `box-sizing` reset, so a panel with padding measures
+  // `max-block-size` against its CONTENT box: the padding lands outside the cap
+  // and the border box comes out at `100dvh` — flush with the screen edges, the
+  // exact outcome the overlay's padding exists to prevent. Measured on the Dialog
+  // at 320×360: 360px tall, i.e. 24px past the bound on each side.
+  // Mutation-checked: deleting that one line turns the E2E's `312` into `360`.
+  //
+  // The Toast stack is deliberately exempt, and not by oversight: it declares no
+  // padding and no `width`, so its border box and content box are the same height
+  // and the clamp means the same thing either way. A gate that demanded the line
+  // here would be a declaration with no measured reason behind it, which is the
+  // one kind of rule this file does not carry.
+  const ownPadding =
+    panelDeclaration(rules, panel.selector, "padding") ??
+    panelDeclaration(rules, panel.selector, "padding-block");
+  const boxSizing = panelDeclaration(rules, panel.selector, "box-sizing");
+  if (ownPadding !== undefined && boxSizing?.value !== "border-box") {
+    problems.push(
+      `${path}: ${panel.selector} declares box-sizing: ${boxSizing?.value ?? "nothing"} and padding ${ownPadding.value}, so max-block-size measures the content box, the padding lands outside the cap and the panel ends up flush with the screen edges. Declare "border-box" on the panel root (RRU-139).`,
+    );
+  }
+
+  // The identity, and the reason this is not a `max-block-size: <something>`
+  // assertion. The two numbers are not independent: the overlay reserves a gutter
+  // and the panel is allowed the viewport minus that same gutter, so the cap and
+  // the gutter must be the SAME token. They were not — the cap subtracted
+  // `space-8` (32px) while the overlay reserved `space-6` (24px) — and the panel
+  // rendered 376px tall inside a 312px content box, 32px off-screen above and
+  // 32px below, because a flex line centres its content and an item taller than
+  // the line overflows equally on both sides.
+  const cap = panelDeclaration(rules, panel.selector, "max-block-size");
+  const capToken = cap?.value.match(VIEWPORT_CAP)?.[1];
+  const gutter = soleToken(panelDeclaration(rules, panel.gutterFrom, panel.gutterProperty)?.value);
+  if (cap === undefined) {
+    problems.push(
+      `${path}: ${panel.selector} has no max-block-size, so content taller than the screen cannot scroll inside the viewport (RRU-139).`,
+    );
+  } else if (capToken === undefined) {
+    problems.push(
+      `${path}:${cap.line}: max-block-size is "${cap.value}", which does not subtract the gutter from the visual viewport in the form "calc(100dvh - 2 * var(--rr-space-N))". Both halves matter: 100vh counts the browser chrome that a fixed overlay does not cover, and a one-sided subtraction is the pre-RRU-139 defect (RRU-139).`,
+    );
+  } else if (capToken !== gutter) {
+    problems.push(
+      `${path}:${cap.line}: max-block-size subtracts ${describeToken(capToken)} but ${panel.gutterFrom}'s ${panel.gutterProperty} reserves ${describeToken(gutter)}. The cap has to be the viewport minus the gutter the panel is actually positioned in: a panel allowed to be taller than the space it sits in overflows on BOTH sides, because the overlay centres its content (RRU-139).`,
+    );
+  }
+
+  // A cap with no scrollport is a clip, not a bound. Measured on the Toast: 422px
+  // of card in a 360px viewport with `overflow-y: visible`, so 78px of the
+  // description was unreachable — not clipped by a few pixels, simply gone.
+  const scrollport =
+    panelDeclaration(rules, panel.selector, "overflow-y") ??
+    panelDeclaration(rules, panel.selector, "overflow");
+  if (scrollport?.value !== "auto") {
+    problems.push(
+      `${path}: ${panel.selector} declares ${scrollport === undefined ? "no overflow" : `overflow-y: ${scrollport.value}`}, so its max-block-size clips the content instead of scrolling it. A bounded block size needs "auto" (RRU-139).`,
+    );
+  }
+
+  // Toast-only: the inline axis, which is where `panelBoundsProblems`' `100vw`
+  // rule cannot be reused. `width` sized the stack against a box that INCLUDES
+  // the scrollbar while the `inset-inline-end` it was positioned against does
+  // not, so below 416px the two disagreed by ~15px. This defect is not
+  // reproducible in the E2E — headless Chromium reports `innerWidth ===
+  // clientWidth`, reserving no scrollbar space, which is why mutation-check
+  // reverting this to `width: min(..., calc(100vw - ...))` leaves all seven specs
+  // green. It is pinned here instead, where reading the declaration is the point.
+  if (panel.file === "toast/Toast.css") {
+    const width = panelDeclaration(rules, panel.selector, "width");
+    if (width !== undefined) {
+      problems.push(
+        `${path}:${width.line}: ${panel.selector} declares width: ${width.value}. Resolve the inline axis with inset instead: 100vw includes the scrollbar and the inset it is positioned against does not, so below the durable term the stack is sized against a wider box than it sits in (RRU-139).`,
+      );
+    }
+
+    // Both edges, because one edge plus `width` is the pair that has to go: with
+    // only the end edge set the stack has no start bound at all, and with `width:
+    // auto` and both edges set the box fills the space between them.
+    for (const edge of ["inset-inline-start", "inset-inline-end"]) {
+      if (panelDeclaration(rules, panel.selector, edge) === undefined) {
+        problems.push(
+          `${path}: ${panel.selector} has no ${edge}, so its inline size is bounded on one side only and a long notification can reach the opposite edge of the screen (RRU-139).`,
+        );
+      }
+    }
+
+    // And the cap's companion. With both insets set and `width: auto` the box
+    // fills the space, and once `max-inline-size` clamps it the FREE SPACE GOES TO
+    // THE LEFT in LTR — the stack would sit at `space-4` from the start edge,
+    // which is not where a notification region belongs. Mutation-checked:
+    // deleting this line moves the 384px card from x = 880 to x = 16 at 1280px.
+    if (panelDeclaration(rules, panel.selector, "margin-inline-start")?.value !== "auto") {
+      problems.push(
+        `${path}: ${panel.selector} must declare margin-inline-start: auto, so the clamped stack keeps hugging the END edge. With both insets set and width: auto the box fills the space, and in LTR the leftover would otherwise go to the start edge (RRU-139).`,
+      );
+    }
+  }
+
+  // Dialog-only, and the one claim in this whole card that no geometry
+  // assertion can reach. With `flex-wrap: nowrap` the footer did not overflow —
+  // `overflowPx` measured exactly 0 — it CRUSHED: RRU-136's `min-width: 0` and
+  // `overflow-wrap: anywhere` let three buttons shrink to ~65px wide and 96–114px
+  // tall each, labels wrapped over three and four lines, on a single row as tall
+  // as a paragraph. So the E2E asserts the number of ROWS and this asserts the
+  // declaration behind it.
+  if (panel.footer !== undefined) {
+    const wrap = panelDeclaration(rules, panel.footer, "flex-wrap");
+    if (wrap?.value !== "wrap") {
+      problems.push(
+        `${path}: ${panel.footer} declares flex-wrap: ${wrap?.value ?? "nothing"}, so a row of actions narrower than its labels does not wrap — it shrinks each button until its own label wraps instead, which reads as a broken layout rather than a tight one (RRU-139).`,
+      );
+    }
+  }
+
+  return problems;
+}
+
+describe("the viewport-positioned panels are bounded by the viewport (RRU-139)", () => {
+  it.each(VIEWPORT_PANELS)("bounds $selector in $file", async ({ file }) => {
+    expect(await viewportBoundsProblems(file, await parseCssRules(file))).toEqual([]);
+  });
+
+  it("judges every panel it claims, and each one really sits in a fixed box", async () => {
+    // The coverage proof, so the block above cannot pass by finding nothing.
+    for (const panel of VIEWPORT_PANELS) {
+      const rules = await parseCssRules(panel.file);
+      const rule = rules.find(
+        (entry) => entry.keyframes === null && entry.selectors.includes(panel.selector),
+      );
+      expect(rule, `${panel.file} has no rule for ${panel.selector}`).toBeDefined();
+
+      // Fixed is asserted on `gutterFrom`, NOT on the panel, and the distinction
+      // is the whole reason these two are not floating panels. The Toast stack IS
+      // the fixed box; the Dialog panel is `position: relative` inside a fixed
+      // overlay that reserves the gutter. Both are in a viewport coordinate space
+      // — which is what ADR-008's exception reserves `@media` for, and what
+      // `100dvh` names — and only the second shape is a "floating panel" the
+      // other gate could have judged.
+      const fixed = rules.find(
+        (entry) => entry.keyframes === null && entry.selectors.includes(panel.gutterFrom),
+      );
+      expect(fixed, `${panel.file} has no rule for ${panel.gutterFrom}`).toBeDefined();
+      expect(
+        declaration(fixed!, "position")?.value,
+        `${panel.gutterFrom} must be fixed-positioned to be in this contract`,
+      ).toBe("fixed");
+    }
+  });
+
+  it("claims two panels, and the floating-panel gate still claims four", async () => {
+    // The scope floor, and the reason the two contracts cannot drift into each
+    // other: a panel listed in both would be judged twice by rules written for
+    // different shapes, and the first one to disagree would win silently.
+    expect(new Set(VIEWPORT_PANELS.map((entry) => entry.file)).size).toBe(VIEWPORT_PANELS.length);
+    const both = new Set(VIEWPORT_PANELS.map((entry) => entry.file));
+    expect(BOUNDED_PANELS.filter((entry) => both.has(entry.file))).toEqual([]);
+  });
+});
+
+describe("the viewport bounds are not a no-op (negative probes, RRU-139)", () => {
+  /**
+   * Writes a probe stylesheet and judges it the way `file` is judged.
+   *
+   * Every probe carries the OTHER declarations in their compliant form, so a probe
+   * can only go red for the one thing it is about — the same discipline as the
+   * RRU-137 and RRU-138 probe blocks.
+   */
+  const probe = async (name: string, file: string, css: string): Promise<readonly string[]> => {
+    const path = join(probeDirectory, name);
+    await writeFile(path, css, "utf8");
+    return viewportBoundsProblems(file, await parseCssRules(path));
+  };
+
+  const DIALOG_CSS = `
+.rr-dialog {
+  position: fixed;
+  padding: var(--rr-space-6);
+}
+.rr-dialog-content {
+  position: relative;
+  box-sizing: border-box;
+  max-block-size: calc(100dvh - 2 * var(--rr-space-6));
+  overflow-y: auto;
+}
+.rr-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+}
+`;
+
+  // The gutter is read from the panel's OWN `top` here rather than from a wrapper,
+  // which is what the `gutterFrom` entry says: the stack insets itself, so the
+  // identity is `100dvh - 2 × top`.
+  const TOAST_CSS = `
+.rr-toast-viewport {
+  position: fixed;
+  top: var(--rr-space-4);
+  inset-inline-start: var(--rr-space-4);
+  inset-inline-end: var(--rr-space-4);
+  margin-inline-start: auto;
+  max-inline-size: calc(var(--rr-space-16) * 6);
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow-y: auto;
+}
+`;
+
+  it("accepts the compliant dialog, then rejects each half of it", async () => {
+    expect(await probe("compliant-dialog.css", "dialog/Dialog.css", DIALOG_CSS)).toEqual([]);
+
+    // The pre-card stylesheet, verbatim in the lines that matter — its padding is
+    // part of the probe, not decoration, because that is what makes `box-sizing`
+    // load-bearing. This is a stylesheet a reviewer would read as perfectly
+    // reasonable.
+    const before = await probe(
+      "pre-card-dialog.css",
+      "dialog/Dialog.css",
+      `
+.rr-dialog {
+  position: fixed;
+  padding: var(--rr-space-6);
+}
+.rr-dialog-content {
+  position: relative;
+  padding: var(--rr-space-6);
+  max-height: calc(100vh - var(--rr-space-8));
+  overflow-y: auto;
+}
+.rr-dialog-footer {
+  display: flex;
+}
+`,
+    );
+    expect(before.join("\n")).toContain("content box");
+    // The cap was written as `max-height`, not `max-block-size` — the logical
+    // property is the fix's other half, so the probe keeps the old name too and
+    // the "no max-block-size" message is the one that fires.
+    expect(before.join("\n")).toContain("no max-block-size");
+    expect(before.join("\n")).toContain("flex-wrap");
+
+    // The subtler one: the cap written in the CORRECT form but against the
+    // wrong gutter. Both declarations look right in isolation, which is exactly
+    // why the contract compares them instead of pattern-matching either.
+    expect(
+      (
+        await probe(
+          "mismatched-dialog-gutter.css",
+          "dialog/Dialog.css",
+          `
+.rr-dialog {
+  position: fixed;
+  padding: var(--rr-space-6);
+}
+.rr-dialog-content {
+  position: relative;
+  box-sizing: border-box;
+  max-block-size: calc(100dvh - 2 * var(--rr-space-8));
+  overflow-y: auto;
+}
+.rr-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+}
+`,
+        )
+      ).join("\n"),
+    ).toContain("reserves space-6");
+  });
+
+  it("flags a one-sided cap, and a cap against the layout viewport", async () => {
+    // `calc(100dvh - var(--rr-space-8))`: the same arithmetic with one side
+    // dropped. A looser check would read this as compliant.
+    expect(
+      (
+        await probe(
+          "one-sided-dialog-cap.css",
+          "dialog/Dialog.css",
+          DIALOG_CSS.replace(
+            "calc(100dvh - 2 * var(--rr-space-6))",
+            "calc(100dvh - var(--rr-space-8))",
+          ),
+        )
+      ).join("\n"),
+    ).toContain("one-sided subtraction");
+
+    // `100vh` counts the browser chrome a fixed overlay never covers, so with the
+    // bar visible the panel hides under it. The E2E cannot see this — there is no
+    // browser bar in a headless viewport — so the gate holds it.
+    expect(
+      (
+        await probe("vh-dialog-cap.css", "dialog/Dialog.css", DIALOG_CSS.replace("100dvh", "100vh"))
+      ).join("\n"),
+    ).toContain("visual viewport");
+  });
+
+  it("flags a cap with no scrollport, and a clip pretending to be a bound", async () => {
+    // `overflow: hidden` is the more dangerous half: it reads like a deliberate
+    // choice, and the content is simply lost.
+    expect(
+      (
+        await probe(
+          "clipping-dialog.css",
+          "dialog/Dialog.css",
+          DIALOG_CSS.replace("overflow-y: auto", "overflow: hidden"),
+        )
+      ).join("\n"),
+    ).toContain('needs "auto"');
+
+    expect(
+      (
+        await probe(
+          "unscrollable-toast.css",
+          "toast/Toast.css",
+          TOAST_CSS.replace("overflow-y: auto", "pointer-events: none"),
+        )
+      ).join("\n"),
+    ).toContain('needs "auto"');
+  });
+
+  it("flags a Toast stack sized against the scrollbar, and one that lost its end edge", async () => {
+    // The pre-card Toast, verbatim. This is the one mutation the E2E suite
+    // cannot catch: headless Chromium reports `innerWidth === clientWidth`, so
+    // `100vw` and the viewport width are the same number there and every geometry
+    // spec stays green. The defect is real — the scrollbar is inside `100vw` and
+    // outside the inset the stack is positioned against — and it is exactly the
+    // kind of claim a source-level gate exists to hold.
+    const before = await probe(
+      "pre-card-toast.css",
+      "toast/Toast.css",
+      `
+.rr-toast-viewport {
+  position: fixed;
+  top: var(--rr-space-4);
+  inset-inline-end: var(--rr-space-4);
+  width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+}
+`,
+    );
+    expect(before.join("\n")).toContain("includes the scrollbar");
+    expect(before.join("\n")).toContain("inset-inline-start");
+
+    // And the compliant form of the same stylesheet, which the contract accepts —
+    // this contrast is what makes the two failures above mean something rather
+    // than being what every probe would say anyway.
+    expect(await probe("compliant-toast.css", "toast/Toast.css", TOAST_CSS)).toEqual([]);
+  });
+
+  it("flags a stack that drifts off the end edge once it is clamped", async () => {
+    // The subtle consequence of replacing `width` with two insets: the panel is
+    // now correct and WRONG at once — inside the screen, but in the wrong place.
+    expect(
+      (
+        await probe(
+          "start-hugging-toast.css",
+          "toast/Toast.css",
+          TOAST_CSS.replace("  margin-inline-start: auto;\n", ""),
+        )
+      ).join("\n"),
+    ).toContain("END edge");
   });
 });
 
