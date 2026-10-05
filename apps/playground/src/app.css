@@ -92,3 +92,13 @@ body {
   max-block-size: calc(3 * var(--rr-space-16));
   overflow-y: auto;
 }
+
+/* Fixed narrow frame for the form-family responsive probes (RRU-142). The
+   width is intentionally smaller than a 320px viewport so the E2E measures the
+   component, not the page padding (RRU-144 owns the shell). */
+.pg-narrow-frame {
+  border: 1px dashed var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  padding: var(--rr-space-2);
+  width: 200px;
+}

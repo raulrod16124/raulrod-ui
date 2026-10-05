@@ -238,6 +238,30 @@ componer `Pagination` dentro de `DataTable`:
   consumidor es quien debe assertar que el componente compuesto sigue siendo visible y tiene un
   ancho razonable.
 
+## Addendum: form family y el suelo intrínseco de los controles reemplazados (RRU-142)
+
+La quinta excepción de implementación afecta a `Input`, `Textarea`, `Radio` y `FormField`:
+
+- **Los elementos reemplazados (`<input>`, `<textarea>`) tienen un ancho intrínseco**
+  (`size=20` / `cols=20` del UA, aproximadamente 177px de contenido). Dentro de un flex/grid item,
+  `min-width: auto` convierte ese intrínseco en suelo: con solo `width: 100%` el control no encoge
+  por debajo y empuja la fila. El contrato es declarar `min-width: 0` en `.rr-input`, en
+  `.rr-textarea` y en el wrapper `.rr-textarea-autosize`, porque ambos niveles pueden ser el flex
+  item visible para el consumidor.
+- **Una fila que se encoge es peor que una fila que salta de línea.** RRU-139 ya midió esto en el
+  footer de `Dialog`: sin `flex-wrap: wrap` los botones se aplastan y sus etiquetas se rompen en
+  3-4 líneas, sin desbordar la página. El criterio correcto para `RadioGroup--horizontal` es
+  `flex-wrap: wrap`, más `min-width: 0` y `overflow-wrap: anywhere` en `.rr-radio-label` para que la
+  opción pueda encogerse sin cortar palabras arbitrariamente.
+- **`FormField` no declara `width: 100%`.** El root y el slot `.rr-form-field-control` sí declaran
+  `min-width: 0`, pero darle al root un ancho del 100% como flex item en una fila horizontal
+  cambiaría la composición del consumidor (`form-section.tsx` agrupa un `FormField` con un `Switch`
+  en una misma fila). El ancho del campo sigue siendo decisión del consumidor.
+- **Las afirmaciones invisibles se fijan en el CSS escrito.** Como en RRU-138, el E2E no puede
+  detectar el suelo intrínseco sin un marco de ancho fijo, y un marco con `Inline` nowrap ya es un
+  artefacto de prueba. Por eso el contrato se pincha con `*.responsive-contract.test.ts` leyendo
+  las declaraciones, no asumiendo el efecto visual.
+
 ## Estado
 
 **Accepted.** EPIC-12 parte de esta convención. Cualquier desviación requiere justificación escrita en la tarjeta correspondiente.

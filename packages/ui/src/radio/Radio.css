@@ -3,9 +3,12 @@
    exceptions (component-pattern.mdx §5, precedents RRU-031/033/041/046):
    - border/outline widths (1px/2px) and outline-offset: no width token
      exists; 2px focus ring is the color.md §6.3 contract.
-   - `appearance: none`, `cursor` and `flex-direction` keywords: platform
-     styling / layout mechanics without a token counterpart (precedent
-     `align`/`justify`, RRU-031).
+   - `appearance: none`, `cursor`, `flex-wrap` and `flex-direction` keywords:
+     platform styling / layout mechanics without a token counterpart
+     (precedent `align`/`justify`, RRU-031).
+   Narrow widths (RRU-142, ADR-008): horizontal groups wrap instead of
+   crushing their labels; each label declares `min-width: 0` and
+   `overflow-wrap: anywhere` so the option can shrink without clipping words.
    The option is a bare `<input type="radio">` (Checkbox/Input precedent):
    `role="radio"` + `aria-checked`, keyboard (arrows select + rove focus, DoD
    #1) and form participation are NATIVE, driven by the shared `name` the
@@ -26,6 +29,7 @@
 
 .rr-radio-group--horizontal {
   flex-direction: row;
+  flex-wrap: wrap;
   gap: var(--rr-space-4);
 }
 
@@ -84,6 +88,8 @@
 }
 
 .rr-radio-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);
   line-height: var(--rr-font-leading-normal);

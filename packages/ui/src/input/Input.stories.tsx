@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { Button } from "../button/index.js";
+import { Inline } from "../inline/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Input } from "./Input.js";
 
@@ -68,5 +70,24 @@ export const Keyboard: Story = {
     const input = canvas.getByRole("textbox");
     await userEvent.click(input);
     await userEvent.type(input, "hello");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="field shrinks inside a 200px row">
+        <Inline>
+          <Input placeholder="Email" />
+          <Button>Send</Button>
+        </Inline>
+      </NarrowContainer>
+      <NarrowContainer label="long value wraps instead of overflowing" width="240px">
+        <Input defaultValue={"a".repeat(60)} />
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

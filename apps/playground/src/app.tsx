@@ -15,6 +15,7 @@ import "./app.css";
 
 import { A11yReviewSection } from "./a11y-review-section.js";
 import { ConsumerContract } from "./consumer-contract/section.js";
+import { FormResponsiveSection } from "./form-responsive-section.js";
 import { FormSection } from "./form-section.js";
 import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
 import { NavigationSection } from "./navigation-section.js";
@@ -103,6 +104,19 @@ export function App() {
                 Navigation
               </Heading>
               <NavigationSection />
+            </section>
+
+            {/* Probe fixture for the form family (RRU-142): Input, Textarea,
+                Radio and FormField must shrink or wrap inside narrow frames. */}
+            <section
+              aria-labelledby="form-responsive-title"
+              className="pg-section"
+              id="form-responsive"
+            >
+              <Heading as="h2" className="pg-section__title" id="form-responsive-title">
+                Form responsive
+              </Heading>
+              <FormResponsiveSection />
             </section>
           </Stack>
         </main>

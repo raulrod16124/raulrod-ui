@@ -3,9 +3,15 @@
    exceptions (component-pattern.mdx §5, precedents RRU-031/033/041):
    - border/outline widths (1px/2px) and outline-offset: no width token
      exists; 2px focus ring is the color.md §6.3 contract.
+   - `box-sizing: border-box`: without it `width: 100%` would include padding
+     and border as overflow in a block container (RRU-138 precedent on
+     `.rr-select-item`).
    Defaults: size=md lives in this base class (Stack.gap precedent). Source
    order matters: the disabled block is last so it beats the invalid border
    at equal specificity.
+   Narrow widths (RRU-142, ADR-008): `min-width: 0` drops the replaced
+   element's automatic minimum size, so the field can shrink below the UA's
+   intrinsic `size=20` floor when it is composed as a flex/grid item.
    Colors: the resting boundary uses `color.border.strong`, NOT
    `border.default` — color.md §6.2 forbids the latter on interactive control
    boundaries; `border.danger` marks the invalid state (AA on
@@ -15,6 +21,8 @@
 .rr-input {
   display: block;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: var(--rr-space-2) var(--rr-space-4);
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);
