@@ -23,8 +23,15 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      # Full history only in this job, for the changeset guard below:
+      # `changeset status` runs `git merge-base` against "main"
+      # (`.changeset/config.json` `baseBranch`) after parsing, and a default
+      # shallow PR checkout has neither the history nor that ref — the git
+      # step would die before the parse runs. The other jobs stay shallow.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -47,6 +54,28 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Changesets are plain markdown until something parses them, and on the
+      # happy path the first parser is `changesets/action` in release.yml —
+      # which runs on push to main, AFTER the merge. rru-141/142/143 were
+      # committed without their opening "---" (2026-10-06): every check on
+      # PR #16 stayed green, the merge landed, and the release job then died
+      # on the parse error — no Release PR, nothing published. This step
+      # moves that failure onto the PR, where it is cheap to fix.
+      #
+      # `changeset status` parses EVERY `.changeset/*.md` first — malformed
+      # frontmatter fails here — and only then runs git against
+      # `.changeset/config.json` `baseBranch` ("main"), which needs the
+      # fetch-depth: 0 above plus a local ref: a PR checkout is detached and
+      # only carries origin/main (git does not DWIM `main` -> `origin/main`
+      # for merge-base). Its second half enforces the release discipline the
+      # board already follows: packages changed since main must carry a
+      # changeset (`changeset add --empty` when there is nothing to release).
+      # Needs no build, so it runs before anything heavier.
+      - name: Validate changesets
+        run: |
+          git show-ref --verify --quiet refs/heads/main || git branch main origin/main
+          pnpm changeset status
 
       - name: Lint
         run: pnpm lint
