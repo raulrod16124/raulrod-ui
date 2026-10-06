@@ -28,8 +28,8 @@ helper does that for you: it builds, watches the two package sources and rebuild
 | Runtime exports of @raulrod/ui | 72     |
 | Components                     | 28     |
 | Story files                    | 28     |
-| MDX documentation pages        | 17     |
-| Architecture Decision Records  | 8      |
+| MDX documentation pages        | 18     |
+| Architecture Decision Records  | 9      |
 | Playwright E2E specs           | 15     |
 | CI jobs                        | 5      |
 | Published line                 | 1.x    |
@@ -81,8 +81,8 @@ and the alternative that was rejected, is `docs/decisions/004-component-composit
 
 ### 3. Documentation
 
-Eight Architecture Decision Records in `docs/decisions/`, and MDX pages shipped inside the package
-so they cannot drift from the components they describe — seventeen of them, including a Spanish
+Nine Architecture Decision Records in `docs/decisions/`, and MDX pages shipped inside the package
+so they cannot drift from the components they describe — eighteen of them, including a Spanish
 translation of the setup guide. Decisions are numbered and never edited after publication; a change
 of mind is a new record.
 
