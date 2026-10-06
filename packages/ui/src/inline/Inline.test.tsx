@@ -106,4 +106,19 @@ describe("Inline authored CSS contract", () => {
   it("only consumes tokens that @raulrod/tokens defines", async () => {
     await expectTokenLineage(await readComponentCss("inline/Inline.css"));
   });
+
+  it("can shrink below its content, and wraps only when asked (RRU-136)", async () => {
+    const css = await readComponentCss("inline/Inline.css");
+
+    // The flex item floor: without this a row nested in a flex or grid parent
+    // is floored at the min-content of its widest child, so the consumer's
+    // documented `overflow: hidden` truncation could never engage.
+    expect(css).toMatch(/\.rr-inline\s*\{[^}]*min-width:\s*0/);
+
+    // The `wrap` contract stays opt-in: this card documents it, it does not
+    // change it. `flex-wrap: nowrap` is never declared, so the absence of the
+    // modifier has to keep meaning "do not wrap".
+    expect(css).toMatch(/\.rr-inline--wrap\s*\{[^}]*flex-wrap:\s*wrap/);
+    expect(css).not.toMatch(/flex-wrap:\s*nowrap/);
+  });
 });

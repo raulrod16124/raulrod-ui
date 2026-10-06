@@ -3,6 +3,7 @@ import type { InputProps, InputSize } from "./Input.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding an `InputSize` member breaks
@@ -34,7 +35,7 @@ const inputClasses = createVariants(inputModifiers);
  * through; `className` is merged via `cx`.
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { size, className, ...props },
+  { size, className, style, styles, ...props },
   ref,
 ) {
   return (
@@ -42,6 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {...props}
       ref={ref}
       className={cx("rr-input", inputClasses("rr-input", { size }), className)}
+      style={mergeStyles(styles, style)}
     />
   );
 });

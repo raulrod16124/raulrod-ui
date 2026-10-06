@@ -52,3 +52,52 @@ export function LongContent() {
     </Text>
   );
 }
+
+/**
+ * The `Responsive` story pattern of EPIC-12 (RRU-136, ADR-008): a fixed-width
+ * frame with a visible boundary, so a story can prove a component reacts to the
+ * width of ITS CONTAINER and not to the viewport.
+ *
+ * Two reasons this exists instead of a `parameters.viewport` story alone:
+ *
+ *  - A viewport story can only shrink the canvas, so it cannot separate "this
+ *    component reacts to the viewport" from "this component reacts to its
+ *    container". Resize the browser window with this frame on screen and
+ *    nothing inside it changes; resize the frame and it does. That contrast is
+ *    the mechanism ADR-008 chose, made observable by a human.
+ *  - `containerType: "inline-size"` is declared HERE, on purpose. A `@container`
+ *    query with no container context never matches, and ADR-008 names that as
+ *    the epic's first observable risk. Every family that adds a `@container`
+ *    block gets its context from this frame for free.
+ *
+ * The frame keeps the width explicit and token-free (`320px` is the narrow
+ * viewport EPIC-12 measures at, not a design value), because a story is a
+ * consumer, and a consumer is allowed its own layout numbers.
+ */
+export function NarrowContainer({
+  children,
+  label,
+  width = "320px",
+}: {
+  children: ReactNode;
+  label: string;
+  width?: string;
+}) {
+  return (
+    <Stack gap="space-2" style={{ alignItems: "flex-start" }}>
+      <Text size="font.size.sm">{label}</Text>
+      <div
+        style={{
+          border: "1px dashed var(--rr-color-border-strong)",
+          borderRadius: "var(--rr-radius-md)",
+          containerType: "inline-size",
+          inlineSize: width,
+          overflow: "visible",
+          padding: "var(--rr-space-2)",
+        }}
+      >
+        {children}
+      </div>
+    </Stack>
+  );
+}

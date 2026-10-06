@@ -4,6 +4,7 @@ import { forwardRef, useState } from "react";
 
 import { cx } from "../utils/cx.js";
 import { getInitials } from "../utils/initials.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding an `AvatarSize` member breaks
@@ -45,7 +46,7 @@ const avatarClasses = createVariants(avatarModifiers);
  * bubble); the fallback switch itself is internal and automatic.
  */
 export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
-  { name, src, alt, size, className, ...props },
+  { name, src, alt, size, className, style, styles, ...props },
   ref,
 ) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
       role={hasImage ? undefined : "img"}
       aria-label={hasImage ? undefined : accessibleName}
       className={cx("rr-avatar", avatarClasses("rr-avatar", { size }), className)}
+      style={mergeStyles(styles, style)}
     >
       {hasImage && (
         <img

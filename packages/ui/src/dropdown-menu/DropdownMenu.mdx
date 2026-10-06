@@ -55,3 +55,28 @@ import { DropdownMenu } from "@raulrod/ui";
   controlled `open`/`onOpenChange` contract.
 - **Slot presence matters.** Items must be direct children of `Content` (or
   `SubContent`) for the keyboard hook to discover them.
+
+## Narrow viewports
+
+Like `Popover`, the menu is `position: fixed` and portaled, so its width was
+shrink-to-fit against the viewport: one long item label opened a panel wider than
+the screen. The menu and every `SubContent` are now bounded (RRU-137):
+
+```css
+/* DropdownMenu.css — on .rr-dropdown-menu */
+box-sizing: border-box;
+max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+overflow: auto;
+```
+
+- **A menu taller than the screen scrolls, and that scrollport is reachable.** It
+  differs from the tooltip's on purpose: every item is a focusable `menuitem`, so
+  <kbd>ArrowDown</kbd> walks focus through the scrollport and the browser scrolls each focused item
+  into view. A long list needs no pointer to reach its end.
+- **Long labels wrap inside the bound** instead of widening the panel, following
+  the `overflow-wrap` policy RRU-136 fixed for layout primitives.
+- **`box-sizing: border-box` again.** The menu's `space-1` padding would
+  otherwise add to the clamp and push the panel past the bound it declares.
+
+<Canvas of={DropdownMenuStories.Responsive} />

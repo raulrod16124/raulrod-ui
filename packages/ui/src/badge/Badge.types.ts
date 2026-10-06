@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
 
 /**
@@ -32,4 +33,6 @@ export type BadgeVariant = "neutral" | "success" | "warning" | "destructive" | "
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   /** Semantic variant; defaults to `neutral` (JS default, Button precedent). */
   variant?: BadgeVariant;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"badge">;
 }

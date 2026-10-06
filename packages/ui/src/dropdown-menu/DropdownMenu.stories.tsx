@@ -98,3 +98,30 @@ export const Keyboard: Story = {
     await userEvent.keyboard("{enter}");
   },
 };
+
+/**
+ * The 320px case, open on load (RRU-137).
+ *
+ * Fourteen items and one long label, because those are the two ways this panel
+ * used to leave the screen: the item count exceeds a phone's height (the menu
+ * scrolls, and every item is a `menuitem`, so ArrowDown walks the scrollport) and
+ * the label is what pushes the INLINE bound. Opened on load so the position
+ * measurement is visible without a click; `mobile1` is 320px wide.
+ */
+export const Responsive: Story = {
+  render: () => (
+    <DropdownMenu defaultOpen>
+      <DropdownMenuTrigger>Open menu</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {Array.from({ length: 14 }).map((_, i) => (
+          <DropdownMenuItem key={i}>
+            {i === 3 ? "Export as CSV with every visible column included" : `Menu item ${i + 1}`}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+};

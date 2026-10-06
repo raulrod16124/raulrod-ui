@@ -6,6 +6,7 @@ import { forwardRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "@raulrod/icons";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { VisuallyHidden } from "../visually-hidden/index.js";
 
 import { paginationRange } from "./pagination-range.js";
@@ -57,7 +58,18 @@ import { paginationRange } from "./pagination-range.js";
  * delayed additive prop (see Pagination.types.ts).
  */
 export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagination(
-  { page, defaultPage, pageCount, onPageChange, announcePageChange = true, className, ...props },
+  {
+    page,
+    defaultPage,
+    pageCount,
+    onPageChange,
+    announcePageChange = true,
+    styles,
+    style,
+    classNames,
+    className,
+    ...props
+  },
   ref,
 ) {
   const [uncontrolledPage, setUncontrolledPage] = useState<number>(defaultPage ?? 1);
@@ -77,15 +89,16 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
       {...props}
       ref={ref}
       aria-label={props["aria-label"] ?? "Pagination"}
-      className={cx("rr-pagination", className)}
+      style={mergeStyles(styles, style)}
+      className={cx("rr-pagination", classNames?.root, className)}
     >
-      <ul className="rr-pagination__list">
+      <ul className={cx("rr-pagination__list", classNames?.list)}>
         <li>
           <button
             type="button"
             aria-label="Previous page"
             disabled={current <= 1}
-            className="rr-pagination__item"
+            className={cx("rr-pagination__item", "rr-pagination__item--prev", classNames?.previous)}
             onClick={() => commit(current - 1)}
           >
             <ChevronLeft aria-hidden={true} />
@@ -104,7 +117,11 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
                 type="button"
                 aria-label={`Go to page ${item}`}
                 aria-current={item === current ? "page" : undefined}
-                className="rr-pagination__item"
+                className={cx(
+                  "rr-pagination__item",
+                  "rr-pagination__item--number",
+                  classNames?.item,
+                )}
                 onClick={() => commit(item)}
               >
                 {item}
@@ -117,7 +134,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
             type="button"
             aria-label="Next page"
             disabled={current >= pageCount}
-            className="rr-pagination__item"
+            className={cx("rr-pagination__item", "rr-pagination__item--next", classNames?.next)}
             onClick={() => commit(current + 1)}
           >
             <ChevronRight aria-hidden={true} />

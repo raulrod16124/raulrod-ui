@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { ColorText } from "@raulrod/tokens";
 import type { HTMLAttributes } from "react";
 
@@ -21,4 +22,6 @@ export interface HeadingProps extends HTMLAttributes<HTMLHeadingElement> {
   as?: HeadingLevel;
   /** Text color from the `ColorText` token union (theme-aware). */
   color?: ColorText;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"heading">;
 }

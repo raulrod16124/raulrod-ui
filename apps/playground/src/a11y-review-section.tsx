@@ -50,9 +50,78 @@ import {
 } from "@raulrod/ui";
 
 const TEAM = [
-  { id: "u1", name: "Ada Lovelace", role: "Maintainer", commits: 1284 },
-  { id: "u2", name: "Grace Hopper", role: "Reviewer", commits: 942 },
-  { id: "u3", name: "Alan Turing", role: "Contributor", commits: 517 },
+  {
+    id: "u1",
+    name: "Ada Lovelace",
+    role: "Maintainer",
+    status: "Active",
+    email: "ada@example.com",
+    identifier: "f7b8a5d0-9c42-4e86-b9f3-8d62f40ab3f9",
+    commits: 1284,
+  },
+  {
+    id: "u2",
+    name: "Grace Hopper",
+    role: "Reviewer",
+    status: "Active",
+    email: "grace@example.com",
+    identifier: "6b902e73-8c44-46f1-bb80-d90f36af22f0",
+    commits: 942,
+  },
+  {
+    id: "u3",
+    name: "Alan Turing",
+    role: "Contributor",
+    status: "Away",
+    email: "alan@example.com",
+    identifier: "9a407058-dbc9-4d41-b9c4-b25d67113e70",
+    commits: 517,
+  },
+  {
+    id: "u4",
+    name: "Tim Berners-Lee",
+    role: "Maintainer",
+    status: "Active",
+    email: "tim@example.com",
+    identifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    commits: 3102,
+  },
+  {
+    id: "u5",
+    name: "Barbara Liskov",
+    role: "Reviewer",
+    status: "Active",
+    email: "barbara@example.com",
+    identifier: "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+    commits: 1876,
+  },
+  {
+    id: "u6",
+    name: "Dennis Ritchie",
+    role: "Contributor",
+    status: "Away",
+    email: "dennis@example.com",
+    identifier: "c3d4e5f6-a7b8-9012-cdef-345678901234",
+    commits: 421,
+  },
+  {
+    id: "u7",
+    name: "Linus Torvalds",
+    role: "Maintainer",
+    status: "Active",
+    email: "linus@example.com",
+    identifier: "d4e5f6a7-b8c9-0123-defa-456789012345",
+    commits: 5633,
+  },
+  {
+    id: "u8",
+    name: "Margaret Hamilton",
+    role: "Reviewer",
+    status: "Active",
+    email: "margaret@example.com",
+    identifier: "e5f6a7b8-c9d0-1234-efab-567890123456",
+    commits: 2890,
+  },
 ] as const;
 
 const RELEASES = [
@@ -139,12 +208,21 @@ export function A11yReviewSection() {
           ))}
         </Inline>
 
-        <Table loading={tableState === "loading"} loadingRows={3} size="sm" sticky>
+        <Table
+          className="pg-table-scrollport"
+          loading={tableState === "loading"}
+          loadingRows={3}
+          size="sm"
+          sticky
+        >
           <Table.Caption>Maintainers and their commit count</Table.Caption>
           <Table.Head>
             <Table.Row>
               <Table.HeaderCell>Name</Table.HeaderCell>
               <Table.HeaderCell>Role</Table.HeaderCell>
+              <Table.HeaderCell>Status</Table.HeaderCell>
+              <Table.HeaderCell>Email</Table.HeaderCell>
+              <Table.HeaderCell>Identifier</Table.HeaderCell>
               <Table.HeaderCell align="end">Commits</Table.HeaderCell>
             </Table.Row>
           </Table.Head>
@@ -157,6 +235,11 @@ export function A11yReviewSection() {
                   <Table.Row key={member.id}>
                     <Table.HeaderCell scope="row">{member.name}</Table.HeaderCell>
                     <Table.Cell>{member.role}</Table.Cell>
+                    <Table.Cell>{member.status}</Table.Cell>
+                    <Table.Cell>{member.email}</Table.Cell>
+                    <Table.Cell>
+                      <span style={{ whiteSpace: "nowrap" }}>{member.identifier}</span>
+                    </Table.Cell>
                     <Table.Cell align="end" numeric>
                       {member.commits.toLocaleString("en-US")}
                     </Table.Cell>

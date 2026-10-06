@@ -19,6 +19,7 @@ import { Children, createContext, forwardRef, isValidElement, useContext } from 
 
 import { Skeleton } from "../skeleton/index.js";
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: `size` (density — the CSS base IS
@@ -75,7 +76,18 @@ const tableAlignmentClasses = createVariants(tableAlignmentModifiers);
  * override via `colSpan` on their own cells).
  */
 const TableRoot = forwardRef<HTMLDivElement, TableProps>(function Table(
-  { size, sticky = false, loading = false, loadingRows = 3, className, children, ...props },
+  {
+    size,
+    sticky = false,
+    loading = false,
+    loadingRows = 3,
+    styles,
+    style,
+    classNames,
+    className,
+    children,
+    ...props
+  },
   ref,
 ) {
   const colCount = collectColumnCount(children);
@@ -86,6 +98,7 @@ const TableRoot = forwardRef<HTMLDivElement, TableProps>(function Table(
     loading,
     loadingRows,
     scopeDefault: "col",
+    classNames,
   };
 
   return (
@@ -93,14 +106,19 @@ const TableRoot = forwardRef<HTMLDivElement, TableProps>(function Table(
       <div
         {...props}
         ref={ref}
+        style={mergeStyles(styles, style)}
         className={cx(
           "rr-table",
           tableSizeClasses("rr-table", { size }),
           sticky && "rr-table--sticky",
+          classNames?.wrapper,
           className,
         )}
       >
-        <table className="rr-table__table" aria-busy={loading || undefined}>
+        <table
+          className={cx("rr-table__table", classNames?.table)}
+          aria-busy={loading || undefined}
+        >
           {children}
         </table>
       </div>
@@ -118,7 +136,11 @@ export const TableHead = forwardRef<HTMLTableSectionElement, TableHeadProps>(fun
   const table = useTableContext();
   return (
     <TableContext.Provider value={{ ...table, scopeDefault: "col" }}>
-      <thead {...props} ref={ref} className={cx("rr-table__head", className)}>
+      <thead
+        {...props}
+        ref={ref}
+        className={cx("rr-table__head", table.classNames?.head, className)}
+      >
         {children}
       </thead>
     </TableContext.Provider>
@@ -171,7 +193,11 @@ export const TableBody = forwardRef<HTMLTableSectionElement, TableBodyProps>(fun
 
   return (
     <TableContext.Provider value={{ ...table, scopeDefault: "row" }}>
-      <tbody {...props} ref={ref} className={cx("rr-table__body", className)}>
+      <tbody
+        {...props}
+        ref={ref}
+        className={cx("rr-table__body", table.classNames?.body, className)}
+      >
         {table.loading ? skeletonRows : hasError ? errorRow : hasRows ? children : isEmptyRow}
       </tbody>
     </TableContext.Provider>
@@ -188,7 +214,11 @@ export const TableFoot = forwardRef<HTMLTableSectionElement, TableFootProps>(fun
   const table = useTableContext();
   return (
     <TableContext.Provider value={{ ...table, scopeDefault: "col" }}>
-      <tfoot {...props} ref={ref} className={cx("rr-table__foot", className)}>
+      <tfoot
+        {...props}
+        ref={ref}
+        className={cx("rr-table__foot", table.classNames?.foot, className)}
+      >
         {children}
       </tfoot>
     </TableContext.Provider>
@@ -203,7 +233,8 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(function 
   { className, ...props },
   ref,
 ) {
-  return <tr {...props} ref={ref} className={cx("rr-table__row", className)} />;
+  const { classNames } = useTableContext();
+  return <tr {...props} ref={ref} className={cx("rr-table__row", classNames?.row, className)} />;
 });
 TableRow.displayName = "TableRow";
 
@@ -222,6 +253,7 @@ export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellP
           "rr-table__header",
           tableAlignmentClasses("rr-table__header", { align }),
           numeric && "rr-table__header--numeric",
+          table.classNames?.headerCell,
           className,
         )}
       />
@@ -236,6 +268,7 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(functi
   { align, numeric, className, ...props },
   ref,
 ) {
+  const { classNames } = useTableContext();
   return (
     <td
       {...props}
@@ -244,6 +277,7 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(functi
         "rr-table__cell",
         tableAlignmentClasses("rr-table__cell", { align }),
         numeric && "rr-table__cell--numeric",
+        classNames?.cell,
         className,
       )}
     />
@@ -256,7 +290,14 @@ TableCell.displayName = "TableCell";
  *  requires (React does not reorder children). */
 export const TableCaption = forwardRef<HTMLTableCaptionElement, TableCaptionProps>(
   function TableCaption({ className, ...props }, ref) {
-    return <caption {...props} ref={ref} className={cx("rr-table__caption", className)} />;
+    const { classNames } = useTableContext();
+    return (
+      <caption
+        {...props}
+        ref={ref}
+        className={cx("rr-table__caption", classNames?.caption, className)}
+      />
+    );
   },
 );
 TableCaption.displayName = "TableCaption";
@@ -265,7 +306,14 @@ TableCaption.displayName = "TableCaption";
  *  (widths via `style`/`span`, consumer data). */
 export const TableColGroup = forwardRef<HTMLTableColElement, TableColGroupProps>(
   function TableColGroup({ className, ...props }, ref) {
-    return <colgroup {...props} ref={ref} className={cx("rr-table__colgroup", className)} />;
+    const { classNames } = useTableContext();
+    return (
+      <colgroup
+        {...props}
+        ref={ref}
+        className={cx("rr-table__colgroup", classNames?.colGroup, className)}
+      />
+    );
   },
 );
 TableColGroup.displayName = "TableColGroup";
@@ -275,7 +323,10 @@ export const TableColumn = forwardRef<HTMLTableColElement, TableColumnProps>(fun
   { className, ...props },
   ref,
 ) {
-  return <col {...props} ref={ref} className={cx("rr-table__col", className)} />;
+  const { classNames } = useTableContext();
+  return (
+    <col {...props} ref={ref} className={cx("rr-table__col", classNames?.column, className)} />
+  );
 });
 TableColumn.displayName = "TableColumn";
 

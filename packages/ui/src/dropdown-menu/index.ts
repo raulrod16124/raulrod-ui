@@ -9,6 +9,7 @@ export {
   DropdownMenuTrigger,
 } from "./DropdownMenu.js";
 export type {
+  DropdownMenuClassNames,
   DropdownMenuContentProps,
   DropdownMenuItemProps,
   DropdownMenuPlacement,

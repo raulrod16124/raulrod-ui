@@ -71,6 +71,7 @@ export function DropdownMenu({
   open,
   defaultOpen = false,
   onOpenChange,
+  classNames,
   children,
 }: DropdownMenuProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
@@ -107,6 +108,7 @@ export function DropdownMenu({
     setTriggerRef,
     getFocusLastOnOpen,
     setFocusLastOnOpen,
+    classNames,
   };
 
   return <DropdownMenuContext.Provider value={dropdown}>{children}</DropdownMenuContext.Provider>;
@@ -131,7 +133,7 @@ export const DropdownMenuTrigger = forwardRef<HTMLButtonElement, DropdownMenuTri
         aria-haspopup="menu"
         aria-expanded={dropdown.open}
         aria-controls={dropdown.contentId}
-        className={cx("rr-dropdown-trigger", className)}
+        className={cx("rr-dropdown-trigger", dropdown.classNames?.trigger, className)}
         onClick={(event) => {
           dropdown.setOpen(!dropdown.open);
           onClick?.(event);
@@ -216,7 +218,7 @@ export const DropdownMenuContent = forwardRef<HTMLDivElement, DropdownMenuConten
           ref={mergeRefs(panelRef, ref)}
           id={dropdown.contentId}
           role="menu"
-          className={cx("rr-dropdown-menu", className)}
+          className={cx("rr-dropdown-menu", dropdown.classNames?.content, className)}
         >
           {children}
         </div>
@@ -248,7 +250,12 @@ export const DropdownMenuItem = forwardRef<HTMLButtonElement, DropdownMenuItemPr
         role="menuitem"
         tabIndex={-1}
         aria-disabled={disabled || undefined}
-        className={cx("rr-dropdown-item", disabled && "rr-dropdown-item--disabled", className)}
+        className={cx(
+          "rr-dropdown-item",
+          disabled && "rr-dropdown-item--disabled",
+          dropdown.classNames?.item,
+          className,
+        )}
         onClick={(event) => {
           if (disabled) {
             event.preventDefault();
@@ -279,12 +286,13 @@ DropdownMenuItem.displayName = "DropdownMenuItem";
 /** `DropdownMenu.Separator` slot: `<div role="separator">` between groups. */
 export const DropdownMenuSeparator = forwardRef<HTMLDivElement, DropdownMenuSeparatorProps>(
   function DropdownMenuSeparator({ className, ...props }, ref) {
+    const dropdown = useDropdownMenuContext();
     return (
       <div
         {...props}
         ref={ref}
         role="separator"
-        className={cx("rr-dropdown-separator", className)}
+        className={cx("rr-dropdown-separator", dropdown.classNames?.separator, className)}
       />
     );
   },
@@ -298,6 +306,7 @@ DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
  *  close: a Sub is mounted INSIDE the parent `.Content`, which returns `null`
  *  when the tree closes — the Sub unmounts and remounts fresh. */
 export function DropdownMenuSub({ children }: DropdownMenuSubProps) {
+  const dropdown = useDropdownMenuContext();
   const [open, setOpen] = useState(false);
 
   const contentId = useId("rr-dropdown-sub");
@@ -320,6 +329,7 @@ export function DropdownMenuSub({ children }: DropdownMenuSubProps) {
     setTriggerRef,
     getFocusLastOnOpen,
     setFocusLastOnOpen,
+    classNames: dropdown.classNames,
   };
 
   return <DropdownMenuSubContext.Provider value={sub}>{children}</DropdownMenuSubContext.Provider>;
@@ -354,7 +364,12 @@ export const DropdownMenuSubTrigger = forwardRef<HTMLButtonElement, DropdownMenu
         aria-expanded={sub.open}
         aria-controls={sub.contentId}
         aria-disabled={disabled || undefined}
-        className={cx("rr-dropdown-item", disabled && "rr-dropdown-item--disabled", className)}
+        className={cx(
+          "rr-dropdown-item",
+          disabled && "rr-dropdown-item--disabled",
+          sub.classNames?.subTrigger,
+          className,
+        )}
         onKeyDown={(event) => {
           if (event.key === "ArrowRight" && !disabled) {
             event.preventDefault();
@@ -432,7 +447,7 @@ export const DropdownMenuSubContent = forwardRef<HTMLDivElement, DropdownMenuSub
           ref={mergeRefs(panelRef, ref)}
           id={sub.contentId}
           role="menu"
-          className={cx("rr-dropdown-menu", className)}
+          className={cx("rr-dropdown-menu", sub.classNames?.subContent, className)}
         >
           {children}
         </div>

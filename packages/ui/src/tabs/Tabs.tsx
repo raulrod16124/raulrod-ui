@@ -45,7 +45,7 @@ import { useId } from "../utils/use-id.js";
  * stays at the tablist default.
  */
 
-export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps) {
+export function Tabs({ value, defaultValue, onValueChange, classNames, children }: TabsProps) {
   const baseId = useId("rr-tabs");
 
   const [uncontrolledValue, setUncontrolledValue] = useState<string | undefined>(defaultValue);
@@ -100,6 +100,7 @@ export function Tabs({ value, defaultValue, onValueChange, children }: TabsProps
     tabs,
     idsByValue,
     setValue,
+    classNames,
   };
 
   return <TabsContext.Provider value={tabsContext}>{children}</TabsContext.Provider>;
@@ -160,7 +161,7 @@ export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(function TabsL
       // `interactive-supports-focus`: the tablist is independently focusable
       // (tabIndex -1 — script-only, the roving tab stop lives on the tabs).
       tabIndex={-1}
-      className={cx("rr-tabs-list", className)}
+      className={cx("rr-tabs-list", tabs.classNames?.list, className)}
       onKeyDown={handleKeyDown}
     >
       {children}
@@ -201,7 +202,12 @@ export const TabsTrigger = forwardRef<HTMLButtonElement, TabsTriggerProps>(funct
       aria-controls={entry?.panelId}
       tabIndex={isTabStop ? 0 : -1}
       disabled={disabled}
-      className={cx("rr-tabs-trigger", disabled && "rr-tabs-trigger--disabled", className)}
+      className={cx(
+        "rr-tabs-trigger",
+        disabled && "rr-tabs-trigger--disabled",
+        tabs.classNames?.trigger,
+        className,
+      )}
       onClick={(event) => {
         if (event.currentTarget.disabled) return;
         tabs.setValue(value);
@@ -242,7 +248,7 @@ export const TabsPanel = forwardRef<HTMLDivElement, TabsPanelProps>(function Tab
       aria-labelledby={entry?.tabId}
       hidden={!active}
       tabIndex={active ? 0 : undefined}
-      className={cx("rr-tabs-panel", className)}
+      className={cx("rr-tabs-panel", tabs.classNames?.panel, className)}
     >
       {children}
     </div>

@@ -3,6 +3,7 @@ import type { TextProps } from "./Text.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { typographyClasses } from "../utils/typography.js";
 
 /**
@@ -13,7 +14,7 @@ import { typographyClasses } from "../utils/typography.js";
  * content needs (`<p>`, `<label>`, …).
  */
 export const Text = forwardRef<HTMLSpanElement, TextProps>(function Text(
-  { size, weight, color, className, ...props },
+  { size, weight, color, className, style, styles, ...props },
   ref,
 ) {
   return (
@@ -21,6 +22,7 @@ export const Text = forwardRef<HTMLSpanElement, TextProps>(function Text(
       {...props}
       ref={ref}
       className={cx("rr-text", typographyClasses("rr-text", { size, weight, color }), className)}
+      style={mergeStyles(styles, style)}
     />
   );
 });

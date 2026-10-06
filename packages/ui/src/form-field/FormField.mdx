@@ -10,15 +10,22 @@ attributes.
 ## Usage
 
 ```tsx
-import { FormField, Input } from "@raulrod/ui";
+import {
+  FormField,
+  FormFieldControl,
+  FormFieldDescription,
+  FormFieldError,
+  FormFieldLabel,
+  Input,
+} from "@raulrod/ui";
 
 <FormField>
-  <FormField.Label>Email</FormField.Label>
-  <FormField.Description>We never share your email.</FormField.Description>
-  <FormField.Control>
+  <FormFieldLabel>Email</FormFieldLabel>
+  <FormFieldDescription>We never share your email.</FormFieldDescription>
+  <FormFieldControl>
     {(field) => <Input type="email" placeholder="you@example.com" {...field} />}
-  </FormField.Control>
-  <FormField.Error>Invalid email address.</FormField.Error>
+  </FormFieldControl>
+  <FormFieldError>Invalid email address.</FormFieldError>
 </FormField>;
 ```
 
@@ -27,13 +34,13 @@ When the `Error` slot is present, the control automatically receives
 
 ## Slots
 
-| Slot                    | Purpose                                                                                                        |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `FormField`             | Provider. Generates the control id and detects slot presence.                                                  |
-| `FormField.Label`       | `<label htmlFor={id}>`.                                                                                        |
-| `FormField.Description` | Helper text, referenced by `aria-describedby`.                                                                 |
-| `FormField.Control`     | Render-prop wrapper that spreads `{ id, aria-describedby, aria-invalid, aria-errormessage }` onto the control. |
-| `FormField.Error`       | Error message. Adds `aria-invalid` and `role="alert"`.                                                         |
+| Slot                   | Purpose                                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `FormField`            | Provider. Generates the control id and detects slot presence.                                                  |
+| `FormFieldLabel`       | `<label htmlFor={id}>`.                                                                                        |
+| `FormFieldDescription` | Helper text, referenced by `aria-describedby`.                                                                 |
+| `FormFieldControl`     | Render-prop wrapper that spreads `{ id, aria-describedby, aria-invalid, aria-errormessage }` onto the control. |
+| `FormFieldError`       | Error message. Adds `aria-invalid` and `role="alert"`.                                                         |
 
 ## Props
 
@@ -75,7 +82,12 @@ Standard `HTMLAttributes<HTMLParagraphElement>`; renders with `role="alert"`.
   Groups of checkboxes or radios should use their own grouping components
   (RadioGroup) rather than FormField.
 - **Render prop vs explicit slot.** You can pass a function as `FormField`
-  children instead of using `FormField.Control`, but this is sugar for the same
+  children instead of using `FormFieldControl`, but this is sugar for the same
   single-control contract.
 - **`aria-errormessage` support is not universal.** Some screen readers ignore
   it; for that reason the error also stays in `aria-describedby`.
+- **No dot-notation API.** Unlike `Table` and its `TableHeader`/`TableBody`
+  slots, `FormField` currently exports `FormFieldLabel`, `FormFieldControl`,
+  etc. as separate named exports. The package root does not expose
+  `FormField.Label`. This is a known inconsistency to resolve in the next
+  API-facing epic (EPIC-13); RRU-142 only documents the current reality.

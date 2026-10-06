@@ -1,10 +1,18 @@
 /* Stack — vertical flex layout primitive (RRU-031, ADR-003).
    Only tokens for design values (`var(--rr-space-*)`); `align`/`justify`
-   values are CSS layout keywords and have no token counterpart. */
+   values are CSS layout keywords and have no token counterpart.
+
+   Narrow widths (RRU-136, ADR-008): `min-width: 0` in the base class, for the
+   same reason as Inline — a Stack nested in a flex or grid parent is a flex or
+   grid item floored at its min-content size, and that floor is the widest
+   child, which is exactly what the consumer's `overflow: hidden` needs to be
+   able to cut. The main axis is vertical and never overflows on its own, so
+   there is no `wrap` concern here beyond the modifier Inline already exposes. */
 
 .rr-stack {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: var(--rr-space-4);
 }
 

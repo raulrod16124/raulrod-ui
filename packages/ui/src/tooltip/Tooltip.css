@@ -13,7 +13,27 @@
    tooltip may appear over an OPEN popover/dialog (e.g. hinting a control
    inside a dialog body, z.modal=200); the hint must never end up painted
    beneath the very layer it explains. Transient + non-modal by nature, the
-   toast tier is its semantic home. */
+   toast tier is its semantic home.
+
+   Narrow viewports (RRU-137, ADR-008): `max-inline-size` bounds the panel to the
+   viewport with the same `Toast.css:21` mold as its two siblings, and
+   `overflow-wrap: anywhere` lets the content that does not fit break instead of
+   pushing the box out of the screen. `100vw` rather than `@container` for the
+   same reason as `Popover.css`: the panel is `position: fixed` and portalled to
+   `document.body`, so its coordinate space is the viewport, not a container the
+   consumer drew.
+
+   DELIBERATE DEVIATION from the card, which asked for `max-block-size` +
+   `overflow: auto` in all three panels: this one gets neither. A scrollport that
+   is not focusable is content a keyboard user cannot reach — the tooltip is not
+   focusable, is not a focus trap, and its content is announced as a description
+   of the trigger, so scrolling it would be an unreachable overflow. Clipping is
+   worse still, and a silent cap would lose the hint. So the tooltip WRAPS: a hint
+   too long to fit in 288px becomes a readable column instead of a viewport-wide
+   sheet, and the only way it exceeds the screen is a tooltip longer than the
+   screen, which is a misuse of a supplementary hint rather than a layout defect.
+   The RRU-137 gate pins this: it requires the clamp here AND forbids
+   `overflow: auto` on this panel, so nobody re-adds an unreachable scrollport. */
 
 .rr-tooltip-trigger {
   display: inline-block;
@@ -24,6 +44,11 @@
   left: -9999px;
   top: -9999px;
   z-index: var(--rr-z-toast);
+  /* Mechanics, not design: `overflow-wrap: anywhere` only breaks a word at the
+     clamp when the clamp itself applies to the border box. */
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  overflow-wrap: anywhere;
   padding: var(--rr-space-2) var(--rr-space-3);
   background: var(--rr-color-background-sunken);
   color: var(--rr-color-text-primary);

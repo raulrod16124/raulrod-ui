@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { Button } from "../button/index.js";
+import { Inline } from "../inline/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Textarea } from "./Textarea.js";
 
@@ -64,5 +66,29 @@ export const Keyboard: Story = {
     const textarea = canvas.getByRole("textbox");
     await userEvent.click(textarea);
     await userEvent.type(textarea, "hello world");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="textarea shrinks inside a 200px row">
+        <Inline>
+          <Textarea placeholder="Message" rows={2} />
+          <Button>Send</Button>
+        </Inline>
+      </NarrowContainer>
+      <NarrowContainer label="autosize stays inside a 240px frame" width="240px">
+        <Textarea
+          autoResize
+          defaultValue={
+            "This autosizing textarea should remain inside its narrow container even when the user types a very long unbroken word."
+          }
+        />
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

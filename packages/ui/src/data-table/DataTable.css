@@ -15,7 +15,7 @@
 .rr-data-table__filter {
   display: flex;
   min-width: 0;
-  flex: 1 1 var(--rr-breakpoint-sm);
+  flex: 1 1 640px;
   flex-direction: column;
   gap: var(--rr-space-1);
 }
@@ -57,4 +57,14 @@
 .rr-data-table__footer {
   display: flex;
   justify-content: flex-end;
+}
+
+.rr-data-table__pagination {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rr-space-2);
 }

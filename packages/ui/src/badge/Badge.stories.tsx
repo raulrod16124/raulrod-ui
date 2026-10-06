@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { StoryInline, StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryInline, StoryStack } from "../storybook-support/index.js";
 
 import { Badge } from "./Badge.js";
 
@@ -53,10 +53,20 @@ export const LongContent: Story = {
 
 export const Responsive: Story = {
   render: () => (
-    <StoryInline gap="space-2" style={{ flexWrap: "wrap" }}>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <Badge key={i}>badge-{i + 1}</Badge>
-      ))}
-    </StoryInline>
+    <StoryStack gap="space-6">
+      <NarrowContainer label="long badge content wraps instead of overflowing">
+        <Badge>https://example.com/settings/billing/invoices/2026-10-05/download</Badge>
+      </NarrowContainer>
+      <NarrowContainer label="multiple badges wrap inside a 240px frame" width="240px">
+        <StoryInline gap="space-2" wrap>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Badge key={i}>badge-{i + 1}</Badge>
+          ))}
+        </StoryInline>
+      </NarrowContainer>
+    </StoryStack>
   ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

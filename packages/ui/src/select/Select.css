@@ -23,6 +23,13 @@
   align-items: center;
   gap: var(--rr-space-2);
   width: 100%;
+  /* A flex item is floored at its min-content size, and the trigger's own
+     min-content is whatever its children need — with raw text children that is
+     the widest word, which a 320px row cannot always afford (RRU-136 policy,
+     RRU-138 criterion 1). The composed case is already protected one level down
+     (`.rr-select-value` declares its own `min-width: 0`), so this line is what
+     stops the protection depending on how the consumer composed the trigger. */
+  min-width: 0;
   appearance: none;
   margin: 0;
   font-family: var(--rr-font-family-sans);
@@ -109,15 +116,28 @@
 }
 
 /* --- Listbox popup: same surface/elevation/entrance as the menu panels
-   (RRU-054/055), with a max-height + scroll so tall lists never escape the
-   viewport (DoD #1). No focusable panel: roving focus lives on the options. --- */
+   (RRU-054/055), bounded by the viewport like them (RRU-137 mold) and carrying
+   the one bound CSS cannot express: its inline size comes from the trigger, so
+   `usePopoverPosition` writes it as an inline style (RRU-138). `max-inline-size`
+   therefore has the last word on where that width stops — a min would not, since
+   CSS resolves min over max. A scrollport here IS reachable by keyboard: the
+   panel owns the roving tabindex, so ArrowDown walks it (Tooltip is the overlay
+   that may not have one). --- */
 
 .rr-select-listbox {
   position: fixed;
   left: -9999px;
   top: -9999px;
   z-index: var(--rr-z-overlay);
-  max-height: calc(100vh - var(--rr-space-10));
+  /* Load-bearing, not cosmetic: the package ships no `box-sizing` reset, so
+     without it both clamps measure the CONTENT box. Measured on the E2E, not
+     assumed: `max-height: calc(100vh - var(--rr-space-10))` rendered a panel
+     328px tall at a 360px viewport — 8px past the bound it declared — and every
+     option was 328px wide inside a 304px content box, so the panel scrolled
+     sideways by 24px. */
+  box-sizing: border-box;
+  max-inline-size: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
   overflow: auto;
   padding: var(--rr-space-1);
   background: var(--rr-color-background-surface);
@@ -139,6 +159,15 @@
   align-items: center;
   gap: var(--rr-space-2);
   width: 100%;
+  /* Same missing reset as the panel root, same measured consequence: an item
+     with `width: 100%` and `space-3` padding is 24px WIDER than the box it
+     fills, so the listbox scrolled sideways instead of scrolling its options.
+     `box-sizing` is not inherited, so the panel's declaration cannot cover it. */
+  box-sizing: border-box;
+  /* A long option wraps INSIDE the listbox instead of widening it — the RRU-136
+     policy for labels that do not fit, and the reason a 40-character plan name
+     costs two lines instead of a panel off the screen. */
+  overflow-wrap: anywhere;
   padding: var(--rr-space-2) var(--rr-space-3);
   border-radius: var(--rr-radius-sm);
   color: var(--rr-color-text-primary);

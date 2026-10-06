@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryInline, StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryInline, StoryStack } from "../storybook-support/index.js";
 
 import { Checkbox } from "./Checkbox.js";
 
@@ -85,5 +85,22 @@ export const Keyboard: Story = {
     const checkbox = canvas.getByRole("checkbox");
     await userEvent.click(checkbox);
     await userEvent.keyboard("{space}");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="three fixed sizes fit inside a 200px frame">
+        <StoryInline gap="space-4" align="center">
+          <Checkbox size="sm" defaultChecked aria-label="Small" />
+          <Checkbox size="md" defaultChecked aria-label="Medium" />
+          <Checkbox size="lg" defaultChecked aria-label="Large" />
+        </StoryInline>
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

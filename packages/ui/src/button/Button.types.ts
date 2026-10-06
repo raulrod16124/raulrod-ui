@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes, ReactNode } from "react";
 
 /**
@@ -71,4 +72,6 @@ export interface ButtonProps extends HTMLAttributes<HTMLElement> {
   startIcon?: ReactNode;
   /** Trailing node, rendered decoratively (`aria-hidden`) next to the label. */
   endIcon?: ReactNode;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"button">;
 }

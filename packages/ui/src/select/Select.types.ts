@@ -1,5 +1,9 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 
+export type SelectClassNames = Partial<
+  Record<"trigger" | "value" | "icon" | "content" | "item" | "group" | "label", string>
+>;
+
 /** Trigger height axis: mirrors the field look of {@link Input}
  *  — `sm` 24px / `md` 34px / `lg` 46px. The default lives in the JS
  *  (precedent Button `variant`, Heading `level`), so the
@@ -57,6 +61,8 @@ export interface SelectProps {
   defaultOpen?: boolean;
   /** Called whenever the popup open state changes. */
   onOpenChange?: (open: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: SelectClassNames;
 }
 
 /** Context flowing from the {@link Select} root to every slot (ADR-004):
@@ -80,6 +86,8 @@ export interface SelectContextValue {
    */
   getFocusLastOnOpen: () => boolean;
   setFocusLastOnOpen: (value: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: SelectClassNames;
 }
 
 /**

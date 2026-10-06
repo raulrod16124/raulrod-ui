@@ -163,6 +163,7 @@ dist-bundle-baseline-*
 # Docs (ignored by default; ADRs are tracked as architecture code)
 /docs/*
 !/docs/decisions/
+/docs/design-system-jira.md   # mini-jira board: local work tool, never published
 
 # Local-only check scripts (not committed; policy like /docs)
 **/scripts/*.mjs

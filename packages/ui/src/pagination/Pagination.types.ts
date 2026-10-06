@@ -1,4 +1,9 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
+
+export type PaginationClassNames = Partial<
+  Record<"root" | "list" | "previous" | "next" | "item", string>
+>;
 
 /**
  * Props of {@link Pagination}: a `nav` landmark named "Pagination"
@@ -40,4 +45,8 @@ export interface PaginationProps extends HTMLAttributes<HTMLElement> {
    *  announcement channel (DataTable) passes `false` — two polite
    *  regions would queue the same sentence twice. */
   announcePageChange?: boolean;
+  /** Token-level styles overrides for the component root. */
+  styles?: Styles<"pagination">;
+  /** Class names distributed from the root to each slot. */
+  classNames?: PaginationClassNames;
 }

@@ -7,13 +7,33 @@
    Defaults: variant=primary comes from JS (Heading `as` precedent); size=md
    lives in this base class (Stack.gap precedent). Source order matters: the
    disabled block is last so it beats every variant `:hover` at equal
-   specificity. */
+   specificity.
+
+   Long-label policy (RRU-136, ADR-008): the label WRAPS, it does not
+   truncate. Two unitless/keyword values, both mechanics rather than design
+   values:
+   - `min-width: 0` drops the flex item's automatic minimum, so the control
+     can shrink below the longest word when the consumer has no `wrap`
+     (Inline's `wrap` is opt-in by contract, not a DS default).
+   - `overflow-wrap: anywhere`, not `break-word`: only `anywhere` feeds soft
+     wrap opportunities into the MIN-CONTENT size, so a token with no spaces
+     (a URL, an id) does not put a floor the first declaration cannot cross.
+     Textarea's mirror is the in-repo precedent for the value.
+   Deliberately NOT truncating: `text-overflow: ellipsis` applies to block
+   containers, and this root is `inline-flex`, so with the label as an
+   anonymous flex item it would clip BOTH edges (the box is `justify-content:
+   center`) and render no ellipsis at all. Doing it right needs a wrapper
+   element, i.e. a new DOM node in a published component — out of scope for a
+   CSS-only card. Verify it wraps instead of overflowing:
+     Button.css contract test "wraps a long label instead of overflowing" */
 
 .rr-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--rr-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: var(--rr-space-2) var(--rr-space-4);
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);

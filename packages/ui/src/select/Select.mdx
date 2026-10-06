@@ -30,6 +30,24 @@ import { Select } from "@raulrod/ui";
 
 <Canvas of={SelectStories.Playground} />
 
+### Sizing: the listbox follows the field
+
+The listbox opens exactly as wide as its trigger — **up to 384px**, and never wider
+than the viewport minus 16px on each side. At a narrow width that means the panel
+matches the field exactly; on a wide screen it stops at 384px rather than stretching
+to 1024px, so a long option wraps into two lines instead of pushing the panel past
+the screen edge. Options scroll **vertically** when there are more of them than fit,
+which <kbd>ArrowDown</kbd> walks through.
+
+Put the trigger in a container whose width you control (a grid cell, a form column)
+and the listbox follows it, even though the panel is portalled to `document.body`:
+`Select.Content` measures the trigger and writes that width before positioning. The
+384px cap is what stops the other half — on a full-width field, a listbox matching
+1024px would put every option on a single short line with the chevron stranded far
+from the labels it points at.
+
+<Canvas of={SelectStories.Responsive} />
+
 ## Props
 
 <ArgTypes of={SelectStories} />

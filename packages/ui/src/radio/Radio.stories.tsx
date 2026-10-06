@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryStack } from "../storybook-support/index.js";
 
 import { Radio, RadioGroup } from "./index.js";
 
@@ -104,5 +104,31 @@ export const Keyboard: Story = {
     const radio = canvas.getByRole("radio", { name: "First" });
     await userEvent.click(radio);
     await userEvent.keyboard("{arrowdown}");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="horizontal group wraps at 320px">
+        <RadioGroup defaultValue="a" orientation="horizontal">
+          <Radio value="a">Alpha</Radio>
+          <Radio value="b">Beta</Radio>
+          <Radio value="c">Gamma</Radio>
+          <Radio value="d">Delta</Radio>
+          <Radio value="e">Epsilon</Radio>
+        </RadioGroup>
+      </NarrowContainer>
+      <NarrowContainer label="vertical group stays a column" width="240px">
+        <RadioGroup defaultValue="a">
+          <Radio value="a">Alpha</Radio>
+          <Radio value="b">Beta</Radio>
+          <Radio value="c">Gamma</Radio>
+        </RadioGroup>
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

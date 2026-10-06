@@ -5,6 +5,9 @@
      exists; 2px focus ring is the color.md §6.3 contract.
    - mirror `border: 1px solid transparent`: has to mirror the control's
      1px border for the CSS-grid autosize parity — no border-width token.
+   - `box-sizing: border-box`: without it `width: 100%` would include padding
+     and border as overflow in a block container (RRU-138 precedent on
+     `.rr-select-item`).
    Defaults: size=md lives in this base class (Stack.gap precedent);
    multiline uses line-height leading.normal (NOT Button/Input leading-none,
    whose tight leading would clip descenders at >1 line).
@@ -20,11 +23,18 @@
    `border.default` — color.md §6.2 forbids the latter on interactive control
    boundaries; `border.danger` marks the invalid state (pair in color.md §6.2).
    Disabled uses the shared `action.disabled.*` tokens (WCAG 1.4.3 exempts
-   disabled controls from contrast — color.md §6 note, RRU-041). */
+   disabled controls from contrast — color.md §6 note, RRU-041).
+   Narrow widths (RRU-142, ADR-008): the control and the autosize grid
+   wrapper both declare `min-width: 0`, so a textarea composed as a flex/grid
+   item can shrink below the UA's intrinsic `cols=20` floor. The autosize
+   control also declares `overflow-wrap: anywhere` to keep parity with the
+   mirror and avoid clipped unbroken words. */
 
 .rr-textarea {
   display: block;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: var(--rr-space-16);
   padding: var(--rr-space-2) var(--rr-space-4);
   font-family: var(--rr-font-family-sans);
@@ -59,12 +69,14 @@
 
 .rr-textarea-autosize {
   display: grid;
+  min-width: 0;
 }
 
 .rr-textarea-autosize .rr-textarea {
   grid-area: 1 / 1;
   resize: none;
   overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .rr-textarea-autosize__mirror {

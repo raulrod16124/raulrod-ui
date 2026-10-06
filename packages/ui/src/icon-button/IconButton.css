@@ -5,30 +5,65 @@
      exists; 2px focus ring is the color.md §6.3 contract.
    - `transparent` keyword (no color token for it) and @keyframes geometry.
    Defaults: variant=primary comes from JS (Heading `as` precedent); size=md
-   lives in this base class (Stack.gap precedent). Source order matters: the
-   disabled block is last so it beats every variant `:hover` at equal
-   specificity.
+   lives in this base class (Stack.gap precedent) and is repeated in
+   `--size-md` (Button.css precedent). Source order matters: the disabled block
+   is last so it beats every variant `:hover` at equal specificity.
 
    Square sizing (matching Button's heights so a mixed toolbar stays aligned):
-   each size sets width/height to `font-size + 2×padding + 2×1px border`
-   (content-box), built entirely from tokens plus the documented 1px border
-   mechanics exception — sm = 14 + 2·4 + 2 = 24, md = 16 + 2·8 + 2 = 34,
-   lg = 20 + 2·12 + 2 = 46 (same as Button sm/md/lg heights).
+   each size sets width/height to `font-size + 2×padding + 2×1px border`, built
+   entirely from tokens plus the documented 1px border mechanics exception —
+   sm = 14 + 2·4 + 2 = 24, md = 16 + 2·8 + 2 = 34, lg = 20 + 2·12 + 2 = 46
+   (same as Button sm/md/lg heights, measured). Those are border-box numbers, so
+   the calc is the whole box rather than the content box, and `2px` is the only
+   literal.
 
    Variants read the semantic layer directly (`color.action.*`,
    `color.border.*`, `color.text.*`), the outline/ghost/link precedent of
    Button.css — no new `icon-button.*` component tokens added (RRU-026 adds
-   them only when a component genuinely needs an alias worth overriding). */
+   them only when a component genuinely needs an alias worth overriding).
+
+   Narrow widths (RRU-136, ADR-008): `flex-shrink: 0`, NOT `min-width: 0`.
+   The base class AND every size declare `width` AND `height`, and the square is
+   the contract that keeps a mixed Button/IconButton toolbar aligned — which is
+   why `min-width: 0` must not be added here: it is the declaration that would
+   allow a flex item to give up its width while its height stays fixed, turning
+   the square into a rectangle.
+
+   `flex-shrink: 0` states that intent explicitly rather than leaving it to a
+   coincidence, but the honest reason to keep it is DEFENCE, and the E2E
+   measurement says so: deleting it does not deform the square today, because a
+   flex item's `min-width: auto` floors it at its min-content size, and an
+   icon-only button's min-content width (svg 1em + padding + border) is exactly
+   its own 34px. Measured with the declaration removed: `flex-shrink: 1`,
+   min-content 34px, rendered 34px. So the square is currently protected by that
+   floor, and this line keeps it protected if the floor ever goes away — a global
+   `min-width: 0` reset, a consumer stylesheet, or an icon whose intrinsic width
+   exceeds its box. Avatar is the in-repo precedent. There is no label here: the
+   icon is decorative and `label` is the accessible name, so there is no
+   long-text case to solve. */
 
 .rr-icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  /* size=md lives HERE, not only in `--size-md` (variants.ts:12: "defaults live
+     in CSS base classes"; the `Stack.gap` precedent this file always cited).
+     Without it, an IconButton rendered with no `size` prop had no padding and
+     no `width`/`height` at all and fell through to the UA stylesheet's button
+     padding — measured at 87.59x20 with `padding: 1px 6px`, a rectangle that
+     broke both the square and the Button-height alignment it is documented to
+     have. `--size-md` below repeats these four declarations verbatim (the
+     `Button.css` sm/md/lg precedent), so an explicit `size="md"` is identical to
+     the default; a contract test asserts the two blocks stay in parity. */
+  padding: var(--rr-space-2);
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);
   font-weight: var(--rr-font-weight-medium);
   line-height: var(--rr-font-leading-none);
   letter-spacing: var(--rr-font-tracking-normal);
+  width: calc(var(--rr-font-size-base) + var(--rr-space-4) + 2px);
+  height: calc(var(--rr-font-size-base) + var(--rr-space-4) + 2px);
   border: 1px solid transparent;
   border-radius: var(--rr-radius-md);
   cursor: pointer;

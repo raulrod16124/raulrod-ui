@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
 
 /**
@@ -36,4 +37,6 @@ export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
   alt?: string;
   /** Square size axis; defaults to `md` in the base CSS class. */
   size?: AvatarSize;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"avatar">;
 }

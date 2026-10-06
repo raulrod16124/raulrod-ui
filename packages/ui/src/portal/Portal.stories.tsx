@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { useState } from "react";
 
-import { Text } from "../index.js";
+import { Button, Text } from "../index.js";
+import { StoryStack } from "../storybook-support/index.js";
 
 import { Portal } from "./Portal.js";
 
@@ -69,4 +70,34 @@ export const Playground: Story = {
 
 export const Default: Story = {
   render: () => <PortalDefault />,
+};
+
+export const Responsive: Story = {
+  // `parameters.viewport`, never a wrapper: Portal renders into document.body,
+  // so a container around it would not clip the portalled child anyway. The
+  // story still draws a clipped ancestor to make the escape observable.
+  render: () => (
+    <StoryStack gap="space-6">
+      <div
+        style={{
+          width: "320px",
+          overflow: "hidden",
+          padding: "var(--rr-space-4)",
+          border: "1px dashed var(--rr-color-border-strong)",
+          borderRadius: "var(--rr-radius-md)",
+        }}
+      >
+        <Text>Ancestor with overflow:hidden</Text>
+        <Portal>
+          <Button>Portalled action</Button>
+        </Portal>
+      </div>
+      <Text>
+        The button above is portalled to document.body and is not clipped by its React ancestor.
+      </Text>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
 };

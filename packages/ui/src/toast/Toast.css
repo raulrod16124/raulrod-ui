@@ -1,8 +1,27 @@
 /* Toast — notification system (RRU-059, ADR-003). Only tokens (var(--rr-*)).
    Documented mechanics/geometry exceptions (component-pattern.mdx §5 family):
-   - viewport width `calc(var(--rr-space-16) * 6)`: a durable card width
-     derived from the space scale by arithmetic (token-derived, no magic
-     number); clamped to the viewport so a narrow window never breaks layout.
+   - The stack is bounded with `inset` on both inline edges plus a durable
+     `max-inline-size` (6 × `space-16` = 384px), NOT with `width`. It used to be
+     `width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)))`,
+     and `100vw` includes the scrollbar while `inset-inline-end` is measured
+     against the viewport that does NOT — so at a width where the viewport term
+     wins the durable one (below 416px), the stack was sized against a box ~15px
+     wider than the one it is positioned in. `margin-inline-start: auto` is what
+     keeps it hugging the END edge (top-right, by contract) once `max-inline-size`
+     clamps it: with both insets set and `width: auto` the box fills the space, and
+     in LTR the free space would otherwise go to the left.
+   - `max-block-size: calc(100dvh - 2 * var(--rr-space-4))` + `overflow-y: auto`
+     bound the STACK in the block axis, the RRU-139 decision. Measured before it: a
+     single long toast rendered 422px tall in a 360px viewport, and 78px of it —
+     the tail of the description — sat below the fold with no scrollport to reach
+     it through. `100dvh`, not `100vh`, inherited from the ADR-008 addendum that
+     RRU-137 left for this family rather than re-litigated here. The scrollport is
+     keyboard-reachable: every toast carries its own focusable dismiss button, and
+     the browser brings a focused descendant into view inside a scrollable
+     ancestor, which is the same argument the DropdownMenu scrollport rests on.
+   - `.rr-toast` is a grid `auto minmax(0, 1fr) auto` (the middle track cannot
+     shrink below its content) with `min-width: 0` on the body, which is the
+     correct long-label pattern and is kept as it was.
    Layering: `z-index: var(--rr-z-toast)` (RRU-023) — the top of the semantic
    scale (base 0 < overlay 100 < modal 200 < toast 300): notifications float
    above dialogs/popovers by contract (a toast may explain an action taken
@@ -12,13 +31,17 @@
 .rr-toast-viewport {
   position: fixed;
   top: var(--rr-space-4);
+  inset-inline-start: var(--rr-space-4);
   inset-inline-end: var(--rr-space-4);
   z-index: var(--rr-z-toast);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--rr-space-2);
-  width: min(calc(var(--rr-space-16) * 6), calc(100vw - 2 * var(--rr-space-4)));
+  margin-inline-start: auto;
+  max-inline-size: calc(var(--rr-space-16) * 6);
+  max-block-size: calc(100dvh - 2 * var(--rr-space-4));
+  overflow-y: auto;
   pointer-events: none;
 }
 

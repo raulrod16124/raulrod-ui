@@ -4,6 +4,7 @@
    Only tokens for design values; no arbitrary values. */
 
 .rr-heading {
+  overflow-wrap: anywhere;
   font-family: var(--rr-font-family-sans);
   font-weight: var(--rr-font-weight-semibold);
   line-height: var(--rr-font-leading-tight);

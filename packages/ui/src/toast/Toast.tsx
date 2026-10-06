@@ -52,6 +52,7 @@ import {
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from "@raulrod/icons";
 
 import { Portal } from "../portal/index.js";
+import { cx } from "../utils/cx.js";
 
 /** Accent icon per tone (ADR-007: decorative, `aria-hidden` at render time). */
 const TONE_ICONS: Record<ToastTone, LucideIcon> = {
@@ -92,7 +93,11 @@ export function useToast(): ToastContextValue {
  * All toast state lives here; consumers only ever touch it through
  * {@link useToast}.
  */
-export function ToastProvider({ children, duration = DEFAULT_DURATION }: ToastProviderProps) {
+export function ToastProvider({
+  children,
+  duration = DEFAULT_DURATION,
+  classNames,
+}: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
 
   // Latest-value mirrors: the schedulers run outside React (timers, pause
@@ -274,8 +279,8 @@ export function ToastProvider({ children, duration = DEFAULT_DURATION }: ToastPr
   }, []);
 
   const api = useMemo<ToastContextValue>(
-    () => ({ toast: push, dismiss, dismissAll }),
-    [push, dismiss, dismissAll],
+    () => ({ toast: push, dismiss, dismissAll, classNames }),
+    [push, dismiss, dismissAll, classNames],
   );
 
   return (
@@ -283,7 +288,7 @@ export function ToastProvider({ children, duration = DEFAULT_DURATION }: ToastPr
       {children}
       <Portal>
         <div
-          className="rr-toast-viewport"
+          className={cx("rr-toast-viewport", classNames?.viewport)}
           role="region"
           aria-label={VIEWPORT_LABEL}
           onPointerEnter={handlePointerEnter}
@@ -297,7 +302,7 @@ export function ToastProvider({ children, duration = DEFAULT_DURATION }: ToastPr
             return (
               <div
                 key={entry.id}
-                className={`rr-toast rr-toast--${entry.tone}`}
+                className={cx("rr-toast", `rr-toast--${entry.tone}`, classNames?.toast)}
                 role={role}
                 data-tone={entry.tone}
               >

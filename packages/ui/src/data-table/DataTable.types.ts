@@ -1,5 +1,8 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { TableAlign, TableSize } from "../table/index.js";
 import type { HTMLAttributes, ReactNode } from "react";
+
+export type DataTableClassNames = Partial<Record<"root" | "toolbar" | "filter" | "footer", string>>;
 
 export type DataTableRowId = string | number;
 
@@ -99,4 +102,8 @@ export interface DataTableProps<T, RowId extends DataTableRowId = DataTableRowId
   error?: ReactNode;
   size?: TableSize;
   sticky?: boolean;
+  /** Token-level styles overrides for the component root. */
+  styles?: Styles<"data-table">;
+  /** Class names distributed from the root to each slot. */
+  classNames?: DataTableClassNames;
 }

@@ -15,8 +15,13 @@ import "./app.css";
 
 import { A11yReviewSection } from "./a11y-review-section.js";
 import { ConsumerContract } from "./consumer-contract/section.js";
+import { FluidResponsiveSection } from "./fluid-responsive-section.js";
+import { FormResponsiveSection } from "./form-responsive-section.js";
 import { FormSection } from "./form-section.js";
+import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
+import { NavigationSection } from "./navigation-section.js";
 import { OverlaysSection } from "./overlays-section.js";
+import { ResponsiveSection } from "./responsive-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
 
 export function App() {
@@ -76,6 +81,71 @@ export function App() {
                 Consumer contract
               </Heading>
               <ConsumerContract />
+            </section>
+
+            {/* Probe fixture, not a showcase: the subject the narrow-width E2E
+                measures (RRU-136). RRU-144 owns the responsive section of the
+                playground; this stays here so the measurement has something to
+                measure. */}
+            <section
+              aria-labelledby="layout-primitives-title"
+              className="pg-section"
+              id="layout-primitives"
+            >
+              <Heading as="h2" className="pg-section__title" id="layout-primitives-title">
+                Layout primitives
+              </Heading>
+              <LayoutPrimitivesSection />
+            </section>
+
+            {/* Probe fixture for the navigation family (RRU-141): Pagination and
+                Tabs are the two horizontal rails of the package, and neither of
+                the existing sections exercises them at a narrow width. */}
+            <section aria-labelledby="navigation-title" className="pg-section" id="navigation">
+              <Heading as="h2" className="pg-section__title" id="navigation-title">
+                Navigation
+              </Heading>
+              <NavigationSection />
+            </section>
+
+            {/* Probe fixture for the form family (RRU-142): Input, Textarea,
+                Radio and FormField must shrink or wrap inside narrow frames. */}
+            <section
+              aria-labelledby="form-responsive-title"
+              className="pg-section"
+              id="form-responsive"
+            >
+              <Heading as="h2" className="pg-section__title" id="form-responsive-title">
+                Form responsive
+              </Heading>
+              <FormResponsiveSection />
+            </section>
+
+            {/* Probe fixture for the fluid family (RRU-143): ten components the
+                board claimed were already fluid, four of which were not. */}
+            <section
+              aria-labelledby="fluid-responsive-title"
+              className="pg-section"
+              id="fluid-responsive"
+            >
+              <Heading as="h2" className="pg-section__title" id="fluid-responsive-title">
+                Fluid responsive
+              </Heading>
+              <FluidResponsiveSection />
+            </section>
+
+            {/* Showcase surface for the whole-page responsive contract (RRU-144).
+                Three device-width frames let a human compare the same content at
+                320 / 375 / 768 px, and the E2E asserts the whole page fits. */}
+            <section
+              aria-labelledby="responsive-section-title"
+              className="pg-section"
+              id="responsive-section"
+            >
+              <Heading as="h2" className="pg-section__title" id="responsive-section-title">
+                Responsive
+              </Heading>
+              <ResponsiveSection />
             </section>
           </Stack>
         </main>

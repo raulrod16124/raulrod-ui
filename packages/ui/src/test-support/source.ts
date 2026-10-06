@@ -17,6 +17,31 @@ export function readSource(path: string): Promise<string> {
 }
 
 /**
+ * Top-level component directories: folders under `src/` that contain a
+ * PascalCase `.tsx` implementation file. This is the shape the Playbook
+ * §4 Paso 1 fixes for a component, and it is the same criterion
+ * `check-demo-claims.mjs` uses to count "Components".
+ *
+ * Filesystem enumeration on purpose (same argument as `styles.test.ts`): a
+ * hardcoded allowlist of the 28 components is the list someone forgets to
+ * update, so a gate that uses this helper keeps covering new components
+ * automatically.
+ */
+export async function listComponentDirectories(): Promise<string[]> {
+  const entries = await readdir(srcDir, { withFileTypes: true });
+  const dirs = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+
+  const withComponent = await Promise.all(
+    dirs.map(async (dir) => {
+      const files = await readdir(join(srcDir, dir));
+      return files.some((file) => /^[A-Z].*\.tsx$/.test(file)) ? dir : null;
+    }),
+  );
+
+  return withComponent.filter((dir): dir is string => dir !== null).sort();
+}
+
+/**
  * Every file under `src/`, recursively, as `src/`-relative POSIX paths, sorted.
  *
  * Filesystem enumeration on purpose (same argument as `styles.test.ts`): a

@@ -5,7 +5,8 @@
      precedent — the border is hairline by design, not a design token).
    - `2px` underline + focus ring: color.md §6.3 contract (≥3:1 perceptible
      change); `outline-offset: -2px` keeps the ring inside the trigger so it
-     does not paint over the rail (Select option precedent).
+     does not paint over the rail (Select option precedent) and cannot be
+     clipped by the horizontal scrollport added in RRU-141.
    - `-1px` overlap: the selected underline sits ON the rail (border-collapse
      trick over `border-bottom`); mirror of the 1px exception.
    - `transparent` underline in repose: keyword toggle, not a color token.
@@ -20,6 +21,8 @@
   align-items: center;
   gap: var(--rr-space-2);
   border-bottom: 1px solid var(--rr-color-border-default);
+  overflow-x: auto;
+  scroll-snap-type: inline proximity;
 }
 
 .rr-tabs-trigger {
@@ -37,6 +40,7 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
+  scroll-snap-align: start;
   transition:
     color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
     border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);

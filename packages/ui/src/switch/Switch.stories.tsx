@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { fn, userEvent, within } from "@storybook/test";
 
-import { StoryInline, StoryStack } from "../storybook-support/index.js";
+import { NarrowContainer, StoryInline, StoryStack } from "../storybook-support/index.js";
 
 import { Switch } from "./Switch.js";
 
@@ -76,5 +76,25 @@ export const Keyboard: Story = {
     const sw = canvas.getByRole("switch");
     await userEvent.click(sw);
     await userEvent.keyboard("{space}");
+  },
+};
+
+export const Responsive: Story = {
+  render: () => (
+    <StoryStack gap="space-6">
+      <NarrowContainer label="long label wraps instead of pushing the track out">
+        <Switch>https://example.com/settings/billing/invoices/2026-10-05/download</Switch>
+      </NarrowContainer>
+      <NarrowContainer label="sizes stay inside a 240px frame" width="240px">
+        <StoryInline gap="space-6" align="center">
+          <Switch size="sm">Small</Switch>
+          <Switch size="md">Medium</Switch>
+          <Switch size="lg">Large</Switch>
+        </StoryInline>
+      </NarrowContainer>
+    </StoryStack>
+  ),
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };

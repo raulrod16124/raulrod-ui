@@ -626,4 +626,46 @@ describe("Select SSR parity + composition contract", () => {
     expect(Select.Group).toBe(SelectGroup);
     expect(Select.Label).toBe(SelectLabel);
   });
+
+  it("distributes root classNames to every slot", () => {
+    render(
+      <Select
+        defaultOpen
+        classNames={{
+          trigger: "root-trigger",
+          value: "root-value",
+          icon: "root-icon",
+          content: "root-content",
+          item: "root-item",
+          group: "root-group",
+          label: "root-label",
+        }}
+      >
+        <Select.Trigger data-testid="trigger">
+          <Select.Value>Pick…</Select.Value>
+          <Select.Icon data-testid="icon" />
+        </Select.Trigger>
+        <Select.Content data-testid="content">
+          <Select.Group data-testid="group">
+            <Select.Label data-testid="label">Cities</Select.Label>
+            <Select.Item value="berlin" data-testid="item">
+              Berlin
+            </Select.Item>
+          </Select.Group>
+        </Select.Content>
+      </Select>,
+    );
+
+    expect(screen.getByTestId("trigger").className).toBe(
+      "rr-select-trigger rr-select-trigger--md root-trigger",
+    );
+    expect(document.querySelector<HTMLElement>(".rr-select-value")!.className).toBe(
+      "rr-select-value rr-select-value--placeholder root-value",
+    );
+    expect(screen.getByTestId("icon").className).toBe("rr-select-icon root-icon");
+    expect(screen.getByTestId("content").className).toBe("rr-select-listbox root-content");
+    expect(screen.getByTestId("item").className).toBe("rr-select-item root-item");
+    expect(screen.getByTestId("group").className).toBe("rr-select-group root-group");
+    expect(screen.getByTestId("label").className).toBe("rr-select-group-label root-label");
+  });
 });

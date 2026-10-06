@@ -144,8 +144,53 @@ export const LongContent: Story = {
 
 export const Responsive: Story = {
   render: () => (
-    <div style={{ maxWidth: "320px" }}>
-      <BasicTable />
-    </div>
+    <Table>
+      <Table.Caption>Responsive Table (narrow viewport)</Table.Caption>
+      <Table.Head>
+        <Table.Row>
+          <Table.HeaderCell>Name</Table.HeaderCell>
+          <Table.HeaderCell>Handle</Table.HeaderCell>
+          <Table.HeaderCell>Email</Table.HeaderCell>
+          <Table.HeaderCell>UUID</Table.HeaderCell>
+          <Table.HeaderCell>Description</Table.HeaderCell>
+        </Table.Row>
+      </Table.Head>
+      <Table.Body>
+        <Table.Row>
+          <Table.Cell>Ana Martínez</Table.Cell>
+          <Table.Cell>@ana_martinez_design</Table.Cell>
+          <Table.Cell>ana.martinez.design+verylongemail@example-domain-name.co</Table.Cell>
+          <Table.Cell>f7b8a5d0-9c42-4e86-b9f3-8d62f40ab3f9</Table.Cell>
+          <Table.Cell>
+            https://example.com/components/table/responsive-behavior/with-very-long-unbroken-url-path-that-should-wrap-or-trigger-horizontal-scroll
+          </Table.Cell>
+        </Table.Row>
+        <Table.Row>
+          <Table.Cell>Jon López</Table.Cell>
+          <Table.Cell>@jonlop</Table.Cell>
+          <Table.Cell>jon.lopez+qa@example.com</Table.Cell>
+          <Table.Cell>6b902e73-8c44-46f1-bb80-d90f36af22f0</Table.Cell>
+          <Table.Cell>
+            Long unbroken token
+            7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+          </Table.Cell>
+        </Table.Row>
+        <Table.Row>
+          <Table.Cell>Mara Chen</Table.Cell>
+          <Table.Cell>@mara</Table.Cell>
+          <Table.Cell>mara@example.com</Table.Cell>
+          <Table.Cell>9a407058-dbc9-4d41-b9c4-b25d67113e70</Table.Cell>
+          <Table.Cell>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua.
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    </Table>
   ),
+  parameters: {
+    viewport: {
+      defaultViewport: "mobile1",
+    },
+  },
 };

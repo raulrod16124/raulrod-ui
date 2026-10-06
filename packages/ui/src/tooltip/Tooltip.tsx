@@ -6,6 +6,7 @@ import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Portal } from "../portal/index.js";
 import { cx } from "../utils/cx.js";
 import { mergeRefs } from "../utils/merge-refs.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { useId } from "../utils/use-id.js";
 import { usePopoverPosition } from "../utils/use-popover-position.js";
 
@@ -48,6 +49,8 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     defaultOpen = false,
     onOpenChange,
     className,
+    style,
+    styles,
     children,
     onPointerEnter,
     onPointerLeave,
@@ -214,6 +217,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
         {...props}
         ref={mergeRefs(triggerRef, ref)}
         className={cx("rr-tooltip-trigger", className)}
+        style={mergeStyles(styles, style)}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onFocus={handleFocus}

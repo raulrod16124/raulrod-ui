@@ -329,4 +329,20 @@ describe("context + SSR parity", () => {
     expect(markup).not.toContain("rr-toast");
     expect(markup).not.toContain("role=");
   });
+
+  it("distributes classNames to the viewport and every toast", () => {
+    render(
+      <ToastProvider classNames={{ viewport: "root-viewport", toast: "root-toast" }}>
+        <ApiProbe />
+      </ToastProvider>,
+    );
+    pushToast({ title: "A" });
+    pushToast({ title: "B" });
+
+    expect(viewport()!.className).toBe("rr-toast-viewport root-viewport");
+    expect(toasts().map((toast) => toast.className)).toEqual([
+      "rr-toast rr-toast--info root-toast",
+      "rr-toast rr-toast--info root-toast",
+    ]);
+  });
 });

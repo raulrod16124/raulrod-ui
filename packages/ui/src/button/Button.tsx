@@ -6,6 +6,7 @@ import { forwardRef } from "react";
 import { Loader2 } from "@raulrod/icons";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `ButtonVariant`/`ButtonSize`
@@ -59,6 +60,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     startIcon,
     endIcon,
     className,
+    style,
+    styles,
     children,
     disabled,
     href,
@@ -79,6 +82,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     loading === true && "rr-button--loading",
     className,
   );
+  const mergedStyle = mergeStyles(styles, style);
 
   // The label stays in the DOM while loading so the accessible name does not
   // disappear; the spinner is decorative (`aria-hidden`), the state itself is
@@ -129,6 +133,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         aria-busy={loading || undefined}
         aria-disabled={inert || undefined}
         className={classes}
+        style={mergedStyle}
         onClick={(event) => {
           if (inert) event.preventDefault();
           onClick?.(event);
@@ -147,6 +152,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled === true || loading}
       aria-busy={loading || undefined}
       className={classes}
+      style={mergedStyle}
       onClick={onClick}
     >
       {content}

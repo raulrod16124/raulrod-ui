@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+export type ToastClassNames = Partial<Record<"viewport" | "toast", string>>;
+
 /**
  * Semantic tone of a toast, coherent with {@link Badge} variants and the alert-tint tokens `color.text.*`/`color.background.*`
  * (color.md §5.3). The tone decides BOTH the role (DoD #1) and the accent icon.
@@ -52,6 +54,8 @@ export interface ToastProviderProps {
    *  #2 — their content must not be yanked away before the reader catches it.
    *  A per-toast `duration` always wins. Default `5000`. */
   duration?: number;
+  /** Class names distributed from the provider to the viewport and each toast. */
+  classNames?: ToastClassNames;
 }
 
 /**
@@ -81,4 +85,7 @@ export interface ToastEntry {
 }
 
 /** Context shape flowing from the provider to {@link useToast}. Internal. */
-export type ToastContextValue = ToastApi;
+export interface ToastContextValue extends ToastApi {
+  /** Class names distributed from the provider to the viewport and each toast. */
+  classNames?: ToastClassNames;
+}

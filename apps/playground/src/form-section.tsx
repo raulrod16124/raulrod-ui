@@ -143,7 +143,7 @@ export function FormSection() {
           </FormField>
         </Inline>
 
-        <Inline className="pg-row">
+        <Inline className="pg-row" data-testid="form-submit-row" wrap>
           <Button data-testid="submit" type="submit">
             Create workspace
           </Button>

@@ -12,13 +12,26 @@
    - label → text.primary
    - description → text.muted
    - error → text.danger (light red-600 / dark red-400, pair AA en color.md §6.1)
-   Source order irrelevant: no hover/active/disabled states on the wrapper. */
+   Source order irrelevant: no hover/active/disabled states on the wrapper.
+   Narrow widths (RRU-142, ADR-008): root and control slot declare
+   `min-width: 0` so the field can shrink when it is a flex/grid item. The
+   field intentionally does NOT declare `width: 100%`; making a flex item in
+   an `Inline` row take the full line width would change composition (see
+   form-section.tsx for the Switch+field row case). Width remains a consumer
+   decision. */
 
 .rr-form-field {
   display: flex;
   flex-direction: column;
   gap: var(--rr-space-1);
+  min-width: 0;
   font-family: var(--rr-font-family-sans);
+}
+
+.rr-form-field-control {
+  display: block;
+  min-width: 0;
+  margin-top: var(--rr-space-1);
 }
 
 .rr-form-field-label {
@@ -32,11 +45,6 @@
   font-size: var(--rr-font-size-sm);
   line-height: var(--rr-font-leading-normal);
   color: var(--rr-color-text-muted);
-}
-
-.rr-form-field-control {
-  display: block;
-  margin-top: var(--rr-space-1);
 }
 
 .rr-form-field-error {

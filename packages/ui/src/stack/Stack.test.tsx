@@ -108,4 +108,12 @@ describe("Stack authored CSS contract", () => {
     const css = await readComponentCss("stack/Stack.css");
     await expectTokenLineage(css);
   });
+
+  it("can shrink below its widest child (RRU-136)", async () => {
+    const css = await readComponentCss("stack/Stack.css");
+
+    // Same flex/grid item floor as Inline: a column's min-content is its widest
+    // child, so without this the consumer cannot cut it with `overflow: hidden`.
+    expect(css).toMatch(/\.rr-stack\s*\{[^}]*min-width:\s*0/);
+  });
 });

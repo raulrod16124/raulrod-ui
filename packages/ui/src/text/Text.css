@@ -3,6 +3,7 @@
    no arbitrary values (docs/typography.md §1). */
 
 .rr-text {
+  overflow-wrap: anywhere;
   font-family: var(--rr-font-family-sans);
   font-size: var(--rr-font-size-base);
   font-weight: var(--rr-font-weight-regular);

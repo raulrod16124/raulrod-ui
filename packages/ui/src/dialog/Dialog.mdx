@@ -34,6 +34,28 @@ It can be used controlled (`open` + `onOpenChange`) or uncontrolled
 
 <Canvas of={DialogStories.Playground} />
 
+### Sizing: the panel is bounded by the viewport, not by your content
+
+`Dialog.Content` is `position: fixed` over the whole screen, so its size is decided
+by the **viewport** rather than by whatever container you render it inside — a 320px
+wrapper around a dialog changes nothing about how wide it opens. It is capped at
+`28rem` (448px) and at the viewport height minus the overlay's own 24px gutter on
+each side, which at a 360px-tall screen is 312px. Content taller than that scrolls
+**inside the panel**, so the border, the title and the actions always stay on
+screen.
+
+The gutter and the cap are the same token, and they have to stay that way. The
+overlay reserves `space-6` and the panel subtracts `2 × space-6`; when those two
+numbers disagree the panel is allowed to be taller than the space it is centred in,
+and a centred flex item that overflows its line does not shrink — it spills equally
+off the top and the bottom.
+
+The footer wraps. A row of long-labelled actions narrower than its labels does not
+overflow: it wraps onto as many rows as it needs, each label on one line, instead of
+squeezing every button until its own text wraps inside it.
+
+<Canvas of={DialogStories.Responsive} />
+
 ## Props
 
 <ArgTypes of={DialogStories} />
@@ -56,5 +78,9 @@ It can be used controlled (`open` + `onOpenChange`) or uncontrolled
   controlled API.
 - **Always modal.** There is no non-modal mode. For non-modal floating panels,
   use `Popover`.
+- **Sizing is not yours to set.** The panel is bounded by the viewport and the
+  overlay's gutter; there is no width or height prop, by design. A dialog whose
+  content must always fit without scrolling needs shorter content, not a taller
+  screen — the cap is the same on every device.
 - **Title is not strictly required at compile time**, but a dialog without
   `Dialog.Title` will fail the accessible-name contract and axe checks.

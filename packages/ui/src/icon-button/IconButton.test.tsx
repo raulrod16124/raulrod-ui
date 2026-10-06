@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import { IconButton, Loader2 } from "../index.js";
 import { auditA11y } from "../test-support/axe.js";
-import { expectTokenLineage, readComponentCss } from "../test-support/css.js";
+import { expectTokenLineage, readComponentCss, stripCssComments } from "../test-support/css.js";
 
 const variants: IconButtonVariant[] = [
   "primary",
@@ -202,6 +202,55 @@ describe("IconButton authored CSS contract", () => {
 
       expect(block, `size-${size} width`).toMatch(square);
       expect(block, `size-${size} height`).toMatch(square);
+    }
+  });
+
+  it("refuses to lose the square in a tight row (RRU-136)", async () => {
+    const css = await readComponentCss("icon-button/IconButton.css");
+
+    // Every size declares `width` AND `height`, so the box is what keeps a mixed
+    // Button/IconButton toolbar aligned. `min-width: 0` must not appear on this
+    // control: it is the declaration that would allow the width to be given up
+    // while the height stays fixed, turning the square into a rectangle.
+    expect(css).toMatch(/\.rr-icon-button\s*\{[^}]*flex-shrink:\s*0/);
+    expect(css).not.toMatch(/\.rr-icon-button\s*\{[^}]*min-width:\s*0/);
+
+    // There is no label here to wrap: the icon is decorative and `label` is the
+    // accessible name, so Button's wrapping policy must not leak in.
+    expect(css).not.toMatch(/overflow-wrap/);
+    expect(css).not.toMatch(/\.rr-icon-button\s*\{[^}]*white-space:\s*nowrap/);
+  });
+
+  it("defaults size=md in the base class, identically to --size-md", async () => {
+    // Comments are stripped first: the rationale for this contract lives in a
+    // CSS comment inside the very block being read, and a regex over raw source
+    // would match the prose instead of the declarations.
+    const css = stripCssComments(await readComponentCss("icon-button/IconButton.css"));
+
+    // The regression gate for a defect found by the RRU-136 E2E: `size` is
+    // optional and `createVariants` drops an `undefined` axis (variants.ts), so
+    // an IconButton rendered with no `size` prop carries NO `--size-md` class.
+    // The md geometry therefore has to live in the base block — that is the
+    // convention variants.ts:12 states ("defaults live in CSS base classes") and
+    // the one Stack.gap and Button follow. It did not, and the control fell
+    // through to the UA stylesheet: measured at 87.59x20 with `padding: 1px 6px`,
+    // breaking both the square and the Button-height alignment asserted above.
+    const geometry = ["padding", "font-size", "width", "height"];
+
+    const base = /\.rr-icon-button\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    const md = /\.rr-icon-button--size-md\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(base, "the base block must exist").not.toBe("");
+    expect(md, "the --size-md block must exist").not.toBe("");
+
+    // Parity, not a snapshot: an explicit `size="md"` and the default must resolve
+    // to the same box, so the four declarations are compared across the two
+    // blocks. A missing default or a diverged duplicate fails here.
+    for (const property of geometry) {
+      const inBase = new RegExp(`(?:^|;)\\s*${property}:\\s*([^;]+)`).exec(base)?.[1]?.trim();
+      const inMd = new RegExp(`(?:^|;)\\s*${property}:\\s*([^;]+)`).exec(md)?.[1]?.trim();
+      expect(inBase, `${property} must be declared in .rr-icon-button`).toBeDefined();
+      expect(inMd, `${property} must be declared in .rr-icon-button--size-md`).toBeDefined();
+      expect(inBase, `${property} must match between the default and --size-md`).toBe(inMd);
     }
   });
 

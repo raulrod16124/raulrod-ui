@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { InputHTMLAttributes, LabelHTMLAttributes } from "react";
 
 /**
@@ -62,4 +63,6 @@ export interface SwitchProps extends Omit<
   "aria-invalid"?: boolean;
   /** Size axis; defaults to `md` via the CSS base class. */
   size?: SwitchSize;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"switch">;
 }

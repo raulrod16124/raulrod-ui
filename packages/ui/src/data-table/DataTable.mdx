@@ -68,6 +68,9 @@ Optional features are enabled through grouped props:
 - **Generic typing.** `DataTable<T, RowId>` lets you type the row shape and the
   id type, but it adds complexity to the public type surface.
 - **No nested rows or expandable rows.**
+- **Responsive behaviour.** The filter input and pagination bar wrap on narrow
+  viewports, and the table body scrolls horizontally when columns do not fit.
+  A card-view on mobile is out of scope for the MVP.
 - **Custom cell rendering via `render`.** The column `render` callback is
   powerful, but it can break the table semantics if it returns non-cell content
   (the consumer owns the returned React tree).

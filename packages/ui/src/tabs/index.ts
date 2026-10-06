@@ -1,5 +1,6 @@
 export { Tabs, TabsList, TabsPanel, TabsTrigger } from "./Tabs.js";
 export type {
+  TabsClassNames,
   TabsContextValue,
   TabsIdEntry,
   TabsListProps,

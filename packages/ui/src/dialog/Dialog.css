@@ -7,10 +7,26 @@
      keyword with no token counterpart (precedent Button `transparent`, RRU-041).
      Edge case of ADR-003's "no arbitrary values": the scrim base IS a semantic
      token, only the alpha is tunable.
-   - `max-width: 28rem` and `max-height: calc(100vh - var(--rr-space-8))`: no
-     container token exists (geometric layout, precedent sr-only clips RRU-033);
-     the height cap keeps long content scrollable inside the overflow allowed
-     by WCAG 1.4.10 (reflow) without losing the window edges.
+   - `max-width: 28rem` and `max-block-size: calc(100dvh - 2 * var(--rr-space-6))`: no
+     container token exists (geometric layout, precedent sr-only clips RRU-033).
+     The block cap is the RRU-139 contract and it is ARITHMETIC, not a taste call:
+     the overlay above reserves `space-6` on every side, so the height a panel is
+     allowed to occupy is the viewport minus exactly that padding. It used to say
+     `calc(100vh - var(--rr-space-8))` — a different padding token, 32px against
+     24px — so the two numbers never agreed, and a panel taller than the overlay's
+     content box does NOT shrink under `align-items: center`: it overflows equally
+     on both sides. Measured at 320×360, a panel whose content exceeded the cap
+     rendered 376px tall inside a 312px content box: 32px of chrome above and 32px
+     below, outside the screen, including the rounded border and part of the title.
+     `100dvh`, not `100vh`, inherited from the ADR-008 addendum RRU-137 left for
+     this family: a fixed overlay tracks the VISUAL viewport, so with the browser
+     bar visible `vh` would let the panel hide under it.
+   - `box-sizing: border-box` on the panel root is load-bearing for the same reason
+     RRU-137 put it on the floating panels (RRU-138 applied it one level down to
+     `.rr-select-item`): the package ships no reset, so without it `max-block-size`
+     measures the CONTENT box, the `space-6` padding lands outside the cap, and the
+     rendered border box is `100dvh` tall — exactly the "flush with the screen edges"
+     outcome the overlay's padding exists to prevent. `css-contracts.test.ts` pins it.
    - `1px` transparent border on the trigger (button chrome, precedent RRU-041).
    Layering: `z-index: var(--rr-z-modal)` (RRU-023, resolveLayerVar); stacked
    dialogs paint by DOM order within the same token level (local composition,
@@ -35,12 +51,13 @@
 
 .rr-dialog-content {
   position: relative;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--rr-space-4);
   width: 100%;
   max-width: 28rem;
-  max-height: calc(100vh - var(--rr-space-8));
+  max-block-size: calc(100dvh - 2 * var(--rr-space-6));
   overflow-y: auto;
   padding: var(--rr-space-6);
   background: var(--rr-color-background-surface);
@@ -82,6 +99,7 @@
 
 .rr-dialog-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--rr-space-2);

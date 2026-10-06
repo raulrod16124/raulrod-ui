@@ -310,4 +310,32 @@ describe("Button authored CSS contract", () => {
   it("only consumes tokens that @raulrod/tokens defines", async () => {
     await expectTokenLineage(await readComponentCss("button/Button.css"));
   });
+
+  it("wraps a long label instead of overflowing (RRU-136)", async () => {
+    const css = await readComponentCss("button/Button.css");
+
+    // The flex item floor, dropped so the control can shrink as a flex item.
+    expect(css).toMatch(/\.rr-button\s*\{[^}]*min-width:\s*0/);
+
+    // `anywhere` and not `break-word`, deliberately: only `anywhere` feeds soft
+    // wrap opportunities into the MIN-CONTENT size, so a label with no spaces
+    // does not put a floor that `min-width: 0` alone cannot cross. A label like
+    // an id or a URL is the case that motivated it.
+    expect(css).toMatch(/\.rr-button\s*\{[^}]*overflow-wrap:\s*anywhere/);
+    expect(css).not.toMatch(/overflow-wrap:\s*break-word/);
+
+    // The wrapping policy must not become a truncation policy: an ellipsis here
+    // would be inert (it only applies to block containers, and this root is
+    // `inline-flex`) and would hide part of an action's label.
+    expect(css).not.toMatch(/\.rr-button\s*\{[^}]*text-overflow/);
+    expect(css).not.toMatch(/\.rr-button\s*\{[^}]*white-space:\s*nowrap/);
+  });
+
+  it("keeps the label in the DOM whatever the width does (RRU-136)", () => {
+    // The visible rendering may wrap onto a second line, but the accessible
+    // name is the label itself and truncation never gets to shorten it.
+    const markup = renderToStaticMarkup(<Button>Cancel the subscription</Button>);
+
+    expect(markup).toContain("Cancel the subscription");
+  });
 });

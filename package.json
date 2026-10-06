@@ -23,6 +23,7 @@
     "verify:external": "node tools/external-install-check.mjs",
     "verify:external:react18": "node tools/external-install-check.mjs --route=tarball --react=18.2.0 --no-browser && node tools/external-install-check.mjs --route=tarball --react=18",
     "check:demo": "node tools/check-demo-claims.mjs",
+    "derive:styles": "node tools/derive-style-types.mjs && prettier --write packages/ui/src/style-tokens.generated.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

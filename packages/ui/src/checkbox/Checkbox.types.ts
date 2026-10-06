@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { InputHTMLAttributes } from "react";
 
 /**
@@ -40,4 +41,6 @@ export interface CheckboxProps extends Omit<
   indeterminate?: boolean;
   /** Size axis; defaults to `md` via the CSS base class. */
   size?: CheckboxSize;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"checkbox">;
 }

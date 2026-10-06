@@ -7,6 +7,7 @@ export {
   useFormField,
 } from "./FormField.js";
 export type {
+  FormFieldClassNames,
   FormFieldControlProps,
   FormFieldControlSlotProps,
   FormFieldDescriptionProps,

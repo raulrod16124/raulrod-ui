@@ -3,6 +3,7 @@ import type { SkeletonProps, SkeletonVariant } from "./Skeleton.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `SkeletonVariant` member
@@ -32,7 +33,7 @@ const skeletonClasses = createVariants(skeletonModifiers);
  * custom properties, ADR-003).
  */
 export const Skeleton = forwardRef<HTMLSpanElement, SkeletonProps>(function Skeleton(
-  { variant = "rectangle", className, ...props },
+  { variant = "rectangle", className, style, styles, ...props },
   ref,
 ) {
   return (
@@ -40,6 +41,7 @@ export const Skeleton = forwardRef<HTMLSpanElement, SkeletonProps>(function Skel
       {...props}
       ref={ref}
       className={cx("rr-skeleton", skeletonClasses("rr-skeleton", { variant }), className)}
+      style={mergeStyles(styles, style)}
     />
   );
 });

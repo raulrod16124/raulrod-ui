@@ -7,6 +7,8 @@ import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { breakpoints } from "@raulrod/tokens";
+
 import { auditA11y } from "../test-support/axe.js";
 import { expectTokenLineage, readComponentCss, stripCssComments } from "../test-support/css.js";
 
@@ -587,14 +589,21 @@ describe("Table authored CSS contract", () => {
     expect(css).not.toMatch(/:focus-visible\s*\{/);
   });
 
-  it("holds the token-only color rule: no hex, and the only px are hairlines", async () => {
+  it("holds the token-only color rule: no hex, and the only px are hairlines or breakpoints", async () => {
     const css = stripCssComments(await readComponentCss("table/Table.css"));
-    // `1px` is the documented hairline for collapsed borders; anything wider
-    // would be an un-tokenized design value
+    // `1px` is the documented hairline for collapsed borders; width conditions
+    // may use the breakpoint token values (ADR-008). Anything else would be an
+    // un-tokenized design value.
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(css.match(/\b\d+px\b/g) ?? []).not.toContain("2px");
+    const allowedPx = new Set([
+      "0",
+      "1",
+      ...Object.values(breakpoints).map((value) => value.replace("px", "")),
+    ]);
     for (const [, value] of css.matchAll(/\b(\d+(?:\.\d+)?)px\b/g)) {
-      expect(["0", "1"]).toContain(value);
+      expect(value, "px literal must have a numeric part").toBeDefined();
+      expect(allowedPx.has(value!)).toBe(true);
     }
   });
 

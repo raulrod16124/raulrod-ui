@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { ButtonHTMLAttributes } from "react";
 
 /**
@@ -46,4 +47,6 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
    *  the control natively (state announced, SR DoD). The accessible name is
    *  retained while loading. */
   loading?: boolean;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"icon-button">;
 }

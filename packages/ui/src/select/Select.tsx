@@ -79,6 +79,7 @@ export function Select({
   value,
   defaultValue,
   onValueChange,
+  classNames,
   children,
 }: SelectProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
@@ -138,6 +139,7 @@ export function Select({
     select,
     getFocusLastOnOpen,
     setFocusLastOnOpen,
+    classNames,
   };
 
   return <SelectContext.Provider value={selectContext}>{children}</SelectContext.Provider>;
@@ -166,7 +168,12 @@ export const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
         aria-haspopup="listbox"
         aria-expanded={select.open}
         aria-controls={select.contentId}
-        className={cx("rr-select-trigger", `rr-select-trigger--${size}`, className)}
+        className={cx(
+          "rr-select-trigger",
+          `rr-select-trigger--${size}`,
+          select.classNames?.trigger,
+          className,
+        )}
         onClick={(event) => {
           select.setOpen(!select.open);
           onClick?.(event);
@@ -216,6 +223,7 @@ export const SelectValue = forwardRef<HTMLSpanElement, SelectValueProps>(functio
       className={cx(
         "rr-select-value",
         !select.hasSelection && "rr-select-value--placeholder",
+        select.classNames?.value,
         className,
       )}
     >
@@ -233,8 +241,14 @@ export const SelectIcon = forwardRef<HTMLSpanElement, SelectIconProps>(function 
   { className, children, ...props },
   ref,
 ) {
+  const select = useSelectContext();
   return (
-    <span {...props} ref={ref} aria-hidden="true" className={cx("rr-select-icon", className)}>
+    <span
+      {...props}
+      ref={ref}
+      aria-hidden="true"
+      className={cx("rr-select-icon", select.classNames?.icon, className)}
+    >
       {children ?? <ChevronDown />}
     </span>
   );
@@ -268,6 +282,12 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(func
     panelRef,
     placement,
     active: select.open,
+    // The listbox is the one overlay whose width is part of its contract: a
+    // dropdown that is not the width of the field it belongs to reads as a
+    // different control (RRU-138). CSS cannot express it — the panel is
+    // `position: fixed`, so it has no containing block to be a percentage of —
+    // which is why this is the single JS line EPIC-12 authorizes.
+    matchAnchorWidth: true,
   });
   useListboxKeyboard({
     listboxRef: panelRef,
@@ -298,7 +318,7 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(func
         ref={mergeRefs(panelRef, ref)}
         id={select.contentId}
         role="listbox"
-        className={cx("rr-select-listbox", className)}
+        className={cx("rr-select-listbox", select.classNames?.content, className)}
       >
         {children}
       </div>
@@ -334,7 +354,12 @@ export const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(function S
       data-value={value}
       aria-selected={selected}
       aria-disabled={disabled}
-      className={cx("rr-select-item", disabled && "rr-select-item--disabled", className)}
+      className={cx(
+        "rr-select-item",
+        disabled && "rr-select-item--disabled",
+        select.classNames?.item,
+        className,
+      )}
       onClick={(event) => {
         if (disabled) {
           event.preventDefault();
@@ -358,8 +383,14 @@ export const SelectGroup = forwardRef<HTMLDivElement, SelectGroupProps>(function
   { className, children, ...props },
   ref,
 ) {
+  const select = useSelectContext();
   return (
-    <div {...props} ref={ref} role="group" className={cx("rr-select-group", className)}>
+    <div
+      {...props}
+      ref={ref}
+      role="group"
+      className={cx("rr-select-group", select.classNames?.group, className)}
+    >
       {children}
     </div>
   );
@@ -372,8 +403,13 @@ export const SelectLabel = forwardRef<HTMLDivElement, SelectLabelProps>(function
   { className, children, ...props },
   ref,
 ) {
+  const select = useSelectContext();
   return (
-    <div {...props} ref={ref} className={cx("rr-select-group-label", className)}>
+    <div
+      {...props}
+      ref={ref}
+      className={cx("rr-select-group-label", select.classNames?.label, className)}
+    >
       {children}
     </div>
   );

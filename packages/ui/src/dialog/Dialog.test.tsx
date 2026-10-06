@@ -590,4 +590,36 @@ describe("Dialog SSR parity + composition contract", () => {
     expect(Dialog.Description).toBe(DialogDescription);
     expect(Dialog.Footer).toBe(DialogFooter);
   });
+
+  it("distributes root classNames to every slot", () => {
+    render(
+      <Dialog
+        defaultOpen
+        classNames={{
+          trigger: "root-trigger",
+          content: "root-content",
+          header: "root-header",
+          title: "root-title",
+          description: "root-desc",
+          footer: "root-footer",
+        }}
+      >
+        <Dialog.Trigger data-testid="trigger">Open</Dialog.Trigger>
+        <Dialog.Content data-testid="content">
+          <Dialog.Header data-testid="header">
+            <Dialog.Title data-testid="title">Title</Dialog.Title>
+            <Dialog.Description data-testid="description">Desc</Dialog.Description>
+          </Dialog.Header>
+          <Dialog.Footer data-testid="footer" />
+        </Dialog.Content>
+      </Dialog>,
+    );
+
+    expect(screen.getByTestId("trigger").className).toBe("rr-dialog-trigger root-trigger");
+    expect(screen.getByTestId("content").className).toBe("rr-dialog-content root-content");
+    expect(screen.getByTestId("header").className).toBe("rr-dialog-header root-header");
+    expect(screen.getByTestId("title").className).toBe("rr-dialog-title root-title");
+    expect(screen.getByTestId("description").className).toBe("rr-dialog-description root-desc");
+    expect(screen.getByTestId("footer").className).toBe("rr-dialog-footer root-footer");
+  });
 });

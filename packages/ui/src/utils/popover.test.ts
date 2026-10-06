@@ -3,6 +3,19 @@
 // computePopoverPosition and the assertions pin the flip/align-fallback/clamp
 // contract. The integration of this math with the real DOM (measure + inline
 // style) lives in Popover.test.tsx.
+//
+// RRU-137 adds the panel's viewport bound (Popover.css: max-inline-size/
+// max-block-size) to that contract, and this file says which half it can prove.
+// The ORDER — stylesheet applied, THEN measured — is a browser fact: happy-dom
+// has no layout, so `getBoundingClientRect()` returns zeros here and no
+// assertion in this file could tell the two orders apart. That half is proven
+// where a layout engine exists, in `apps/playground/e2e/overlays-narrow.spec.ts`.
+// What lives here is the geometry each order implies, so the invariants stay
+// pinned even though the DOM half cannot be:
+//   - a panel ALREADY clamped by CSS fits and is left untouched by `clamp`;
+//   - a panel wider than the viewport still gets its leading edge pinned, which
+//     is now the DEFENSIVE path, reachable only if a consumer overrides
+//     `max-inline-size` through `style` or a stylesheet.
 import type { PopoverPlacement } from "./popover.js";
 
 import { describe, expect, it } from "vitest";
@@ -153,6 +166,59 @@ describe("computePopoverPosition — flip (DoD #1)", () => {
   });
 });
 
+describe("computePopoverPosition — the panel is bounded by CSS, not by the clamp (RRU-137)", () => {
+  it("leaves a panel that already fits the viewport exactly where it asked to be", () => {
+    // The state RRU-137 makes NORMAL. `max-inline-size` resolves against the
+    // viewport, so the rect `use-popover-position.ts` measures is already bounded
+    // (320 - 2*space-4 = 288 here, and `MARGIN` is this spec's own 8), `fitsFully`
+    // accepts it, and `clamp` is never reached. This is the assertion that says
+    // the clamp is NOT the mechanism holding the panel on screen: the stylesheet
+    // is, and the positioner's job is to stop interfering with it.
+    expect(
+      position(
+        { left: 16, top: 100, width: 100, height: 40 },
+        { width: 288, height: 60 },
+        "bottom-start",
+      ),
+    ).toEqual({
+      left: 16, // the requested edge, untouched: 16 + 288 = 304 <= 320 - 8
+      top: 148,
+    });
+  });
+
+  it("lands a screen-tall panel inside the viewport instead of under the fold", () => {
+    // The other axis, same argument. `max-block-size: calc(100dvh - 2*space-4)`
+    // is 480 - 32 = 448 here, so a panel filling its scrollport is still a panel
+    // whose bottom edge the positioner has to place: neither side fits (448 > the
+    // space above or below any anchor), and 24 + 448 = 472 is exactly
+    // `480 - margin`. The scrollport doing the rest is Popover.css's job; this
+    // pins the half that is geometry.
+    expect(
+      position(
+        { left: 0, top: 10, width: 100, height: 20 },
+        { width: 288, height: 448 },
+        "bottom-start",
+      ),
+    ).toEqual({ left: 8, top: 24 });
+  });
+
+  it("still pins the leading edge of a panel a consumer made unbounded", () => {
+    // The DEFENSIVE path, and the one the old test described as the normal case.
+    // It stays reachable because `style` is the consumer's escape hatch (EPIC 13
+    // formalises it): someone who sets `maxInlineSize` inline, or ships a
+    // stylesheet that wins the cascade, hands the positioner a 400px panel in a
+    // 320px viewport. The positioner cannot shrink it — it only moves `left`/`top`
+    // — so the guarantee it can still make is the one it has always made.
+    const pos = position(
+      { left: 0, top: 0, width: 100, height: 40 },
+      { width: 400, height: 60 },
+      "bottom-start",
+    );
+    expect(pos.left).toBe(MARGIN);
+    expect(pos.top).toBe(48);
+  });
+});
+
 describe("computePopoverPosition — align fallback + clamp", () => {
   it("mirrors a start-aligned panel that would overflow the right edge (align fallback)", () => {
     // start (-20 over the right edge) and end (-180) both stick out → the
@@ -180,6 +246,12 @@ describe("computePopoverPosition — align fallback + clamp", () => {
   });
 
   it("never leaves the viewport even when the panel is wider than the viewport", () => {
+    // Kept, and renamed by its card: since RRU-137 the CSS bounds the panel, so
+    // this rect is only reachable if the consumer overrides `max-inline-size`
+    // (the defensive case is asserted with that framing above). It is not
+    // deleted, because deleting it would drop the last coverage of `clamp`'s
+    // hard guarantee — a guard that is unreachable in this repo is still the
+    // thing that saves a consumer who overrides it.
     const pos = position(
       { left: 0, top: 0, width: 100, height: 40 },
       { width: 400, height: 60 },

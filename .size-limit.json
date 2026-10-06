@@ -8,7 +8,7 @@
   {
     "name": "Selective import CSS",
     "path": "apps/playground/dist-tree-shake/assets/*.css",
-    "limit": "6 kB",
+    "limit": "5.75 kB",
     "gzip": true
   }
 ]

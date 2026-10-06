@@ -7,6 +7,9 @@
      (`space-1` = 4px).
    - `outline: 2px solid` + `outline-offset`: the 2px focus ring family
      (color.md §6.3 — same constant as Button/Tabs; no width token exists).
+   - `640px` in the `@container` block is the `sm` breakpoint token value
+     (ADR-008, RRU-135): width conditions use px literals because CSS does not
+     evaluate custom properties inside container queries.
    - icons are sized `1em` so they inherit the item `font-size` token.
    - `cursor` keywords (`pointer`/`not-allowed`): native affordance, no token
      counterpart (Button precedent).
@@ -20,6 +23,7 @@
 
 .rr-pagination {
   display: block;
+  container-type: inline-size;
 }
 
 .rr-pagination__list {
@@ -114,4 +118,16 @@
   color: var(--rr-color-action-disabled-text);
   background: transparent;
   cursor: not-allowed;
+}
+
+/* Narrow container: collapse to prev/current/next. The DOM keeps every node
+   so the accessible list structure and SSR contract stay intact; only the
+   visual rendering is suppressed. `aria-current="page"` is the guard that
+   keeps the current page visible (ADR-008, EPIC-12). */
+
+@container (max-width: 640px) {
+  .rr-pagination__item--number:not([aria-current="page"]),
+  .rr-pagination__ellipsis {
+    display: none;
+  }
 }

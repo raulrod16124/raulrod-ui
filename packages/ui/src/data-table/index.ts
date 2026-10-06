@@ -1,5 +1,6 @@
 export { DataTable } from "./DataTable.js";
 export type {
+  DataTableClassNames,
   DataTableColumn,
   DataTableFiltering,
   DataTableKey,
