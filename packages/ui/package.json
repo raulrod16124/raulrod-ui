@@ -1,6 +1,6 @@
 {
   "name": "@raulrod/ui",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "React components for RaulRod UI (public entry point).",
   "license": "MIT",
   "repository": {
