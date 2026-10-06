@@ -7,7 +7,8 @@ import { Meta } from "@storybook/blocks";
 EPIC-13 añade dos props para ajustar una instancia sin romper el contrato visual
 ni depender de selectores internos:
 
-- **`styles`** — mapa de variables `--rr-*` que el componente consume de verdad.
+- **`styles`** — mapa con las variables `--rr-*` que el componente consume de
+  verdad **más** propiedades CSS estándar (`color`, `opacity`, `zIndex`, …).
 - **`classNames`** — mapa de clases para slots públicos de componentes compuestos.
 
 Ambas respetan el orden de merge documentado en `component-pattern.mdx` §5.1: las
@@ -25,27 +26,47 @@ tu `className`/`style` explícitos ganan si hay colisión.
 4. **`style`/`className` directos** como último recurso. Siguen permitidos, pero
    tú eres responsable de no violar el contrato de tokens ni la accesibilidad.
 
-## `styles` está tipado por el CSS
+## `styles` está tipado: tokens consumidos + CSS estándar
 
-El tipo `Styles<"button">` solo acepta las variables que `Button.css` consume.
-Esto no compila:
+El tipo `Styles<"button">` acepta dos familias de claves:
+
+1. **Los tokens `--rr-*` que el componente consume de verdad** — los que su CSS
+   usa, no cualquier variable suelta. Si añades o quitas un `var(--rr-*)`, el
+   generador y el gate de igualdad (`pnpm derive:styles`) mantienen esta mitad
+   del tipo alineada con el CSS.
+2. **Propiedades CSS estándar** (`color`, `opacity`, `zIndex`, …) — con la misma
+   semántica que el prop `style` de React, incluidos valores numéricos
+   (`opacity: 0.5`). El runtime siempre las ha aceptado (`mergeStyles` solo hace
+   spread, sin filtrar); el tipo ahora refleja esa realidad.
+
+Esto no compila — el token no lo consume el componente:
 
 ```tsx
 // ❌ `--rr-not-a-button-token` no está en Button.css
 <Button styles={{ "--rr-not-a-button-token": "red" }} />
-
-// ❌ `color` es una propiedad CSS, no un token del componente
-<Button styles={{ color: "red" }} />
 ```
 
 Esto sí:
 
 ```tsx
+// Token consumido por Button.css
 <Button styles={{ "--rr-button-primary-background": "#c026d3" }}>Brand action</Button>
+
+// Propiedad CSS estándar
+<Button styles={{ color: "red" }}>Danger</Button>
+
+// Mezcla: tokens y CSS en el mismo mapa; tu `style` sigue ganando en colisión
+<Button
+  styles={{ "--rr-button-primary-background": "#c026d3", opacity: 0.6 }}
+  style={{ color: "black" }}
+>
+  Brand action
+</Button>
 ```
 
-Si añades o quitas un `var(--rr-*)` en el CSS, el generador y el gate de
-igualdad (`pnpm derive:styles`) mantienen el tipo alineado.
+Las claves `--rr-*` que el componente no consume siguen rechazadas a propósito:
+si necesitas una variable que su CSS no usa, esa no es una corrección de
+instancia — cámbiala por la vía de `theming.md` §7.
 
 ## `classNames` solo expone slots públicos
 

@@ -1,20 +1,22 @@
-// Contract of the token-level `styles` prop introduced by ADR-009 / RRU-146.
-//
-// ADR-003 says the consumer overrides variables, not internals. ADR-009 says the
-// `styles` prop is a typed instance-level shortcut for exactly that: the keys it
-// accepts are the `--rr-*` tokens the component's own CSS already consumes, no
-// more and no less. That makes the prop a contract, not a CSS-in-JS escape.
+// Contract of the `styles` prop introduced by ADR-009 / RRU-146, amended
+// post-1.1.0 (see ADR-009): the prop accepts the `--rr-*` tokens the
+// component's own CSS consumes **and** standard CSS properties — the runtime
+// always spread both (mergeStyles does no filtering), so the type matches
+// reality instead of gatekeeping DX. A `--rr-*` key the component does not
+// consume is still rejected: it is in neither half of the intersection.
 //
 // This spec keeps two directions of that contract honest:
 //
 //   1. The generated file `style-tokens.generated.ts` is the compile-time source
-//      of truth for the type. It must match the CSS on disk; if it drifts, the
-//      error message tells the reviewer to run `pnpm derive:styles`.
-//   2. The type must reject a key the component does not consume and an
-//      arbitrary CSS property. Because these failures are type-level, the
-//      instrument is `pnpm typecheck`: `@ts-expect-error` suppresses the error
-//      today; if the type ever loosens, tsc fails with "Unused '@ts-expect-error'
-//      directive". The runtime `expect` only keeps the values referenced.
+//      of truth for the token half of the type. It must match the CSS on disk;
+//      if it drifts, the error message tells the reviewer to run
+//      `pnpm derive:styles`.
+//   2. The type must accept a real token and a standard CSS property, and
+//      reject a key the component does not consume. Because these failures are
+//      type-level, the instrument is `pnpm typecheck`: `@ts-expect-error`
+//      suppresses the error today; if the type ever loosens or tightens the
+//      wrong way, tsc fails with "Unused '@ts-expect-error' directive". The
+//      runtime `expect` only keeps the values referenced.
 import { describe, expect, it } from "vitest";
 
 import { styleTokens, type Styles } from "./style-tokens.generated.js";
@@ -66,7 +68,7 @@ describe("styles type contract (RRU-146)", () => {
     expect(orphaned, "generated entries without a matching CSS file").toEqual([]);
   });
 
-  it("keeps the styles type narrow to real tokens", () => {
+  it("keeps the styles type narrow to real tokens and open to CSS properties", () => {
     // Vacuity guard: if Button somehow consumed zero tokens, the negative probes
     // below would pass for the wrong reason.
     expect(
@@ -75,14 +77,18 @@ describe("styles type contract (RRU-146)", () => {
     ).toBeGreaterThan(0);
 
     // A token Button actually consumes must compile without suppression.
-    const _valid = { [styleTokens.button[0]]: "red" } satisfies Styles<"button">;
+    const _validToken = { [styleTokens.button[0]]: "red" } satisfies Styles<"button">;
+
+    // A standard CSS property compiles (ADR-009 amendment) — string and number
+    // value forms, with the style-prop merge order unchanged.
+    const _validCss = { color: "red", opacity: 0.5 } satisfies Styles<"button">;
 
     // @ts-expect-error -- `--rr-not-consumed-by-button` is not a token Button consumes.
     const _badToken = { "--rr-not-consumed-by-button": "red" } satisfies Styles<"button">;
 
-    // @ts-expect-error -- `color` is a CSS property, not a component token.
-    const _badProperty = { color: "red" } satisfies Styles<"button">;
+    // @ts-expect-error -- `color` takes a color, not a number.
+    const _badValue = { color: 12 } satisfies Styles<"button">;
 
-    expect([_valid, _badToken, _badProperty]).toHaveLength(3);
+    expect([_validToken, _validCss, _badToken, _badValue]).toHaveLength(4);
   });
 });
