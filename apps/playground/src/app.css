@@ -20,6 +20,16 @@ body {
   padding: var(--rr-space-8) var(--rr-space-6);
 }
 
+/* Reduce shell padding on narrow viewports so a 320px phone keeps more usable
+   width. 640px matches `--rr-breakpoint-sm`; CSS variables cannot be read
+   inside a media condition, so the literal is intentional and aligned with the
+   token (theming.md §8, ADR-008). */
+@media (max-width: 640px) {
+  .pg-shell {
+    padding: var(--rr-space-6) var(--rr-space-4);
+  }
+}
+
 .pg-header {
   border-bottom: 1px solid var(--rr-color-border-default);
   margin-bottom: var(--rr-space-8);
@@ -90,6 +100,7 @@ body {
    so the sticky header has a scrollport to stick to. */
 .pg-table-scrollport {
   max-block-size: calc(3 * var(--rr-space-16));
+  overflow-x: auto;
   overflow-y: auto;
 }
 
@@ -111,4 +122,24 @@ body {
   padding: var(--rr-space-2);
   width: 200px;
   overflow: hidden;
+}
+
+/* Responsive showcase frames (RRU-144). Fixed-width device simulators clamped
+   to the available width, so the demo never overflows its own section. */
+.pg-responsive-frames {
+  /* Inline already handles flex wrap and gap; no extra rules needed. */
+}
+
+.pg-responsive-frame {
+  border: 1px dashed var(--rr-color-border-strong);
+  border-radius: var(--rr-radius-md);
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: var(--rr-space-4);
+}
+
+.pg-responsive-frame__label {
+  display: block;
+  font-size: var(--rr-font-size-sm);
+  margin-bottom: var(--rr-space-2);
 }

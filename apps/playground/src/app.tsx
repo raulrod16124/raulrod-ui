@@ -21,6 +21,7 @@ import { FormSection } from "./form-section.js";
 import { LayoutPrimitivesSection } from "./layout-primitives-section.js";
 import { NavigationSection } from "./navigation-section.js";
 import { OverlaysSection } from "./overlays-section.js";
+import { ResponsiveSection } from "./responsive-section.js";
 import { ThemeSwitcher } from "./theme-switcher.js";
 
 export function App() {
@@ -131,6 +132,20 @@ export function App() {
                 Fluid responsive
               </Heading>
               <FluidResponsiveSection />
+            </section>
+
+            {/* Showcase surface for the whole-page responsive contract (RRU-144).
+                Three device-width frames let a human compare the same content at
+                320 / 375 / 768 px, and the E2E asserts the whole page fits. */}
+            <section
+              aria-labelledby="responsive-section-title"
+              className="pg-section"
+              id="responsive-section"
+            >
+              <Heading as="h2" className="pg-section__title" id="responsive-section-title">
+                Responsive
+              </Heading>
+              <ResponsiveSection />
             </section>
           </Stack>
         </main>

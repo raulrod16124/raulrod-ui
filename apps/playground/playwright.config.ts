@@ -43,7 +43,25 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "mobile",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 320, height: 900 },
+      },
+      testMatch: [
+        "data-table.spec.ts",
+        "dialog.spec.ts",
+        "form.spec.ts",
+        "overlays.spec.ts",
+        "responsive-section.spec.ts",
+        "select-keyboard.spec.ts",
+        "tabs.spec.ts",
+      ],
+    },
+  ],
   webServer: {
     // No port or host flags: `vite.config.ts` owns both, so the address the suite
     // waits for and the address the server binds can never drift apart.
