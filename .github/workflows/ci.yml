@@ -48,6 +48,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Changesets are plain markdown until something parses them, and on the
+      # happy path the first parser is `changesets/action` in release.yml —
+      # which runs on push to main, AFTER the merge. rru-141/142/143 were
+      # committed without their opening "---" (2026-10-06): every check on
+      # PR #16 stayed green, the merge landed, and the release job then died
+      # on the parse error — no Release PR, nothing published. This step
+      # moves that failure onto the PR, where it is cheap to fix.
+      # `changeset status` exits 1 on malformed frontmatter, needs no build
+      # and no network, so it goes first, before anything heavier runs.
+      - name: Validate changesets
+        run: pnpm changeset status
+
       - name: Lint
         run: pnpm lint
 
