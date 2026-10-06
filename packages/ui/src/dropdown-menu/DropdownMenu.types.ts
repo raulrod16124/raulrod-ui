@@ -1,6 +1,10 @@
 import type { PopoverPlacement } from "../utils/popover.js";
 import type { ButtonHTMLAttributes, HTMLAttributes, MouseEvent, ReactNode, RefObject } from "react";
 
+export type DropdownMenuClassNames = Partial<
+  Record<"trigger" | "content" | "item" | "separator" | "subTrigger" | "subContent", string>
+>;
+
 /** Public `placement` re-export under a DropdownMenu-coherent name (single
  *  source stays `PopoverPlacement` in `utils/popover.ts`). */
 export type DropdownMenuPlacement = PopoverPlacement;
@@ -39,6 +43,8 @@ export interface DropdownMenuContextValue {
    *  context object (react-hooks/immutability). */
   getFocusLastOnOpen: () => boolean;
   setFocusLastOnOpen: (value: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: DropdownMenuClassNames;
 }
 
 /**
@@ -63,6 +69,8 @@ export interface DropdownMenuProps {
   /** Fired whenever the root open state changes (trigger click, Escape,
    *  outside, item selection, Tab). */
   onOpenChange?: (open: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: DropdownMenuClassNames;
   children?: ReactNode;
 }
 

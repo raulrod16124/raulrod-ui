@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { FlexAlign, FlexJustify } from "../utils/flex.js";
 import type { Spacing } from "@raulrod/tokens";
 import type { HTMLAttributes } from "react";
@@ -22,4 +23,6 @@ export interface InlineProps extends HTMLAttributes<HTMLDivElement> {
   justify?: FlexJustify;
   /** Allows items to wrap onto a new line (`flex-wrap`). */
   wrap?: boolean;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"inline">;
 }

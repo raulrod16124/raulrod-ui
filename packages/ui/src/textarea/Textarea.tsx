@@ -3,6 +3,7 @@ import type { TextareaProps, TextareaSize } from "./Textarea.types.js";
 import { forwardRef, useState } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `TextareaSize` member
@@ -43,10 +44,11 @@ const textareaClasses = createVariants(textareaModifiers);
  * `maxLength`/ARIA pass through; `className` is merged via `cx`.
  */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { autoResize, size, className, ...props },
+  { autoResize, size, className, style, styles, ...props },
   ref,
 ) {
   const [mirrorValue, setMirrorValue] = useState(() => props.value ?? props.defaultValue ?? "");
+  const mergedStyle = mergeStyles(styles, style);
 
   if (autoResize) {
     return (
@@ -59,6 +61,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
             props.onChange?.(event);
           }}
           className={cx("rr-textarea", textareaClasses("rr-textarea", { size }), className)}
+          style={mergedStyle}
         />
         <span
           aria-hidden="true"
@@ -75,6 +78,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       {...props}
       ref={ref}
       className={cx("rr-textarea", textareaClasses("rr-textarea", { size }), className)}
+      style={mergedStyle}
     />
   );
 });

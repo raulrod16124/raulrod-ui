@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { RadioSize } from "./Radio.types.js";
 import type { HTMLAttributes } from "react";
 
@@ -48,4 +49,6 @@ export interface RadioGroupProps extends HTMLAttributes<HTMLDivElement> {
   size?: RadioSize;
   /** Layout axis; defaults to `vertical`. */
   orientation?: RadioGroupOrientation;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"radio">;
 }

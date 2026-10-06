@@ -1,0 +1,75 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Guides/Cuándo sobrescribir" />
+
+# Cuándo sobrescribir
+
+EPIC-13 añade dos props para ajustar una instancia sin romper el contrato visual
+ni depender de selectores internos:
+
+- **`styles`** — mapa de variables `--rr-*` que el componente consume de verdad.
+- **`classNames`** — mapa de clases para slots públicos de componentes compuestos.
+
+Ambas respetan el orden de merge documentado en `component-pattern.mdx` §5.1: las
+clases/variables del componente se aplican primero, luego las que aportas tú, y
+tu `className`/`style` explícitos ganan si hay colisión.
+
+## Jerarquía recomendada
+
+1. **Token global o por scope CSS** (`theming.md` §7). Es la vía principal para
+   cambios de marca, tema o densidad.
+2. **`classNames`** cuando necesitas tocar un slot público (p. ej. el error de un
+   `FormField` o el panel de un `Dialog`) sin salirte del HTML/ARIA del DS.
+3. **`styles`** solo para el ajuste puntual de una instancia: un botón de
+   marketing, un badge de estado propio, etc.
+4. **`style`/`className` directos** como último recurso. Siguen permitidos, pero
+   tú eres responsable de no violar el contrato de tokens ni la accesibilidad.
+
+## `styles` está tipado por el CSS
+
+El tipo `Styles<"button">` solo acepta las variables que `Button.css` consume.
+Esto no compila:
+
+```tsx
+// ❌ `--rr-not-a-button-token` no está en Button.css
+<Button styles={{ "--rr-not-a-button-token": "red" }} />
+
+// ❌ `color` es una propiedad CSS, no un token del componente
+<Button styles={{ color: "red" }} />
+```
+
+Esto sí:
+
+```tsx
+<Button styles={{ "--rr-button-primary-background": "#c026d3" }}>Brand action</Button>
+```
+
+Si añades o quitas un `var(--rr-*)` en el CSS, el generador y el gate de
+igualdad (`pnpm derive:styles`) mantienen el tipo alineado.
+
+## `classNames` solo expone slots públicos
+
+No puedes pasar cualquier selector. Cada componente compuesto documenta sus
+slots en su `.types.ts` y en su MDX. Ejemplo:
+
+```tsx
+<FormField classNames={{ error: "my-field-error" }}>
+  <FormField.Label>Email</FormField.Label>
+  <FormField.Control>{(field) => <Input {...field} />}</FormField.Control>
+  <FormField.Error>Invalid email</FormField.Error>
+</FormField>
+```
+
+El slot `error` es parte del contrato público; `.rr-form-field__error` no lo es.
+
+## Límite de accesibilidad
+
+La garantía de contraste AA del DS cubre el **output por defecto**. Cuando
+sobrescribes una variable en una instancia, el consumidor asume la
+responsabilidad de mantener los pares de contraste necesarios. El DS no valida
+valores arbitrarios de `styles` en runtime.
+
+## Regla de oro
+
+> Preferir la vía más débil que resuelva el caso. Si un token global lo cubre,
+> no uses `styles`. Si `classNames` lo cubre, no uses `style`/`className` directos.

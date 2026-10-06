@@ -8,6 +8,7 @@ export {
   DialogTrigger,
 } from "./Dialog.js";
 export type {
+  DialogClassNames,
   DialogContentProps,
   DialogDescriptionProps,
   DialogFooterProps,

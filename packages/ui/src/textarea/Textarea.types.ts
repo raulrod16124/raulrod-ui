@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { TextareaHTMLAttributes } from "react";
 
 /**
@@ -33,4 +34,6 @@ export interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaE
   size?: TextareaSize;
   /** Auto-grow the field with its content via a hidden CSS-grid mirror. */
   autoResize?: boolean;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"textarea">;
 }

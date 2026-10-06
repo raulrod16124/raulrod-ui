@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { Children, createContext, forwardRef, isValidElement, useContext } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { useId } from "../utils/use-id.js";
 
 /**
@@ -35,7 +36,7 @@ import { useId } from "../utils/use-id.js";
  * the consumer keeps full layout control.
  */
 export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(function FormField(
-  { controlId, className, children, ...props },
+  { controlId, styles, style, classNames, className, children, ...props },
   ref,
 ) {
   const generated = useId("rr-field");
@@ -53,11 +54,16 @@ export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(function For
     ...(invalid && { "aria-errormessage": errorId, "aria-invalid": true }),
   };
 
-  const context: FormFieldContextValue = { field, descriptionId, errorId };
+  const context: FormFieldContextValue = { field, descriptionId, errorId, classNames };
 
   return (
     <FormFieldContext.Provider value={context}>
-      <div {...props} ref={ref} className={cx("rr-form-field", className)}>
+      <div
+        {...props}
+        ref={ref}
+        style={mergeStyles(styles, style)}
+        className={cx("rr-form-field", classNames?.root, className)}
+      >
         {children}
       </div>
     </FormFieldContext.Provider>
@@ -79,12 +85,12 @@ export function useFormField(): FormFieldControlProps {
  *  the spread so the association cannot be broken by consumer props). */
 export const FormFieldLabel = forwardRef<HTMLLabelElement, FormFieldLabelProps>(
   function FormFieldLabel({ className, ...props }, ref) {
-    const { field } = useFieldContext();
+    const { field, classNames } = useFieldContext();
     return (
       <label
         {...props}
         ref={ref}
-        className={cx("rr-form-field-label", className)}
+        className={cx("rr-form-field-label", classNames?.label, className)}
         htmlFor={field.id}
       />
     );
@@ -96,13 +102,13 @@ FormFieldLabel.displayName = "FormFieldLabel";
  *  control's `aria-describedby`. Rendered as a `<p>`. */
 export const FormFieldDescription = forwardRef<HTMLParagraphElement, FormFieldDescriptionProps>(
   function FormFieldDescription({ className, ...props }, ref) {
-    const { descriptionId } = useFieldContext();
+    const { descriptionId, classNames } = useFieldContext();
     return (
       <p
         {...props}
         ref={ref}
         id={descriptionId}
-        className={cx("rr-form-field-description", className)}
+        className={cx("rr-form-field-description", classNames?.description, className)}
       />
     );
   },
@@ -114,10 +120,14 @@ FormFieldDescription.displayName = "FormFieldDescription";
  *  the idiomatic way to bind a single control (`{(field) => <Input {...field}/>}`). */
 export const FormFieldControl = forwardRef<HTMLDivElement, FormFieldControlSlotProps>(
   function FormFieldControl({ className, children, ...props }, ref) {
-    const { field } = useFieldContext();
+    const { field, classNames } = useFieldContext();
     const content = typeof children === "function" ? children(field) : children;
     return (
-      <div {...props} ref={ref} className={cx("rr-form-field-control", className)}>
+      <div
+        {...props}
+        ref={ref}
+        className={cx("rr-form-field-control", classNames?.control, className)}
+      >
         {content}
       </div>
     );
@@ -130,14 +140,14 @@ FormFieldControl.displayName = "FormFieldControl";
  *  `aria-invalid` + `aria-errormessage` on the control. */
 export const FormFieldError = forwardRef<HTMLParagraphElement, FormFieldErrorProps>(
   function FormFieldError({ className, ...props }, ref) {
-    const { errorId } = useFieldContext();
+    const { errorId, classNames } = useFieldContext();
     return (
       <p
         {...props}
         ref={ref}
         id={errorId}
         role="alert"
-        className={cx("rr-form-field-error", className)}
+        className={cx("rr-form-field-error", classNames?.error, className)}
       />
     );
   },

@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 
+export type TabsClassNames = Partial<Record<"list" | "trigger" | "panel", string>>;
+
 /**
  * Props of {@link Tabs}, the COMPOSITION ROOT of the WAI-ARIA Tabs
  * pattern (guide §14/§15, ADR-004). Like {@link Select} a PURE
@@ -31,6 +33,8 @@ export interface TabsProps {
   /** Called when the selection changes (click or automatic keyboard
    *  activation) — only when the value actually changes. */
   onValueChange?: (value: string) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: TabsClassNames;
 }
 
 /**
@@ -125,4 +129,6 @@ export interface TabsContextValue {
   tabs: TabsRovingItem[];
   idsByValue: ReadonlyMap<string, TabsIdEntry>;
   setValue: (value: string) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: TabsClassNames;
 }

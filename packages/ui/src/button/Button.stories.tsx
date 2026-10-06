@@ -186,3 +186,14 @@ export const CustomSpinner: Story = {
     </Button>
   ),
 };
+
+/**
+ * RRU-147: `styles` lets the consumer override a component token on a single
+ * instance without leaving the token contract. The key is typed from the CSS,
+ * so only tokens Button actually consumes are accepted.
+ */
+export const StylesOverride: Story = {
+  render: () => (
+    <Button styles={{ "--rr-button-primary-background": "#c026d3" }}>Brand action</Button>
+  ),
+};

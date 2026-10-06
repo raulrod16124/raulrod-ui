@@ -45,7 +45,13 @@ import { usePopoverPosition } from "../utils/use-popover-position.js";
  * stamps `aria-labelledby` only when present (never an empty idref).
  */
 
-export function Popover({ open, defaultOpen = false, onOpenChange, children }: PopoverProps) {
+export function Popover({
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  classNames,
+  children,
+}: PopoverProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const controlled = open !== undefined;
   const isOpen = controlled ? open : uncontrolledOpen;
@@ -77,6 +83,7 @@ export function Popover({ open, defaultOpen = false, onOpenChange, children }: P
     contentId,
     triggerRef,
     setTriggerRef,
+    classNames,
     ...(labelId !== undefined && { labelId }),
   };
 
@@ -102,7 +109,7 @@ export const PopoverTrigger = forwardRef<HTMLButtonElement, PopoverTriggerProps>
         aria-haspopup="dialog"
         aria-expanded={popover.open}
         aria-controls={popover.contentId}
-        className={cx("rr-popover-trigger", className)}
+        className={cx("rr-popover-trigger", popover.classNames?.trigger, className)}
         onClick={(event) => {
           popover.setOpen(!popover.open);
           onClick?.(event);
@@ -165,7 +172,7 @@ export const PopoverContent = forwardRef<HTMLDivElement, PopoverContentProps>(
           role="dialog"
           tabIndex={-1}
           aria-labelledby={popover.labelId}
-          className={cx("rr-popover-content", className)}
+          className={cx("rr-popover-content", popover.classNames?.content, className)}
         >
           {children}
         </div>
@@ -184,7 +191,12 @@ export const PopoverTitle = forwardRef<HTMLHeadingElement, PopoverTitleProps>(fu
 ) {
   const popover = usePopoverContext();
   return (
-    <h2 {...props} ref={ref} id={popover.labelId} className={cx("rr-popover-title", className)}>
+    <h2
+      {...props}
+      ref={ref}
+      id={popover.labelId}
+      className={cx("rr-popover-title", popover.classNames?.title, className)}
+    >
       {children}
     </h2>
   );

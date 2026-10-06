@@ -3,6 +3,7 @@ import type { VisuallyHiddenProps } from "./VisuallyHidden.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 
 /**
  * Accessibility primitive that keeps content present for assistive
@@ -18,7 +19,7 @@ import { cx } from "../utils/cx.js";
  * (`:focus-within`, `VisuallyHidden.css`).
  */
 export const VisuallyHidden = forwardRef<HTMLSpanElement, VisuallyHiddenProps>(
-  function VisuallyHidden({ focusable = false, className, ...props }, ref) {
+  function VisuallyHidden({ focusable = false, className, style, styles, ...props }, ref) {
     return (
       <span
         {...props}
@@ -28,6 +29,7 @@ export const VisuallyHidden = forwardRef<HTMLSpanElement, VisuallyHiddenProps>(
           focusable && "rr-visually-hidden--focusable",
           className,
         )}
+        style={mergeStyles(styles, style)}
       />
     );
   },

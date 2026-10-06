@@ -351,4 +351,26 @@ describe("Popover SSR parity + composition contract", () => {
     expect(Popover.Content).toBe(PopoverContent);
     expect(Popover.Title).toBe(PopoverTitle);
   });
+
+  it("distributes root classNames to trigger, content and title", () => {
+    render(
+      <Popover
+        defaultOpen
+        classNames={{
+          trigger: "root-trigger",
+          content: "root-content",
+          title: "root-title",
+        }}
+      >
+        <Popover.Trigger data-testid="trigger">Open</Popover.Trigger>
+        <Popover.Content data-testid="content">
+          <Popover.Title data-testid="title">Title</Popover.Title>
+        </Popover.Content>
+      </Popover>,
+    );
+
+    expect(screen.getByTestId("trigger").className).toBe("rr-popover-trigger root-trigger");
+    expect(screen.getByTestId("content").className).toBe("rr-popover-content root-content");
+    expect(screen.getByTestId("title").className).toBe("rr-popover-title root-title");
+  });
 });

@@ -33,11 +33,11 @@
 | Campo                         | Valor                                                           |
 | ----------------------------- | --------------------------------------------------------------- |
 | Fecha de última actualización | 2026-10-06 |
-| Siguiente tarea | **RRU-146 · ADR-009 y el tipo de `styles` derivado del gate** — EPIC-13 · P0 · M · **depende de RRU-145 (✅ Done 2026-10-06)**. Primera carta de la única épica post-MVP que cambia la API pública del `1.0.0` publicado; requiere ADR-009 propio y changeset `minor`. |
-| Siguiente epic | **EPIC-13 — Extensibilidad: escape hatch de estilos (Fase 13)**, la única épica que **cambia la API pública**. Los 12 epics del MVP y EPIC-12 Responsive siguen ✅; EPIC-13 nace de una decisión del usuario (2026-10-04), no de la regla. Va con **ADR-009 propio** y changeset `minor`. |
-| Rama / PR activo | `development` con los cambios de **RRU-145** listos para commit. El tablero **sí está trackeado** (`git ls-files docs` lo lista). **Pendiente de release**: lo publicado en npm (`1.0.0`) todavía no incluye RRU-124, RRU-129, RRU-131, RRU-113 ni las cartas de EPIC-12 —necesitan un `pnpm release`, y hay ocho changesets `patch` sin publicar (RRU-136, RRU-137, RRU-138, RRU-139, RRU-140, RRU-141, RRU-142 y RRU-143)—. Ni RRU-144 ni RRU-145 añaden changeset porque EPIC-12 no toca la API pública. |
-| Último cierre | **RRU-145** ✅ **Done** (2026-10-06) — `Cierre de EPIC 12: auditoría de stories, DEMO.md y presupuesto CSS`. Se añadió `packages/ui/src/responsive-stories.test.ts` (gate filesystem-derived que exige story `Responsive` en los 28 componentes, guía §861), se cerró la fila responsive de `DEMO.md` con `pnpm test:e2e` como comando de verificación, se ajustó `.size-limit.json` a CSS 5.75 kB (medido 5.63 kB gzip) y se documentó la limitación de `@container` en `theming.md §8`. Verificación: `pnpm lint` ✅, `pnpm typecheck` ✅, `pnpm test --filter=@raulrod/ui` (**1168 passed**) ✅, `pnpm build` ✅, `pnpm test:e2e` (**131 passed**) ✅, `pnpm check:demo` (**76 afirmaciones**) ✅, `pnpm format:check` ✅ y `pnpm size-limit` (JS 70.84kB/75kB, CSS 5.63kB/5.75kB) verdes. Antes: **RRU-144** ✅ Done (2026-10-06) — `Playground responsive y E2E de no-desbordamiento por familia`. |
-| Bloqueos / notas | **EPIC 12 y EPIC 13 abiertas el 2026-10-04 por decisión del usuario**. EPIC 11 ✅ completo. EPIC 0–10 ✅ completos; EPIC 5 ✅ con RRU-060 en backlog. **Higiene de cierre reparada en esta sesión**: RRU-136 ya estaba correctamente cerrada en HEAD; RRU-140 cierra con DoD marcado, fecha, notas de ejecución, §0.1/§3.7 actualizados y todos los gates ejecutados. **Gobernanza del repo aplazada sin tarjeta** en §0.2 (CODEOWNERS, CONTRIBUTING.md, ruleset de `main`). **Deuda de protocolo** en RRU-134 (prioridad vs ID en §0 paso 1) sigue abierta; visible en que RRU-136 (P1) se ejecutó antes que RRU-137 (P0) por menor ID. |
+| Siguiente tarea | **Ninguna tarjeta ejecutable.** Todos los epics planificados hasta EPIC-13 están completos. La siguiente sesión aplica la regla §0 paso 1: si no hay tarjeta `⬜ To Do` con dependencias ✅, es sesión de **hardening / backlog** (RRU-134 deuda de protocolo, RRU-060 P2 opcional, o gobernanza §0.2 si el usuario la retoma). |
+| Siguiente epic | **Ninguno en curso.** EPIC-13 — Extensibilidad: escape hatch de estilos (Fase 13) está ✅ completo. Es la única épica que **cambió la API pública** del `1.0.0` publicado. |
+| Rama / PR activo | `development` con los cambios de **RRU-147** listos para commit. El tablero **sí está trackeado** (`git ls-files docs` lo lista). **Pendiente de release**: lo publicado en npm (`1.0.0`) todavía no incluye RRU-124, RRU-129, RRU-131, RRU-113 ni las cartas de EPIC-12/EPIC-13 —necesitan un `pnpm release`; hay nueve changesets sin publicar (ocho `patch` de EPIC-12 + uno `minor` de RRU-147)—. |
+| Último cierre | **RRU-147** ✅ **Done** (2026-10-06) — `styles y classNames en los 28 componentes`. Se añadieron `styles?: Styles<"...">` a los 28 componentes públicos que renderizan DOM, `classNames?: { [slot]: string }` a los componentes compuestos repartido por contexto, util `mergeStyles`, stories representativas, guía `docs/overriding.mdx`, changeset `minor` de EPIC-13, y se actualizó `component-pattern.mdx` §5.1. Verificación: `pnpm lint` ✅, `pnpm typecheck` ✅, `pnpm test --filter=@raulrod/ui` (**1182 passed**) ✅, `pnpm build` ✅, `pnpm format:check` ✅, `pnpm size-limit` ✅, `pnpm verify:external` ✅. |
+| Bloqueos / notas | **EPIC-13 ✅ completo (2 de 2).** EPIC-12 ✅ completo. EPIC 0–11 ✅ completos; EPIC 5 ✅ con RRU-060 en backlog. **Gobernanza del repo aplazada sin tarjeta** en §0.2 (CODEOWNERS, CONTRIBUTING.md, ruleset de `main`). **Deuda de protocolo** en RRU-134 (prioridad vs ID en §0 paso 1) sigue abierta. |
 
 ---
 
@@ -170,7 +170,7 @@ no-force-push, sin PR obligatorio.
 | EPIC 10 — Performance + hardening  | Fase 10     | RRU-100…105 | ✅ completo (RRU-100 ✅; RRU-104 ✅; RRU-105 ✅; RRU-101 ✅; **RRU-102 ✅**; **RRU-103 ✅**) |
 | EPIC 11 — Portfolio / demo         | Fase 11     | RRU-110…114 + RRU-131…134 | ✅ completo (RRU-110 ✅; RRU-111 ✅; **RRU-112 ✅** — v1.0.0 publicada y verificada sobre el registro; **RRU-132 ✅** — el peer `>=18.2.0` verificado en sus dos extremos; **RRU-131 ✅** — job `external-install` en CI, informativo; **RRU-113 ✅** — `DEMO.md` en la raíz + gate `pnpm check:demo`; **RRU-133 📋** — movida a EPIC-12 como su carta 1; RRU-134 📋 — backlog, no ejecutables por la regla de §0. Orden de cierre en §0.2, borrada al cerrar RRU-113) |
 | EPIC 12 — Responsive (Fase 12) | Fase 12 — **nueva**, la añade RRU-133 en `design-system-guide.md` §6 | RRU-133 + RRU-135…145 | ✅ **completo, 12 de 12** — **RRU-133 ✅ Done (2026-10-04)**; **RRU-135 ✅ Done (2026-10-04)**; **RRU-136 ✅ Done (2026-10-05)**; **RRU-137 ✅ Done (2026-10-05)**; **RRU-138 ✅ Done (2026-10-05)**; **RRU-139 ✅ Done (2026-10-05)**; **RRU-140 ✅ Done (2026-10-05)**; **RRU-141 ✅ Done (2026-10-05)**; **RRU-142 ✅ Done (2026-10-05)**; **RRU-143 ✅ Done (2026-10-05)**; **RRU-144 ✅ Done (2026-10-06)**; **RRU-145 ✅ Done (2026-10-06)**. Las **8 familias** RRU-136–143 están ejecutadas; última **RRU-145** cerrada. Cadena: RRU-135 → RRU-136–143 → RRU-144 → RRU-145. Sin cambios de API pública. Mecanismo `@container` con `@media` solo para Dialog y Toast. Precedentes heredados: RRU-136 (min-width: 0, overflow-wrap, container-type, E2E geométrico, gate literal↔token, cero props); RRU-137 (box-sizing en raíz con padding, overlays fixed acotados con min()/viewport); RRU-138 (min-* gana a max-*, box-sizing no heredada); RRU-139 (gate y E2E no intercambiables, una regresión se mide o se lee; una fila que se encoge es peor que una que se sale); RRU-140 (la altura de un scrollport sticky es responsabilidad del consumidor); RRU-141 (`container-type: inline-size` en flex item sin `flex-grow` colapsa a 0px; el consumidor debe darle base positiva); RRU-142 (controles reemplazados necesitan `min-width: 0` + `box-sizing: border-box`; grupos horizontales deben preferir `flex-wrap: wrap`). **Octavo precedente, fijado por RRU-143:** los elementos reemplazados ya están suelo por `min-width: auto` (Checkbox, track de Switch) y no necesitan `flex-shrink: 0` a diferencia de un `<button>`; la tipografía pura (`Text`, `Heading`) y los contenedores inline-flex con texto (`Badge`) sí necesitan `overflow-wrap: anywhere` para token irrompible. **Noveno precedente, fijado por RRU-144:** el desbordamiento horizontal de una página entera se contiene en el consumidor (scrollports en tablas, `wrap` en filas de botones, padding reducido en el shell); el DS provee los mecanismos, pero el layout de página es responsabilidad de quien consume la librería. |
-| EPIC 13 — Extensibilidad: escape hatch de estilos (Fase 13) | Fase 13 — **nueva**, la añade RRU-146 | RRU-146…147 | ⬜ **planificada, 0 de 2 y ninguna ejecutable** (RRU-146 depende de RRU-145). Única épica que **cambia la API pública** de un `1.0.0` publicado, y por eso va con **ADR-009 propio** (regla 2) y changeset `minor`. Nace de un encargo del usuario (2026-10-04), no de un hallazgo |
+| EPIC 13 — Extensibilidad: escape hatch de estilos (Fase 13) | Fase 13 — **nueva**, la añade RRU-146 | RRU-146…147 | ✅ **completo, 2 de 2** (**RRU-146 ✅ Done 2026-10-06**; **RRU-147 ✅ Done 2026-10-06**). Única épica que **cambió la API pública** de un `1.0.0` publicado, y por eso va con **ADR-009 propio** (regla 2) y changeset `minor`. Nace de un encargo del usuario (2026-10-04), no de un hallazgo |
 
 > Actualizar la tabla y las tarjetas en cada cierre de tarea. El número de tarjeta nunca se reutiliza.
 
@@ -1975,7 +1975,7 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
 
 ### RRU-139 · Dialog y Toast: los dos que sí miden el viewport
 
-- **Epic:** EPIC-12 · **Estado:** 👀 In Review (2026-10-05) — diff entregado al usuario, sin commitear
+- **Epic:** EPIC-12 · **Estado:** ✅ Done · **Fecha:** 2026-10-05
 - **Prioridad:** P1 · **Estimación:** M · **Dependencias:** RRU-135
 - **Labels:** `component` `styling`
 - **Descripción:** Las dos únicas cartas donde `@media` está justificado, y las dos donde el ancho
@@ -2051,6 +2051,9 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
     panel, revertir el tope, quitar el `flex-wrap` y quitar el tope del stack ponen en rojo la E2E
     (2, 2, 1 y 2 tests respectivamente); los mismos cuatro más la reversión a `100vw` ponen en rojo
     la gate. La que **solo** la gate caza es justamente la que el E2E no puede ver.
+  - **Higiene de cierre (2026-10-06):** la tarjeta quedó accidentalmente en 👀 In Review en el
+    tablero a pesar de que su trabajo ya estaba en HEAD y EPIC-12 se declaró completo. Se corrige
+    a ✅ Done con fecha 2026-10-05.
 
 ### RRU-140 · Data display: Table y DataTable
 
@@ -2293,17 +2296,24 @@ y cero CSS de componente en este cambio; los tokens que tocan son de manifiesto,
 
 ### RRU-146 · ADR-009 y el tipo de `styles` derivado del gate
 
-- **Epic:** EPIC-13 · **Estado:** ⬜ To Do
+- **Epic:** EPIC-13 · **Estado:** ✅ Done · **Fecha:** 2026-10-06
 - **Prioridad:** P0 · **Estimación:** M · **Dependencias:** RRU-145
 - **Labels:** `docs` `component` `styling`
 - **Descripción:** El contrato y su gate. No escribe la prop en ningún componente: define qué se
   puede sobrescribir, con qué tipado y con qué prueba de que no se cuela nada más.
 - **Criterios de aceptación (DoD):**
-  - [ ] **`ADR-009 · Escape hatch de estilos`** en `docs/decisions/009-styles-prop.md` (template §22): por qué `styles` es **override de tokens** y no CSS-in-JS; por qué `style`/`className` de raíz no se tocan; qué pasa con lo que no es token; y la relación con ADR-003 y `theming.md §7` (que es lo que esta prop **implementa por instancia**, no contradice).
-  - [ ] **El tipo se deriva, no se escribe.** `Styles` sale de `tokenVarsUsed(css)` contra la hoja del propio componente, así que un componente **no puede ofrecer un token que no consume** y un token nuevo no necesita tocar 28 `.types.ts`. El gate que lo demuestra compara el tipo publicado con la lista real de tokens del CSS.
-  - [ ] **Gate de que no se cuela nada**: ninguna prop de estilo acepta una propiedad CSS arbitraria, y `@ts-expect-error` sobre un token inexistente **falla de compilar**. Con **sonda negativa** que lo demuestre (ADR-005: una gate que no se puede ver fallar no es una gate).
-  - [ ] **Decisión sobre el límite de AA, escrita y argumentada**: un consumidor puede poner `--rr-color-action-primary-background: <cualquiera>` en una instancia. Se decide **explícitamente** si eso es una puerta documentada (y el argumento es `theming.md §7`: override = cambiar variables, y es **su** instancia) o si hay que restringir a tokens sin par de contraste registrado. Lo que no vale es dejarlo sin decidir.
-  - [ ] Guía §10 y el `.mdx` de `component-pattern.mdx` por dónde entra el patrón.
+  - [x] **`ADR-009 · Escape hatch de estilos`** en `docs/decisions/009-styles-prop.md` (template §22): por qué `styles` es **override de tokens** y no CSS-in-JS; por qué `style`/`className` de raíz no se tocan; qué pasa con lo que no es token; y la relación con ADR-003 y `theming.md §7` (que es lo que esta prop **implementa por instancia**, no contradice).
+  - [x] **El tipo se deriva, no se escribe.** `Styles` sale de `tokenVarsUsed(css)` contra la hoja del propio componente, así que un componente **no puede ofrecer un token que no consume** y un token nuevo no necesita tocar 28 `.types.ts`. El gate que lo demuestra compara el tipo publicado con la lista real de tokens del CSS.
+  - [x] **Gate de que no se cuela nada**: ninguna prop de estilo acepta una propiedad CSS arbitraria, y `@ts-expect-error` sobre un token inexistente **falla de compilar**. Con **sonda negativa** que lo demuestre (ADR-005: una gate que no se puede ver fallar no es una gate).
+  - [x] **Decisión sobre el límite de AA, escrita y argumentada**: un consumidor puede poner `--rr-color-action-primary-background: <cualquiera>` en una instancia. Se decide **explícitamente** si eso es una puerta documentada (y el argumento es `theming.md §7`: override = cambiar variables, y es **su** instancia) o si hay que restringir a tokens sin par de contraste registrado. Lo que no vale es dejarlo sin decidir.
+  - [x] Guía §10 y el `.mdx` de `component-pattern.mdx` por dónde entra el patrón.
+- **Notas de la sesión (2026-10-06 — cierre):**
+  - Se implementa derivación mediante `tools/derive-style-types.mjs`, que genera `packages/ui/src/style-tokens.generated.ts` desde `tokenVarsUsed(css)`. Cero listas de tokens escritas a mano. El gate `packages/ui/src/styles-type-contract.test.ts` compara el generado con el CSS de cada componente y falla con mensaje accionable (`pnpm derive:styles`).
+  - Sondas negativas `@ts-expect-error` en el mismo spec: token inexistente (`--rr-not-consumed-by-button`) y propiedad CSS arbitraria (`color`) rechazadas por `Styles<"button">`; una clave válida compila sin supresión (anti-vacuidad).
+  - Decisión AA: **puerta documentada** — la garantía AA cubre el output por defecto del DS; el consumidor es responsable del valor que ponga en una instancia, igual que al redefinir una variable en `:root`.
+  - ADR-009 publicado en `docs/decisions/009-styles-prop.md`. Docs locales actualizados: guía §10, `component-pattern.mdx` §5.1, `theming.md` §7.
+  - Sin changeset: RRU-146 no exporta tipos nuevos por el barrel; la API pública cambia en RRU-147, que llevará el changeset `minor`.
+  - Verificación: `pnpm lint` ✅, `pnpm typecheck` ✅, `pnpm test --filter=@raulrod/ui` (**1171 passed**) ✅, `pnpm build` ✅, `pnpm format:check` ✅.
 - **Notas de la sesión (2026-10-04 — creación):** El criterio 4 es el que un revisor tiene que
   poder leer y decidir, no el que le heredas. **Argumento a favor de dejarlo abierto**: la garantía
   de AA es del **DS sobre su output por defecto**; en cuanto el consumidor sustituye una variable,

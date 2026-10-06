@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
 import { flexClasses } from "../utils/flex.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 
 /**
  * Horizontal (`flex-direction: row`) layout primitive with token-typed
@@ -12,7 +13,7 @@ import { flexClasses } from "../utils/flex.js";
  * over CSS custom properties, ADR-003).
  */
 export const Inline = forwardRef<HTMLDivElement, InlineProps>(function Inline(
-  { gap, align, justify, wrap, className, ...props },
+  { gap, align, justify, wrap, className, style, styles, ...props },
   ref,
 ) {
   return (
@@ -24,6 +25,7 @@ export const Inline = forwardRef<HTMLDivElement, InlineProps>(function Inline(
         flexClasses("rr-inline", { gap, align, justify, wrap }),
         className,
       )}
+      style={mergeStyles(styles, style)}
     />
   );
 });

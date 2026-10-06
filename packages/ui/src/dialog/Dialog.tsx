@@ -51,7 +51,13 @@ import { useId } from "../utils/use-id.js";
  * trigger (DoD #1).
  */
 
-export function Dialog({ open, defaultOpen = false, onOpenChange, children }: DialogProps) {
+export function Dialog({
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  classNames,
+  children,
+}: DialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const controlled = open !== undefined;
   const isOpen = controlled ? open : uncontrolledOpen;
@@ -83,6 +89,7 @@ export function Dialog({ open, defaultOpen = false, onOpenChange, children }: Di
     contentId,
     triggerRef,
     setTriggerRef,
+    classNames,
     ...(labelId !== undefined && { labelId }),
     ...(descriptionId !== undefined && { descriptionId }),
   };
@@ -107,7 +114,7 @@ export const DialogTrigger = forwardRef<HTMLButtonElement, DialogTriggerProps>(
         aria-haspopup="dialog"
         aria-expanded={dialog.open}
         aria-controls={dialog.contentId}
-        className={cx("rr-dialog-trigger", className)}
+        className={cx("rr-dialog-trigger", dialog.classNames?.trigger, className)}
         onClick={(event) => {
           dialog.setOpen(true);
           onClick?.(event);
@@ -169,7 +176,7 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
           tabIndex={-1}
           aria-labelledby={dialog.labelId}
           aria-describedby={dialog.descriptionId}
-          className={cx("rr-dialog-content", className)}
+          className={cx("rr-dialog-content", dialog.classNames?.content, className)}
         >
           {children}
         </div>
@@ -184,7 +191,14 @@ export const DialogHeader = forwardRef<HTMLDivElement, DialogHeaderProps>(functi
   { className, ...props },
   ref,
 ) {
-  return <div {...props} ref={ref} className={cx("rr-dialog-header", className)} />;
+  const dialog = useDialogContext();
+  return (
+    <div
+      {...props}
+      ref={ref}
+      className={cx("rr-dialog-header", dialog.classNames?.header, className)}
+    />
+  );
 });
 DialogHeader.displayName = "DialogHeader";
 
@@ -196,7 +210,12 @@ export const DialogTitle = forwardRef<HTMLHeadingElement, DialogTitleProps>(func
 ) {
   const dialog = useDialogContext();
   return (
-    <h2 {...props} ref={ref} id={dialog.labelId} className={cx("rr-dialog-title", className)}>
+    <h2
+      {...props}
+      ref={ref}
+      id={dialog.labelId}
+      className={cx("rr-dialog-title", dialog.classNames?.title, className)}
+    >
       {children}
     </h2>
   );
@@ -213,7 +232,7 @@ export const DialogDescription = forwardRef<HTMLParagraphElement, DialogDescript
         {...props}
         ref={ref}
         id={dialog.descriptionId}
-        className={cx("rr-dialog-description", className)}
+        className={cx("rr-dialog-description", dialog.classNames?.description, className)}
       />
     );
   },
@@ -225,7 +244,14 @@ export const DialogFooter = forwardRef<HTMLDivElement, DialogFooterProps>(functi
   { className, ...props },
   ref,
 ) {
-  return <div {...props} ref={ref} className={cx("rr-dialog-footer", className)} />;
+  const dialog = useDialogContext();
+  return (
+    <div
+      {...props}
+      ref={ref}
+      className={cx("rr-dialog-footer", dialog.classNames?.footer, className)}
+    />
+  );
 });
 DialogFooter.displayName = "DialogFooter";
 

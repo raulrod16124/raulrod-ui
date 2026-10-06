@@ -1,6 +1,8 @@
 import type { PopoverPlacement } from "../utils/popover.js";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 
+export type PopoverClassNames = Partial<Record<"trigger" | "content" | "title", string>>;
+
 /** Public `placement` re-export (single source in `utils/popover.ts`). */
 export type { PopoverPlacement } from "../utils/popover.js";
 
@@ -34,6 +36,8 @@ export interface PopoverContextValue {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
   /** Registers the `<Popover.Trigger>` node (owned by the root, see above). */
   setTriggerRef: (node: HTMLButtonElement | null) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: PopoverClassNames;
 }
 
 /**
@@ -60,6 +64,8 @@ export interface PopoverProps {
   defaultOpen?: boolean;
   /** Fired whenever open state changes (trigger click, Escape, outside). */
   onOpenChange?: (open: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: PopoverClassNames;
   children?: ReactNode;
 }
 

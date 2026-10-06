@@ -9,6 +9,7 @@ export {
   SelectValue,
 } from "./Select.js";
 export type {
+  SelectClassNames,
   SelectContentProps,
   SelectGroupProps,
   SelectIconProps,

@@ -1,5 +1,9 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, RefObject } from "react";
 
+export type DialogClassNames = Partial<
+  Record<"trigger" | "content" | "header" | "title" | "description" | "footer", string>
+>;
+
 /**
  * Internal context payload of {@link Dialog}, consumed by the slots.
  * The root is the ONLY provider; slots read `open`/`setOpen` for the
@@ -29,6 +33,8 @@ export interface DialogContextValue {
   /** Registers/unregisters the trigger's DOM node (ref callbacks, never an
    *  object mutation during render — react-hooks/immutability). */
   setTriggerRef: (node: HTMLButtonElement | null) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: DialogClassNames;
   /** `<Dialog.Title>` id, referenced by `aria-labelledby` (present only when the slot is). */
   labelId?: string;
   /** `<Dialog.Description>` id, referenced by `aria-describedby` (present only when the slot is). */
@@ -54,6 +60,8 @@ export interface DialogProps {
   defaultOpen?: boolean;
   /** Fired whenever open state changes (trigger click, Escape, backdrop). */
   onOpenChange?: (open: boolean) => void;
+  /** Class names distributed from the root to each slot. */
+  classNames?: DialogClassNames;
   children?: ReactNode;
 }
 

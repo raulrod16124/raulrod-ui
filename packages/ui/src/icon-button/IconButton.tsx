@@ -5,6 +5,7 @@ import { forwardRef } from "react";
 import { Loader2 } from "@raulrod/icons";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: same guarantee as Button — adding
@@ -49,7 +50,18 @@ const iconButtonClasses = createVariants(iconButtonModifiers);
  * height so both kinds of action align in a toolbar.
  */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, variant = "primary", size, loading = false, disabled, className, children, ...props },
+  {
+    label,
+    variant = "primary",
+    size,
+    loading = false,
+    disabled,
+    className,
+    style,
+    styles,
+    children,
+    ...props
+  },
   ref,
 ) {
   if (process.env.NODE_ENV !== "production" && !label) {
@@ -73,6 +85,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-busy={loading || undefined}
       disabled={disabled === true || loading}
       className={classes}
+      style={mergeStyles(styles, style)}
     >
       {loading === true ? (
         <span className="rr-icon-button__spinner" aria-hidden="true">

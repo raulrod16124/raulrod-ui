@@ -3,6 +3,7 @@ import type { ProgressProps } from "./Progress.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 
 const MIN_VALUE = 0;
 const MAX_VALUE = 100;
@@ -14,7 +15,7 @@ function normalizeValue(value: number): number {
 }
 
 export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progress(
-  { label, value, indeterminate = false, className, ...props },
+  { label, value, indeterminate = false, className, style, styles, ...props },
   ref,
 ) {
   const normalizedValue = normalizeValue(value ?? MIN_VALUE);
@@ -29,6 +30,7 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progr
       aria-valuemax={MAX_VALUE}
       aria-valuenow={indeterminate ? undefined : normalizedValue}
       className={cx("rr-progress", indeterminate && "rr-progress--indeterminate", className)}
+      style={mergeStyles(styles, style)}
     >
       <span
         aria-hidden="true"

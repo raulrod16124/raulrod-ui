@@ -3,6 +3,7 @@ import type { CheckboxProps, CheckboxSize } from "./Checkbox.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `CheckboxSize` member
@@ -36,7 +37,7 @@ const checkboxClasses = createVariants(checkboxModifiers);
  * so server and client markup always match.
  */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
-  { indeterminate, size, className, "aria-checked": ariaChecked, ...props },
+  { indeterminate, size, className, style, styles, "aria-checked": ariaChecked, ...props },
   ref,
 ) {
   return (
@@ -53,6 +54,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       }}
       aria-checked={indeterminate ? "mixed" : ariaChecked}
       className={cx("rr-checkbox", checkboxClasses("rr-checkbox", { size }), className)}
+      style={mergeStyles(styles, style)}
     />
   );
 });

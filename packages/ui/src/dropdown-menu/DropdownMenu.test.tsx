@@ -607,6 +607,49 @@ describe("DropdownMenu controlled/uncontrolled + composition", () => {
     expect(DropdownMenu.SubContent).toBe(DropdownMenuSubContent);
   });
 
+  it("distributes root classNames to every slot (including sub slots)", () => {
+    render(
+      <DropdownMenu
+        defaultOpen
+        classNames={{
+          trigger: "root-trigger",
+          content: "root-content",
+          item: "root-item",
+          separator: "root-separator",
+          subTrigger: "root-sub-trigger",
+          subContent: "root-sub-content",
+        }}
+      >
+        <DropdownMenu.Trigger data-testid="trigger">Options</DropdownMenu.Trigger>
+        <DropdownMenu.Content data-testid="content">
+          <DropdownMenu.Item data-testid="edit">Edit</DropdownMenu.Item>
+          <DropdownMenu.Item data-testid="share" disabled>
+            Share
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator data-testid="sep" />
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger data-testid="more">More</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent data-testid="sub">
+              <DropdownMenu.Item>Duplicate</DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+        </DropdownMenu.Content>
+      </DropdownMenu>,
+    );
+
+    expect(screen.getByTestId("trigger").className).toBe("rr-dropdown-trigger root-trigger");
+    expect(screen.getByTestId("content").className).toBe("rr-dropdown-menu root-content");
+    expect(screen.getByTestId("edit").className).toBe("rr-dropdown-item root-item");
+    expect(screen.getByTestId("share").className).toBe(
+      "rr-dropdown-item rr-dropdown-item--disabled root-item",
+    );
+    expect(screen.getByTestId("sep").className).toBe("rr-dropdown-separator root-separator");
+
+    pointerOverOn(screen.getByTestId("more"));
+    expect(screen.getByTestId("more").className).toBe("rr-dropdown-item root-sub-trigger");
+    expect(screen.getByTestId("sub").className).toBe("rr-dropdown-menu root-sub-content");
+  });
+
   it("merges className and passes through props on the slots", async () => {
     render(
       <DropdownMenu>

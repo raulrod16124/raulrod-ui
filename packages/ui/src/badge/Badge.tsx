@@ -3,6 +3,7 @@ import type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `BadgeVariant` member
@@ -35,7 +36,7 @@ const badgeClasses = createVariants(badgeModifiers);
  * `green-950`) — theme changes the value, never the intent (§9/decisión #4).
  */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
-  { variant = "neutral", className, children, ...props },
+  { variant = "neutral", className, style, styles, children, ...props },
   ref,
 ) {
   return (
@@ -43,6 +44,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
       {...props}
       ref={ref}
       className={cx("rr-badge", badgeClasses("rr-badge", { variant }), className)}
+      style={mergeStyles(styles, style)}
     >
       {children}
     </span>

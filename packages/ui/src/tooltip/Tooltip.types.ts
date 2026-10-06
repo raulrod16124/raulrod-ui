@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { PopoverPlacement } from "../utils/popover.js";
 import type { HTMLAttributes, ReactNode } from "react";
 
@@ -46,4 +47,6 @@ export interface TooltipProps extends Omit<HTMLAttributes<HTMLSpanElement>, "con
   defaultOpen?: boolean;
   /** Fired whenever the resolved open state changes (hover, focus, blur). */
   onOpenChange?: (open: boolean) => void;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"tooltip">;
 }

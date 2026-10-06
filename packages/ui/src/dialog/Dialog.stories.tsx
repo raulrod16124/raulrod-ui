@@ -132,6 +132,24 @@ export const Keyboard: Story = {
 };
 
 /**
+ * RRU-147: `classNames` distributes classes to the dialog's public slots from
+ * the provider root. The consumer never touches `.rr-dialog-content` directly.
+ */
+export const ClassNamesOverride: Story = {
+  render: () => (
+    <Dialog classNames={{ content: "my-dialog-content" }}>
+      <DialogTrigger>Open styled dialog</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Styled panel</DialogTitle>
+        </DialogHeader>
+        <p>The content slot carries the consumer class.</p>
+      </DialogContent>
+    </Dialog>
+  ),
+};
+
+/**
  * The fixture that made the defect visible (RRU-139).
  *
  * Two things about it are load-bearing, and neither is about looking like a real

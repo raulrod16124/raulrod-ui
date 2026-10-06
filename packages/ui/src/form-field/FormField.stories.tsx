@@ -100,6 +100,23 @@ export const Keyboard: Story = {
   },
 };
 
+/**
+ * RRU-147: `classNames` reaches a public slot without exposing internal
+ * selectors. The `error` slot is part of the API; `.rr-form-field__error` is
+ * not.
+ */
+export const ClassNamesOverride: Story = {
+  render: () => (
+    <FormField classNames={{ error: "my-field-error" }}>
+      <FormFieldLabel>Email</FormFieldLabel>
+      <FormFieldControl>
+        {(field) => <Input type="email" aria-invalid defaultValue="not-an-email" {...field} />}
+      </FormFieldControl>
+      <FormFieldError>Please enter a valid email address.</FormFieldError>
+    </FormField>
+  ),
+};
+
 export const Responsive: Story = {
   render: () => (
     <StoryStack gap="space-6">

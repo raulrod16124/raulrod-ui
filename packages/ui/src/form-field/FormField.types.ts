@@ -1,4 +1,9 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes, LabelHTMLAttributes, ReactNode } from "react";
+
+export type FormFieldClassNames = Partial<
+  Record<"root" | "label" | "description" | "control" | "error", string>
+>;
 
 /**
  * Props a control must receive to be wired into a {@link FormField}.
@@ -32,6 +37,8 @@ export interface FormFieldContextValue {
   field: FormFieldControlProps;
   descriptionId?: string;
   errorId?: string;
+  /** Class names distributed from the root to each slot. */
+  classNames?: FormFieldClassNames;
 }
 
 /**
@@ -66,6 +73,10 @@ export interface FormFieldProps extends Omit<HTMLAttributes<HTMLDivElement>, "ch
   /** Override the generated control id (defaults to a `useId` value). */
   controlId?: string;
   children?: ReactNode;
+  /** Token-level styles overrides for the component root. */
+  styles?: Styles<"form-field">;
+  /** Class names distributed from the root to each slot. */
+  classNames?: FormFieldClassNames;
 }
 
 /** Props of the `<FormField.Label>` slot: a real `<label>` (`htmlFor` is

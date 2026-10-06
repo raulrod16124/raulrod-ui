@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { InputHTMLAttributes } from "react";
 
 /**
@@ -28,4 +29,6 @@ export type InputSize = "sm" | "md" | "lg";
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   /** Size axis; defaults to `md` via the CSS base class. */
   size?: InputSize;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"input">;
 }

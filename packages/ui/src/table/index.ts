@@ -15,6 +15,7 @@ export type {
   TableBodyProps,
   TableCaptionProps,
   TableCellProps,
+  TableClassNames,
   TableColGroupProps,
   TableColumnProps,
   TableFootProps,

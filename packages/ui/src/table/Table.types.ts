@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type {
   ColHTMLAttributes,
   HTMLAttributes,
@@ -5,6 +6,23 @@ import type {
   TdHTMLAttributes,
   ThHTMLAttributes,
 } from "react";
+
+export type TableClassNames = Partial<
+  Record<
+    | "wrapper"
+    | "table"
+    | "head"
+    | "body"
+    | "foot"
+    | "row"
+    | "headerCell"
+    | "cell"
+    | "caption"
+    | "colGroup"
+    | "column",
+    string
+  >
+>;
 
 /** Row density axis of {@link Table} (uniform axis §24). `md` is the
  *  CSS base default (the modifier is only emitted when the prop is provided);
@@ -53,6 +71,10 @@ export interface TableProps extends HTMLAttributes<HTMLDivElement> {
   loading?: boolean;
   /** Number of skeleton rows while `loading` (default `3`). */
   loadingRows?: number;
+  /** Token-level styles overrides for the component wrapper. */
+  styles?: Styles<"table">;
+  /** Class names distributed from the root to each slot. */
+  classNames?: TableClassNames;
 }
 
 /** Props of the `<Table.Head>` slot: the native `<thead>` section. */
@@ -141,4 +163,6 @@ export interface TableContextValue {
   loadingRows: number;
   /** Default `<th>` scope of the current section. */
   scopeDefault: TableScope;
+  /** Class names distributed from the root to each slot. */
+  classNames?: TableClassNames;
 }

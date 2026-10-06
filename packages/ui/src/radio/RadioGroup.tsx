@@ -4,6 +4,7 @@ import type { RadioGroupProps, RadioGroupOrientation } from "./RadioGroup.types.
 import { createContext, forwardRef, useState } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { useId } from "../utils/use-id.js";
 import { createVariants } from "../utils/variants.js";
 
@@ -60,6 +61,8 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(function R
     size,
     orientation = "vertical",
     className,
+    style,
+    styles,
     children,
     ...rest
   },
@@ -92,6 +95,7 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(function R
         radioGroupClasses("rr-radio-group", { orientation }),
         className,
       )}
+      style={mergeStyles(styles, style)}
     >
       <RadioGroupContext.Provider value={group}>{children}</RadioGroupContext.Provider>
     </div>

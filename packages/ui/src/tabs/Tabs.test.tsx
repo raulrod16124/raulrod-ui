@@ -537,6 +537,38 @@ describe("Tabs SSR parity + composition contract", () => {
     expect(Tabs.Panel).toBe(TabsPanel);
   });
 
+  it("distributes root classNames to list, trigger and panel", () => {
+    render(
+      <Tabs
+        defaultValue="overview"
+        classNames={{
+          list: "root-list",
+          trigger: "root-trigger",
+          panel: "root-panel",
+        }}
+      >
+        <Tabs.List data-testid="list">
+          <Tabs.Trigger value="overview" data-testid="tab-overview">
+            Overview
+          </Tabs.Trigger>
+          <Tabs.Trigger value="settings" data-testid="tab-settings">
+            Settings
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Panel value="overview" data-testid="panel-overview">
+          O
+        </Tabs.Panel>
+        <Tabs.Panel value="settings" data-testid="panel-settings">
+          S
+        </Tabs.Panel>
+      </Tabs>,
+    );
+
+    expect(screen.getByTestId("list").className).toBe("rr-tabs-list root-list");
+    expect(screen.getByTestId("tab-overview").className).toBe("rr-tabs-trigger root-trigger");
+    expect(screen.getByTestId("panel-overview").className).toBe("rr-tabs-panel root-panel");
+  });
+
   it("a slot used outside a <Tabs> root fails loud", () => {
     expect(() => renderToStaticMarkup(<Tabs.Trigger value="a">A</Tabs.Trigger>)).toThrow(
       "Tabs slots must be used within a <Tabs> root",

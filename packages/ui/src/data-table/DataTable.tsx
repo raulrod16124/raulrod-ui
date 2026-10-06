@@ -15,6 +15,7 @@ import { Input } from "../input/index.js";
 import { Pagination } from "../pagination/index.js";
 import { Table } from "../table/index.js";
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { useId as useDesignSystemId } from "../utils/use-id.js";
 import { VisuallyHidden } from "../visually-hidden/index.js";
 
@@ -113,6 +114,9 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
     error,
     size = "sm",
     sticky = false,
+    styles,
+    style,
+    classNames,
     className,
     ...props
   }: DataTableProps<T, RowId>,
@@ -264,10 +268,15 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
   });
 
   return (
-    <div {...props} ref={ref} className={cx("rr-data-table", className)}>
+    <div
+      {...props}
+      ref={ref}
+      style={mergeStyles(styles, style)}
+      className={cx("rr-data-table", classNames?.root, className)}
+    >
       {filtering && (
-        <div className="rr-data-table__toolbar">
-          <div className="rr-data-table__filter">
+        <div className={cx("rr-data-table__toolbar", classNames?.toolbar)}>
+          <div className={cx("rr-data-table__filter", classNames?.filter)}>
             <label className="rr-data-table__filter-label" htmlFor={`${id}-filter`}>
               {filtering.label ?? "Filter rows"}
             </label>
@@ -350,7 +359,7 @@ const DataTableRoot = forwardRef(function DataTable<T, RowId extends DataTableRo
         </Table.Body>
       </Table>
       {pagination && pageCount > 1 && !loading && !hasError && (
-        <div className="rr-data-table__footer">
+        <div className={cx("rr-data-table__footer", classNames?.footer)}>
           <Pagination
             className="rr-data-table__pagination"
             page={page}

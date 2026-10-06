@@ -3,6 +3,7 @@ import type { SwitchProps, SwitchSize } from "./Switch.types.js";
 import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 /** Exhaustive axis maps: adding a `SwitchSize` member breaks
@@ -56,6 +57,8 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
     "aria-invalid": ariaInvalid,
     size,
     className,
+    style,
+    styles,
     children,
     ...rest
   },
@@ -70,6 +73,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
         switchClasses("rr-switch", { size }),
         className,
       )}
+      style={mergeStyles(styles, style)}
     >
       <input
         type="checkbox"

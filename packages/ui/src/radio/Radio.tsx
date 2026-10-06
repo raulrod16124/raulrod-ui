@@ -3,6 +3,7 @@ import type { RadioProps, RadioSize } from "./Radio.types.js";
 import { forwardRef, useContext } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { createVariants } from "../utils/variants.js";
 
 import { RadioGroupContext } from "./RadioGroup.js";
@@ -39,7 +40,7 @@ const radioClasses = createVariants(radioModifiers);
  * and turns the row cursor.
  */
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
-  { value, disabled, size, className, children, ...rest },
+  { value, disabled, size, className, style, styles, children, ...rest },
   ref,
 ) {
   const group = useContext(RadioGroupContext);
@@ -55,6 +56,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         radioClasses("rr-radio", { size: resolvedSize }),
         className,
       )}
+      style={mergeStyles(styles, style)}
     >
       <input
         type="radio"

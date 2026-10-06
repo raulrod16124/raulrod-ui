@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
 
 type ProgressNativeProps = Omit<
@@ -7,6 +8,8 @@ type ProgressNativeProps = Omit<
 
 type ProgressBaseProps = ProgressNativeProps & {
   label: string;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"progress">;
 };
 
 export type ProgressProps =

@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { LabelHTMLAttributes } from "react";
 
 /**
@@ -40,6 +41,8 @@ export interface RadioProps extends Omit<
   disabled?: boolean;
   /** Size axis; defaults to `md` via the CSS base class. */
   size?: RadioSize;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"radio">;
 }
 
 /**

@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
 
 /**
@@ -31,4 +32,6 @@ export type SkeletonVariant = "rectangle" | "circle";
 export interface SkeletonProps extends HTMLAttributes<HTMLSpanElement> {
   /** Placeholder shape; defaults to `rectangle` (JS default, Badge precedent). */
   variant?: SkeletonVariant;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"skeleton">;
 }

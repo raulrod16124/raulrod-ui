@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
 import { flexClasses } from "../utils/flex.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 
 /**
  * Vertical (`flex-direction: column`) layout primitive with token-typed
@@ -12,7 +13,7 @@ import { flexClasses } from "../utils/flex.js";
  * over CSS custom properties, ADR-003).
  */
 export const Stack = forwardRef<HTMLDivElement, StackProps>(function Stack(
-  { gap, align, justify, wrap, className, ...props },
+  { gap, align, justify, wrap, className, style, styles, ...props },
   ref,
 ) {
   return (
@@ -20,6 +21,7 @@ export const Stack = forwardRef<HTMLDivElement, StackProps>(function Stack(
       {...props}
       ref={ref}
       className={cx("rr-stack", flexClasses("rr-stack", { gap, align, justify, wrap }), className)}
+      style={mergeStyles(styles, style)}
     />
   );
 });

@@ -4,6 +4,7 @@ import type { TypeScale } from "@raulrod/tokens";
 import { createElement, forwardRef } from "react";
 
 import { cx } from "../utils/cx.js";
+import { mergeStyles } from "../utils/merge-styles.js";
 import { typographyClasses } from "../utils/typography.js";
 
 /** Default font size per heading level (docs/typography.md §4: monotonic
@@ -24,7 +25,7 @@ const sizeByLevel: Record<HeadingLevel, TypeScale> = {
  * never arbitrary values (docs/typography.md §1, ADR-003).
  */
 export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Heading(
-  { as = "h2", color, className, ...props },
+  { as = "h2", color, className, style, styles, ...props },
   ref,
 ) {
   return createElement(as, {
@@ -35,6 +36,7 @@ export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Hea
       typographyClasses("rr-heading", { size: sizeByLevel[as], color }),
       className,
     ),
+    style: mergeStyles(styles, style),
   });
 });
 Heading.displayName = "Heading";

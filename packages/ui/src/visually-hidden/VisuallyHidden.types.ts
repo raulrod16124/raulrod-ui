@@ -1,3 +1,4 @@
+import type { Styles } from "../style-tokens.generated.js";
 import type { HTMLAttributes } from "react";
 
 /**
@@ -18,4 +19,6 @@ export interface VisuallyHiddenProps extends HTMLAttributes<HTMLSpanElement> {
    *  reveals itself as soon as it (or a focused child) receives focus, for
    *  skip-link utilities. Defaults to `false`. */
   focusable?: boolean;
+  /** Token overrides for this component instance. Keys are the CSS tokens the component consumes. */
+  styles?: Styles<"visually-hidden">;
 }
