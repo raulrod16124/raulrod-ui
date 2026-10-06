@@ -44,5 +44,5 @@ Set `data-theme="light"` or `data-theme="dark"` on `<html>` to switch themes.
 
 ## Documentation
 
-- Full documentation and Storybook: `https://raulrod16124.github.io/raulrod-ui` (coming soon).
-- Repository: `raulrod16124/raulrod-ui`
+- Full documentation and Storybook: <a href="https://raulrod16124.github.io/raulrod-ui" target="_blank" rel="noopener noreferrer">https://raulrod16124.github.io/raulrod-ui</a>
+- Repository: <a href="https://github.com/raulrod16124/raulrod-ui" target="_blank" rel="noopener noreferrer">raulrod16124/raulrod-ui</a>

@@ -189,11 +189,24 @@ export const CustomSpinner: Story = {
 
 /**
  * RRU-147: `styles` lets the consumer override a component token on a single
- * instance without leaving the token contract. The key is typed from the CSS,
- * so only tokens Button actually consumes are accepted.
+ * instance without leaving the token contract. The token half is typed from
+ * the CSS (only tokens Button actually consumes are accepted); standard CSS
+ * properties (`color`, `opacity`, …) are also allowed — same merge order as
+ * `style`, and the explicit `style` prop still wins on key collision.
  */
 export const StylesOverride: Story = {
   render: () => (
-    <Button styles={{ "--rr-button-primary-background": "#c026d3" }}>Brand action</Button>
+    <StoryStack gap="space-4">
+      <Button styles={{ "--rr-button-primary-background": "#c026d3" }}>Brand action</Button>
+      <Button variant="secondary" styles={{ color: "#c026d3", opacity: 0.8 }}>
+        Standard CSS properties
+      </Button>
+      <Button
+        styles={{ "--rr-button-primary-background": "#c026d3", color: "red" }}
+        style={{ color: "blue" }}
+      >
+        `style` wins on collision
+      </Button>
+    </StoryStack>
   ),
 };

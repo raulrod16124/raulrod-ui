@@ -1,24 +1,29 @@
 import type { CSSProperties } from "react";
 
 /**
- * Merge consumer token overrides (`styles`) onto the native `style` prop.
+ * Merge `styles` under the consumer's native `style` prop.
  *
- * Order: component base style (none by default) → `styles` token map →
- * consumer `style` wins if a key collides. This keeps `styles` as a typed
- * shortcut for CSS variables while leaving the escape hatch of the raw
- * `style` prop intact.
+ * Call sites pass `mergeStyles(styles, style)`. Order: component base style
+ * (none by default) → `styles` → consumer `style` last, so `style` wins if a
+ * key collides — the same rule as `cx` and the consumer's `className`
+ * (component-pattern.mdx §5.1).
+ *
+ * `styles` carries two key families (ADR-009 amendment): the component's own
+ * `--rr-*` tokens and standard CSS properties (`color`, `zIndex`, …). Both are
+ * plain keys in a style object, so the merge is a spread — no filtering, no
+ * runtime validation; the gate is the `Styles` type.
  */
 export function mergeStyles(
-  overrides: Record<string, string> | undefined,
-  base: CSSProperties | undefined,
+  styles: CSSProperties | undefined,
+  style: CSSProperties | undefined,
 ): CSSProperties | undefined {
-  if (overrides === undefined || Object.keys(overrides).length === 0) {
-    return base;
+  if (styles === undefined || Object.keys(styles).length === 0) {
+    return style;
   }
 
-  if (base === undefined) {
-    return overrides as CSSProperties;
+  if (style === undefined) {
+    return styles;
   }
 
-  return { ...base, ...overrides };
+  return { ...styles, ...style };
 }
